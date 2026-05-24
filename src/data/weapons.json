@@ -1,0 +1,272 @@
+[
+  {
+    "id": "m252_81mm",
+    "name": "M252 81mm Mortar",
+    "category": "mortar",
+    "isMod": false,
+    "minElevationMil": 800,
+    "maxElevationMil": 1500,
+    "ammo": [
+      {
+        "id": "m821_he",
+        "name": "M821 HE",
+        "description": "81mm high-explosive round",
+        "charges": [
+          {
+            "id": "0",
+            "label": "Charge 0",
+            "rows": [
+              { "range_m": 100, "elevation_mil": 1466, "tof_sec": 11.2 },
+              { "range_m": 150, "elevation_mil": 1424, "tof_sec": 11.0 },
+              { "range_m": 200, "elevation_mil": 1380, "tof_sec": 10.7 },
+              { "range_m": 250, "elevation_mil": 1333, "tof_sec": 10.3 },
+              { "range_m": 300, "elevation_mil": 1280, "tof_sec": 9.8 },
+              { "range_m": 350, "elevation_mil": 1219, "tof_sec": 9.3 },
+              { "range_m": 400, "elevation_mil": 1144, "tof_sec": 8.6 },
+              { "range_m": 450, "elevation_mil": 1043, "tof_sec": 7.6 },
+              { "range_m": 500, "elevation_mil": 870,  "tof_sec": 6.2 }
+            ]
+          },
+          {
+            "id": "1",
+            "label": "Charge 1",
+            "rows": [
+              { "range_m": 200, "elevation_mil": 1494, "tof_sec": 16.0 },
+              { "range_m": 300, "elevation_mil": 1450, "tof_sec": 15.7 },
+              { "range_m": 400, "elevation_mil": 1404, "tof_sec": 15.3 },
+              { "range_m": 500, "elevation_mil": 1356, "tof_sec": 14.9 },
+              { "range_m": 600, "elevation_mil": 1304, "tof_sec": 14.4 },
+              { "range_m": 700, "elevation_mil": 1247, "tof_sec": 13.8 },
+              { "range_m": 800, "elevation_mil": 1183, "tof_sec": 13.1 },
+              { "range_m": 900, "elevation_mil": 1107, "tof_sec": 12.3 },
+              { "range_m": 1000, "elevation_mil": 1012, "tof_sec": 11.2 },
+              { "range_m": 1100, "elevation_mil": 880,  "tof_sec": 9.9  }
+            ]
+          },
+          {
+            "id": "2",
+            "label": "Charge 2",
+            "rows": [
+              { "range_m": 400, "elevation_mil": 1480, "tof_sec": 20.4 },
+              { "range_m": 600, "elevation_mil": 1410, "tof_sec": 19.8 },
+              { "range_m": 800, "elevation_mil": 1336, "tof_sec": 19.0 },
+              { "range_m": 1000, "elevation_mil": 1256, "tof_sec": 18.1 },
+              { "range_m": 1200, "elevation_mil": 1166, "tof_sec": 17.0 },
+              { "range_m": 1400, "elevation_mil": 1059, "tof_sec": 15.7 },
+              { "range_m": 1600, "elevation_mil": 920,  "tof_sec": 13.8 }
+            ]
+          },
+          {
+            "id": "3",
+            "label": "Charge 3",
+            "rows": [
+              { "range_m": 600, "elevation_mil": 1474, "tof_sec": 24.5 },
+              { "range_m": 900, "elevation_mil": 1394, "tof_sec": 23.7 },
+              { "range_m": 1200, "elevation_mil": 1308, "tof_sec": 22.7 },
+              { "range_m": 1500, "elevation_mil": 1212, "tof_sec": 21.5 },
+              { "range_m": 1800, "elevation_mil": 1105, "tof_sec": 20.0 },
+              { "range_m": 2100, "elevation_mil": 967,  "tof_sec": 17.9 },
+              { "range_m": 2400, "elevation_mil": 760,  "tof_sec": 14.6 }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "m120_120mm",
+    "name": "M120 120mm Mortar",
+    "category": "mortar",
+    "isMod": false,
+    "minElevationMil": 800,
+    "maxElevationMil": 1500,
+    "ammo": [
+      {
+        "id": "m934_he",
+        "name": "M934 HE",
+        "description": "120mm high-explosive round",
+        "charges": [
+          {
+            "id": "1",
+            "label": "Charge 1",
+            "rows": [
+              { "range_m": 400,  "elevation_mil": 1480, "tof_sec": 22.0 },
+              { "range_m": 600,  "elevation_mil": 1420, "tof_sec": 21.3 },
+              { "range_m": 800,  "elevation_mil": 1356, "tof_sec": 20.5 },
+              { "range_m": 1000, "elevation_mil": 1289, "tof_sec": 19.7 },
+              { "range_m": 1200, "elevation_mil": 1215, "tof_sec": 18.7 },
+              { "range_m": 1400, "elevation_mil": 1133, "tof_sec": 17.5 },
+              { "range_m": 1600, "elevation_mil": 1037, "tof_sec": 16.2 },
+              { "range_m": 1800, "elevation_mil": 916,  "tof_sec": 14.5 }
+            ]
+          },
+          {
+            "id": "2",
+            "label": "Charge 2",
+            "rows": [
+              { "range_m": 800,  "elevation_mil": 1465, "tof_sec": 29.5 },
+              { "range_m": 1200, "elevation_mil": 1370, "tof_sec": 28.4 },
+              { "range_m": 1600, "elevation_mil": 1265, "tof_sec": 27.0 },
+              { "range_m": 2000, "elevation_mil": 1149, "tof_sec": 25.3 },
+              { "range_m": 2400, "elevation_mil": 1014, "tof_sec": 23.2 },
+              { "range_m": 2800, "elevation_mil": 845,  "tof_sec": 20.3 }
+            ]
+          },
+          {
+            "id": "3",
+            "label": "Charge 3",
+            "rows": [
+              { "range_m": 1500, "elevation_mil": 1460, "tof_sec": 37.5 },
+              { "range_m": 2000, "elevation_mil": 1380, "tof_sec": 36.2 },
+              { "range_m": 2500, "elevation_mil": 1290, "tof_sec": 34.5 },
+              { "range_m": 3000, "elevation_mil": 1190, "tof_sec": 32.6 },
+              { "range_m": 3500, "elevation_mil": 1075, "tof_sec": 30.4 },
+              { "range_m": 4000, "elevation_mil": 935,  "tof_sec": 27.8 },
+              { "range_m": 4500, "elevation_mil": 740,  "tof_sec": 24.0 }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "m777_155mm",
+    "name": "M777 155mm Howitzer (mod)",
+    "category": "howitzer",
+    "isMod": true,
+    "minElevationMil": 0,
+    "maxElevationMil": 1290,
+    "ammo": [
+      {
+        "id": "m107_he",
+        "name": "M107 HE",
+        "description": "155mm high-explosive projectile",
+        "charges": [
+          {
+            "id": "1",
+            "label": "Charge 1",
+            "rows": [
+              { "range_m": 950,  "elevation_mil": 1245, "tof_sec": 24.4 },
+              { "range_m": 1000, "elevation_mil": 1221, "tof_sec": 24.2 },
+              { "range_m": 1050, "elevation_mil": 1197, "tof_sec": 24.0 },
+              { "range_m": 1100, "elevation_mil": 1171, "tof_sec": 23.7 },
+              { "range_m": 1150, "elevation_mil": 1144, "tof_sec": 23.4 },
+              { "range_m": 1200, "elevation_mil": 1115, "tof_sec": 23.1 },
+              { "range_m": 1250, "elevation_mil": 1084, "tof_sec": 22.7 },
+              { "range_m": 1300, "elevation_mil": 1050, "tof_sec": 22.3 },
+              { "range_m": 1350, "elevation_mil": 1011, "tof_sec": 21.8 },
+              { "range_m": 1400, "elevation_mil": 965,  "tof_sec": 21.2 },
+              { "range_m": 1450, "elevation_mil": 907,  "tof_sec": 20.3 },
+              { "range_m": 1500, "elevation_mil": 800,  "tof_sec": 18.6 }
+            ]
+          },
+          {
+            "id": "2",
+            "label": "Charge 2",
+            "rows": [
+              { "range_m": 1500, "elevation_mil": 1270, "tof_sec": 33.1 },
+              { "range_m": 1550, "elevation_mil": 1257, "tof_sec": 33.0 },
+              { "range_m": 1600, "elevation_mil": 1243, "tof_sec": 32.9 },
+              { "range_m": 1650, "elevation_mil": 1229, "tof_sec": 32.7 },
+              { "range_m": 1700, "elevation_mil": 1214, "tof_sec": 32.5 },
+              { "range_m": 1750, "elevation_mil": 1200, "tof_sec": 32.4 },
+              { "range_m": 1800, "elevation_mil": 1185, "tof_sec": 32.1 },
+              { "range_m": 1850, "elevation_mil": 1169, "tof_sec": 31.9 },
+              { "range_m": 1900, "elevation_mil": 1153, "tof_sec": 31.7 },
+              { "range_m": 1950, "elevation_mil": 1136, "tof_sec": 31.5 },
+              { "range_m": 2000, "elevation_mil": 1119, "tof_sec": 31.2 },
+              { "range_m": 2050, "elevation_mil": 1101, "tof_sec": 31.0 },
+              { "range_m": 2100, "elevation_mil": 1082, "tof_sec": 30.7 },
+              { "range_m": 2150, "elevation_mil": 1062, "tof_sec": 30.3 },
+              { "range_m": 2200, "elevation_mil": 1041, "tof_sec": 30.0 },
+              { "range_m": 2250, "elevation_mil": 1018, "tof_sec": 29.6 },
+              { "range_m": 2300, "elevation_mil": 995,  "tof_sec": 29.2 },
+              { "range_m": 2350, "elevation_mil": 967,  "tof_sec": 28.7 },
+              { "range_m": 2400, "elevation_mil": 938,  "tof_sec": 28.1 },
+              { "range_m": 2450, "elevation_mil": 904,  "tof_sec": 27.5 },
+              { "range_m": 2500, "elevation_mil": 860,  "tof_sec": 26.5 }
+            ]
+          },
+          {
+            "id": "3",
+            "label": "Charge 3",
+            "rows": [
+              { "range_m": 2100, "elevation_mil": 1272, "tof_sec": 41.0 },
+              { "range_m": 2200, "elevation_mil": 1253, "tof_sec": 40.8 },
+              { "range_m": 2300, "elevation_mil": 1233, "tof_sec": 40.5 },
+              { "range_m": 2400, "elevation_mil": 1213, "tof_sec": 40.2 },
+              { "range_m": 2500, "elevation_mil": 1192, "tof_sec": 39.9 },
+              { "range_m": 2600, "elevation_mil": 1170, "tof_sec": 39.5 },
+              { "range_m": 2700, "elevation_mil": 1147, "tof_sec": 39.1 },
+              { "range_m": 2800, "elevation_mil": 1123, "tof_sec": 38.7 },
+              { "range_m": 2900, "elevation_mil": 1098, "tof_sec": 38.3 },
+              { "range_m": 3000, "elevation_mil": 1070, "tof_sec": 37.7 },
+              { "range_m": 3100, "elevation_mil": 1042, "tof_sec": 37.2 },
+              { "range_m": 3200, "elevation_mil": 1010, "tof_sec": 36.5 },
+              { "range_m": 3300, "elevation_mil": 975,  "tof_sec": 35.7 },
+              { "range_m": 3400, "elevation_mil": 936,  "tof_sec": 34.9 },
+              { "range_m": 3500, "elevation_mil": 890,  "tof_sec": 33.7 },
+              { "range_m": 3600, "elevation_mil": 828,  "tof_sec": 32.1 }
+            ]
+          },
+          {
+            "id": "4",
+            "label": "Charge 4",
+            "rows": [
+              { "range_m": 2600, "elevation_mil": 1271, "tof_sec": 47.2 },
+              { "range_m": 2700, "elevation_mil": 1255, "tof_sec": 47.0 },
+              { "range_m": 2800, "elevation_mil": 1240, "tof_sec": 46.7 },
+              { "range_m": 2900, "elevation_mil": 1224, "tof_sec": 46.5 },
+              { "range_m": 3000, "elevation_mil": 1207, "tof_sec": 46.2 },
+              { "range_m": 3100, "elevation_mil": 1190, "tof_sec": 45.9 },
+              { "range_m": 3200, "elevation_mil": 1172, "tof_sec": 45.6 },
+              { "range_m": 3300, "elevation_mil": 1154, "tof_sec": 45.2 },
+              { "range_m": 3400, "elevation_mil": 1135, "tof_sec": 44.9 },
+              { "range_m": 3500, "elevation_mil": 1116, "tof_sec": 44.5 },
+              { "range_m": 3600, "elevation_mil": 1095, "tof_sec": 44.0 },
+              { "range_m": 3700, "elevation_mil": 1074, "tof_sec": 43.6 },
+              { "range_m": 3800, "elevation_mil": 1052, "tof_sec": 43.1 },
+              { "range_m": 3900, "elevation_mil": 1028, "tof_sec": 42.5 },
+              { "range_m": 4000, "elevation_mil": 1003, "tof_sec": 41.9 },
+              { "range_m": 4100, "elevation_mil": 976,  "tof_sec": 41.3 },
+              { "range_m": 4200, "elevation_mil": 946,  "tof_sec": 40.5 },
+              { "range_m": 4300, "elevation_mil": 912,  "tof_sec": 39.6 },
+              { "range_m": 4400, "elevation_mil": 874,  "tof_sec": 38.5 },
+              { "range_m": 4500, "elevation_mil": 828,  "tof_sec": 37.2 }
+            ]
+          },
+          {
+            "id": "5",
+            "label": "Charge 5",
+            "rows": [
+              { "range_m": 3000, "elevation_mil": 1271, "tof_sec": 52.2 },
+              { "range_m": 3100, "elevation_mil": 1258, "tof_sec": 52.0 },
+              { "range_m": 3200, "elevation_mil": 1244, "tof_sec": 51.8 },
+              { "range_m": 3300, "elevation_mil": 1230, "tof_sec": 51.5 },
+              { "range_m": 3400, "elevation_mil": 1216, "tof_sec": 51.3 },
+              { "range_m": 3500, "elevation_mil": 1202, "tof_sec": 51.0 },
+              { "range_m": 3600, "elevation_mil": 1187, "tof_sec": 50.7 },
+              { "range_m": 3700, "elevation_mil": 1172, "tof_sec": 50.4 },
+              { "range_m": 3800, "elevation_mil": 1156, "tof_sec": 50.1 },
+              { "range_m": 3900, "elevation_mil": 1140, "tof_sec": 49.8 },
+              { "range_m": 4000, "elevation_mil": 1124, "tof_sec": 49.4 },
+              { "range_m": 4100, "elevation_mil": 1107, "tof_sec": 49.0 },
+              { "range_m": 4200, "elevation_mil": 1089, "tof_sec": 48.6 },
+              { "range_m": 4300, "elevation_mil": 1071, "tof_sec": 48.2 },
+              { "range_m": 4400, "elevation_mil": 1052, "tof_sec": 47.7 },
+              { "range_m": 4500, "elevation_mil": 1032, "tof_sec": 47.2 },
+              { "range_m": 4600, "elevation_mil": 1011, "tof_sec": 46.7 },
+              { "range_m": 4700, "elevation_mil": 989,  "tof_sec": 46.1 },
+              { "range_m": 4800, "elevation_mil": 966,  "tof_sec": 45.5 },
+              { "range_m": 4900, "elevation_mil": 941,  "tof_sec": 44.7 },
+              { "range_m": 5000, "elevation_mil": 913,  "tof_sec": 44.0 },
+              { "range_m": 5100, "elevation_mil": 883,  "tof_sec": 43.1 },
+              { "range_m": 5200, "elevation_mil": 850,  "tof_sec": 42.0 },
+              { "range_m": 5300, "elevation_mil": 809,  "tof_sec": 40.7 }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

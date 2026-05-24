@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  background:
+    radial-gradient(1200px 600px at 20% -10%, rgba(214, 255, 58, 0.04), transparent 60%),
+    radial-gradient(900px 500px at 110% 110%, rgba(214, 255, 58, 0.03), transparent 60%),
+    #06070a;
+  -webkit-font-smoothing: antialiased;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.panel {
+  @apply bg-panel border border-line rounded-sm;
+}
+.panel-alt {
+  @apply bg-panelAlt border border-line rounded-sm;
+}
+.label {
+  @apply text-[10px] uppercase tracking-[0.18em] text-zinc-500 font-mono;
+}
+.value {
+  @apply font-mono text-zinc-100;
+}
+.field {
+  @apply w-full bg-black/40 border border-line px-2 py-1 font-mono text-sm text-zinc-100
+    focus:outline-none focus:border-accentDim focus:ring-1 focus:ring-accentDim/60;
+}
+.btn {
+  @apply font-mono text-xs uppercase tracking-wider px-3 py-1.5 border border-line bg-panelAlt
+    text-zinc-200 hover:border-accentDim hover:text-accent transition-colors;
+}
+.btn-primary {
+  @apply font-mono text-xs uppercase tracking-wider px-3 py-1.5 border border-accentDim bg-accentDim/15
+    text-accent hover:bg-accentDim/30 transition-colors;
+}
+.section-title {
+  @apply text-[11px] uppercase tracking-[0.2em] text-accent/80 font-mono;
+}
+.hairline {
+  @apply border-t border-line;
+}
