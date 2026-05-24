@@ -1,0 +1,135 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    background: #0a0c0a;
+    background-image:
+      radial-gradient(1200px 600px at 20% -10%, rgba(127, 176, 105, 0.05), transparent 60%),
+      radial-gradient(900px 500px at 100% 110%, rgba(127, 176, 105, 0.04), transparent 60%);
+    color: #a3c585;
+  }
+
+  input,
+  select,
+  button,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
+
+  /* Coarse, tactical grid texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(127, 176, 105, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(127, 176, 105, 0.025) 1px, transparent 1px);
+    background-size: 32px 32px;
+    z-index: 0;
+  }
+
+  ::selection {
+    background: #7fb069;
+    color: #0a0c0a;
+  }
+
+  /* Number inputs: kill the spinners */
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0f1310;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1f2a21;
+    border-radius: 0;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2c3a2e;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply border border-line bg-bg-panel relative;
+  }
+
+  .panel-title {
+    @apply px-3 py-2 border-b border-line text-[11px] uppercase tracking-[0.18em] text-muted flex items-center justify-between;
+  }
+
+  .panel-body {
+    @apply p-3;
+  }
+
+  .field-label {
+    @apply text-[10px] uppercase tracking-widest text-muted mb-1 block;
+  }
+
+  .field-input {
+    @apply w-full bg-bg border border-line px-2 py-1.5 text-accent placeholder:text-muted/50 focus:outline-none focus:border-accent-dim focus:ring-1 focus:ring-accent-dim/40 transition-colors;
+  }
+
+  .btn {
+    @apply border border-line bg-bg-panel hover:bg-bg-raised hover:border-accent-dim text-accent px-3 py-1.5 text-xs uppercase tracking-wider transition-colors active:translate-y-[1px];
+  }
+
+  .btn-primary {
+    @apply border-accent-dim bg-accent-dim/10 hover:bg-accent-dim/25 text-accent-glow;
+  }
+
+  .btn-danger {
+    @apply hover:border-danger hover:text-danger;
+  }
+
+  .chip {
+    @apply px-2 py-0.5 text-[10px] uppercase tracking-wider border border-line text-muted;
+  }
+
+  .chip-on {
+    @apply border-accent-dim text-accent-glow bg-accent-dim/10;
+  }
+
+  .stat {
+    @apply flex flex-col gap-0.5;
+  }
+
+  .stat-label {
+    @apply text-[10px] uppercase tracking-widest text-muted;
+  }
+
+  .stat-value {
+    @apply text-2xl text-accent-glow tabular-nums;
+  }
+
+  .divider-h {
+    @apply h-px bg-line w-full my-2;
+  }
+
+  .crosshair {
+    background-image:
+      linear-gradient(to right, transparent calc(50% - 1px), rgba(127, 176, 105, 0.4) calc(50% - 1px), rgba(127, 176, 105, 0.4) calc(50% + 1px), transparent calc(50% + 1px)),
+      linear-gradient(to bottom, transparent calc(50% - 1px), rgba(127, 176, 105, 0.4) calc(50% - 1px), rgba(127, 176, 105, 0.4) calc(50% + 1px), transparent calc(50% + 1px));
+  }
+}

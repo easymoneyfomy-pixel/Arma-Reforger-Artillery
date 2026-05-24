@@ -1,0 +1,22 @@
+{
+  "maps": [
+    {
+      "id": "everon",
+      "name": "Everon",
+      "source": "base",
+      "imageUrl": "",
+      "worldSize_m": 12800,
+      "imgWidth": 1024,
+      "imgHeight": 1024
+    },
+    {
+      "id": "arland",
+      "name": "Arland",
+      "source": "base",
+      "imageUrl": "",
+      "worldSize_m": 4096,
+      "imgWidth": 1024,
+      "imgHeight": 1024
+    }
+  ]
+}
