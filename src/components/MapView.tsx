@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { MapDef, Vec3 } from "../types";
+import type { ChargeTable, MapDef, Vec3 } from "../types";
 import { Tooltip, InfoHint } from "./Tooltip";
 
 type Props = {
@@ -13,6 +13,12 @@ type Props = {
   impact: Vec3 | null;
   setGun: (v: Vec3) => void;
   setTarget: (v: Vec3) => void;
+  placeMode: "gun" | "target";
+  setPlaceMode: (m: "gun" | "target") => void;
+  charges: ChargeTable[];
+  activeChargeId: string;
+  showRangeRings: boolean;
+  setShowRangeRings: (v: boolean) => void;
 };
 
 type CalibMode = null | "p1" | "p2";
@@ -52,6 +58,12 @@ function pxToWorld(map: MapDef, px: { x: number; y: number }, dispW: number, dis
   return { x: fx * map.worldSizeM, y: (1 - fy) * map.worldSizeM };
 }
 
+function metersToPx(map: MapDef, anchor: { x: number; y: number }, meters: number, dispW: number, dispH: number) {
+  const a = worldToPx(map, anchor, dispW, dispH);
+  const b = worldToPx(map, { x: anchor.x + meters, y: anchor.y }, dispW, dispH);
+  return Math.hypot(b.x - a.x, b.y - a.y);
+}
+
 export default function MapView({
   map,
   maps,
@@ -63,16 +75,22 @@ export default function MapView({
   impact,
   setGun,
   setTarget,
+  placeMode,
+  setPlaceMode,
+  charges,
+  activeChargeId,
+  showRangeRings,
+  setShowRangeRings,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 600, h: 600 });
-  const [placeMode, setPlaceMode] = useState<"gun" | "target">("gun");
   const [calibMode, setCalibMode] = useState<CalibMode>(null);
   const [calibDraft, setCalibDraft] = useState<MapDef["calibration"] | null>(null);
   const [calibWorldInput, setCalibWorldInput] = useState({ x: "0", y: "0" });
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [customSize, setCustomSize] = useState("8192");
+  const [dragging, setDragging] = useState<null | "gun" | "target">(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -89,6 +107,7 @@ export default function MapView({
   }, []);
 
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {
+    if (dragging) return;
     const rect = e.currentTarget.getBoundingClientRect();
     const px = e.clientX - rect.left;
     const py = e.clientY - rect.top;
@@ -117,10 +136,26 @@ export default function MapView({
     const py = e.clientY - rect.top;
     const world = pxToWorld(map, { x: px, y: py }, size.w, size.h);
     setCursor(world);
+    if (dragging) {
+      const v = { x: world.x, y: world.y, z: dragging === "gun" ? gun?.z ?? 0 : target?.z ?? 0 };
+      if (dragging === "gun") setGun(v);
+      else setTarget(v);
+    }
   }
 
   function handleLeave() {
     setCursor(null);
+    setDragging(null);
+  }
+
+  function startDrag(e: React.MouseEvent, which: "gun" | "target") {
+    e.stopPropagation();
+    e.preventDefault();
+    setDragging(which);
+  }
+
+  function stopDrag() {
+    setDragging(null);
   }
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -137,7 +172,7 @@ export default function MapView({
       e.target.value = "";
       return;
     }
-    const size = Math.max(256, Math.min(20480, Number(customSize) || 8192));
+    const sizeM = Math.max(256, Math.min(20480, Number(customSize) || 8192));
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = reader.result as string;
@@ -145,7 +180,7 @@ export default function MapView({
       onAddMap({
         id,
         name: f.name.replace(/\.[^.]+$/, "") + " (custom)",
-        worldSizeM: size,
+        worldSizeM: sizeM,
         image: dataUrl,
         builtin: false,
       });
@@ -163,13 +198,37 @@ export default function MapView({
     }
   }
 
-  const markers: Array<{ pos: { x: number; y: number }; color: string; label: string }> = [];
-  if (gun) markers.push({ pos: worldToPx(map, gun, size.w, size.h), color: "#34d399", label: "G" });
-  if (target) markers.push({ pos: worldToPx(map, target, size.w, size.h), color: "#f87171", label: "T" });
+  const markers: Array<{ pos: { x: number; y: number }; color: string; label: string; which?: "gun" | "target" }> = [];
+  if (gun) markers.push({ pos: worldToPx(map, gun, size.w, size.h), color: "#34d399", label: "G", which: "gun" });
+  if (target) markers.push({ pos: worldToPx(map, target, size.w, size.h), color: "#f87171", label: "T", which: "target" });
   if (impact) markers.push({ pos: worldToPx(map, impact, size.w, size.h), color: "#fbbf24", label: "I" });
 
   const showLine = gun && target;
   const rangeM = gun && target ? Math.hypot(target.x - gun.x, target.y - gun.y) : null;
+
+  const rings: Array<{ r: number; color: string; label: string; dash?: string }> = [];
+  if (gun && showRangeRings && charges.length) {
+    for (const c of charges) {
+      const min = c.rows[0].range_m;
+      const max = c.rows[c.rows.length - 1].range_m;
+      const isActive = c.id === activeChargeId;
+      const color = isActive ? "#d6ff3a" : "rgba(214,255,58,0.25)";
+      rings.push({
+        r: metersToPx(map, gun, max, size.w, size.h),
+        color,
+        label: `C${c.id} ${max}m`,
+        dash: isActive ? undefined : "3 3",
+      });
+      if (min > 0) {
+        rings.push({
+          r: metersToPx(map, gun, min, size.w, size.h),
+          color,
+          label: "",
+          dash: "1 3",
+        });
+      }
+    }
+  }
 
   return (
     <div className="panel p-3 space-y-2 flex flex-col h-full">
@@ -178,13 +237,14 @@ export default function MapView({
           Tactical Map
           <InfoHint
             side="bottom"
-            width={300}
+            width={320}
             text={
               <>
                 Click the map to drop your <span className="text-emerald-400">Gun</span> or{" "}
-                <span className="text-red-400">Target</span> marker (toggle below). The
-                yellow line is the line of fire and the marker labels are{" "}
-                <b>G</b>=gun, <b>T</b>=target, <b>I</b>=impact (set in Correction panel).
+                <span className="text-red-400">Target</span> marker (toggle below). You
+                can also <b>drag</b> the G/T markers to fine-tune. Yellow dashed line
+                is the line of fire. <b>Range rings</b> show min/max for each charge;
+                the active charge is solid.
               </>
             }
           />
@@ -266,14 +326,14 @@ export default function MapView({
         <button
           className={placeMode === "gun" ? "btn-primary" : "btn"}
           onClick={() => setPlaceMode("gun")}
-          title="Next click on the map places the GUN position."
+          title="Next click on the map places the GUN position. (G)"
         >
           Place Gun
         </button>
         <button
           className={placeMode === "target" ? "btn-primary" : "btn"}
           onClick={() => setPlaceMode("target")}
-          title="Next click on the map places the TARGET position."
+          title="Next click on the map places the TARGET position. (T)"
         >
           Place Target
         </button>
@@ -281,10 +341,22 @@ export default function MapView({
           className="btn"
           onClick={swap}
           disabled={!gun || !target}
-          title="Swap Gun and Target positions."
+          title="Swap Gun and Target positions. (S)"
         >
           Swap
         </button>
+        <label
+          className="btn cursor-pointer select-none flex items-center gap-1"
+          title="Show min/max range rings around the gun for the current charge (all charges shown dimmer)."
+        >
+          <input
+            type="checkbox"
+            className="accent-accent"
+            checked={showRangeRings}
+            onChange={(e) => setShowRangeRings(e.target.checked)}
+          />
+          Rings
+        </label>
         {!map.builtin && (
           <details className="ml-auto">
             <summary
@@ -364,7 +436,8 @@ export default function MapView({
         onClick={handleClick}
         onMouseMove={handleMove}
         onMouseLeave={handleLeave}
-        style={{ cursor: calibMode ? "crosshair" : "pointer" }}
+        onMouseUp={stopDrag}
+        style={{ cursor: calibMode ? "crosshair" : dragging ? "grabbing" : "pointer" }}
       >
         <div
           className="absolute"
@@ -406,6 +479,33 @@ export default function MapView({
                 />
               </g>
             ))}
+            {gun && rings.map((r, i) => {
+              const c = worldToPx(map, gun, size.w, size.h);
+              return (
+                <g key={`ring-${i}`}>
+                  <circle
+                    cx={c.x}
+                    cy={c.y}
+                    r={r.r}
+                    fill="none"
+                    stroke={r.color}
+                    strokeDasharray={r.dash}
+                    strokeWidth={1}
+                  />
+                  {r.label && (
+                    <text
+                      x={c.x + r.r + 2}
+                      y={c.y + 4}
+                      fontSize={9}
+                      fontFamily="ui-monospace, monospace"
+                      fill={r.color}
+                    >
+                      {r.label}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
             {showLine && gun && target && (() => {
               const a = worldToPx(map, gun, size.w, size.h);
               const b = worldToPx(map, target, size.w, size.h);
@@ -437,10 +537,18 @@ export default function MapView({
               );
             })()}
             {markers.map((m, i) => (
-              <g key={i} transform={`translate(${m.pos.x},${m.pos.y})`}>
-                <circle r={6} fill={m.color} stroke="#000" strokeWidth={1} />
+              <g
+                key={i}
+                transform={`translate(${m.pos.x},${m.pos.y})`}
+                style={{ cursor: m.which ? "grab" : "default" }}
+                onMouseDown={(e) => m.which && startDrag(e, m.which)}
+              >
+                <circle r={7} fill={m.color} stroke="#000" strokeWidth={1} />
+                {m.which && (
+                  <circle r={11} fill="transparent" stroke={m.color} strokeOpacity={0.35} strokeWidth={1} />
+                )}
                 <text
-                  x={10}
+                  x={12}
                   y={4}
                   fontSize={11}
                   fontFamily="ui-monospace, monospace"
@@ -451,6 +559,15 @@ export default function MapView({
               </g>
             ))}
           </svg>
+          <div className="absolute top-2 right-2 pointer-events-none" title="North">
+            <svg width="34" height="34" viewBox="0 0 34 34">
+              <circle cx="17" cy="17" r="15" fill="rgba(0,0,0,0.55)" stroke="rgba(214,255,58,0.4)" />
+              <polygon points="17,4 21,18 17,15 13,18" fill="#d6ff3a" />
+              <text x="17" y="29" fontSize="9" fontFamily="ui-monospace, monospace" fill="#d6ff3a" textAnchor="middle">
+                N
+              </text>
+            </svg>
+          </div>
         </div>
         {cursor && (
           <div
@@ -464,10 +581,12 @@ export default function MapView({
       <div className="font-mono text-[10px] text-zinc-500 flex items-center gap-2 flex-wrap">
         <span>
           Click map to place {placeMode === "gun" ? "GUN" : "TARGET"} (world size{" "}
-          {map.worldSizeM} m).
+          {map.worldSizeM} m). Drag G/T to refine.
         </span>
         {rangeM !== null && (
-          <span className="text-zinc-400">· line of fire: <span className="text-accent">{rangeM.toFixed(0)} m</span></span>
+          <span className="text-zinc-400">
+            · line of fire: <span className="text-accent">{rangeM.toFixed(0)} m</span>
+          </span>
         )}
       </div>
     </div>

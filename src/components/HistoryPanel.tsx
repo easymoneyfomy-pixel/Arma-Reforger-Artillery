@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import type { Mission } from "../types";
 import { InfoHint } from "./Tooltip";
 
@@ -6,32 +7,95 @@ type Props = {
   onLoad: (m: Mission) => void;
   onDelete: (id: string) => void;
   onClear: () => void;
+  onImport: (next: Mission[]) => void;
 };
 
-export default function HistoryPanel({ missions, onLoad, onDelete, onClear }: Props) {
+export default function HistoryPanel({ missions, onLoad, onDelete, onClear, onImport }: Props) {
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  function exportJson() {
+    const blob = new Blob([JSON.stringify(missions, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `fdc_missions_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importJson(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = "";
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const text = reader.result as string;
+        const data = JSON.parse(text);
+        if (!Array.isArray(data)) throw new Error("not an array");
+        const cleaned = data.filter(
+          (m) => m && typeof m === "object" && m.id && m.gun && m.target && m.solution,
+        ) as Mission[];
+        if (!cleaned.length) {
+          alert("No valid missions found in file.");
+          return;
+        }
+        onImport(cleaned);
+      } catch (err) {
+        alert("Invalid mission JSON.");
+      }
+    };
+    reader.readAsText(f);
+  }
+
   return (
     <div className="panel p-3 space-y-2">
       <div className="flex items-center justify-between">
         <span className="section-title flex items-center">
           Combat Memory
           <InfoHint
-            width={260}
+            width={280}
             text={
               <>
-                Saved fire missions stored locally in your browser. Click <b>Load</b>{" "}
-                to restore weapon, ammo, charge and coordinates from a past mission.
+                Saved fire missions stored locally in your browser. <b>Load</b>{" "}
+                restores weapon, ammo, charge and coordinates. <b>Export</b> downloads
+                them as JSON so you can back up or share between machines.
               </>
             }
           />
         </span>
-        <button
-          className="btn"
-          onClick={onClear}
-          disabled={!missions.length}
-          title="Delete all saved fire missions."
-        >
-          Clear
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            className="btn !py-1 !px-2 !text-[10px]"
+            onClick={exportJson}
+            disabled={!missions.length}
+            title="Download all saved missions as a JSON file."
+          >
+            Export
+          </button>
+          <button
+            className="btn !py-1 !px-2 !text-[10px]"
+            onClick={() => fileRef.current?.click()}
+            title="Import missions from a previously-exported JSON file (appends to existing)."
+          >
+            Import
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={importJson}
+          />
+          <button
+            className="btn !py-1 !px-2 !text-[10px]"
+            onClick={onClear}
+            disabled={!missions.length}
+            title="Delete all saved fire missions."
+          >
+            Clear
+          </button>
+        </div>
       </div>
       <div className="space-y-1 max-h-80 overflow-y-auto pr-1">
         {missions.length === 0 && (

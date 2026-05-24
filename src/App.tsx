@@ -9,6 +9,7 @@ import RightPanel from "./components/RightPanel";
 import MapView from "./components/MapView";
 import HistoryPanel from "./components/HistoryPanel";
 import CorrectionPanel from "./components/CorrectionPanel";
+import HelpModal from "./components/HelpModal";
 
 const WEAPONS = weaponsData as Weapon[];
 const BUILTIN_MAPS = mapsData as MapDef[];
@@ -27,6 +28,8 @@ function toVec(s: StrVec): Vec3 | null {
 function vecToStr(v: Vec3): StrVec {
   return { x: String(Math.round(v.x)), y: String(Math.round(v.y)), z: String(Math.round(v.z)) };
 }
+
+const HELP_SEEN_KEY = "ar_fdc_help_seen_v1";
 
 export default function App() {
   const [weaponId, setWeaponId] = useState(WEAPONS[0].id);
@@ -47,13 +50,18 @@ export default function App() {
   const [missions, setMissions] = useState<Mission[]>(() => loadJSON<Mission[]>(STORAGE.MISSIONS, []));
   const [impactPoint, setImpactPoint] = useState<Vec3 | null>(null);
 
+  const [placeMode, setPlaceMode] = useState<"gun" | "target">("gun");
+  const [showRangeRings, setShowRangeRings] = useState(true);
+  const [helpOpen, setHelpOpen] = useState(() => {
+    return !loadJSON<boolean>(HELP_SEEN_KEY, false);
+  });
+
   const weapon = WEAPONS.find((w) => w.id === weaponId)!;
   const ammo = weapon.ammo.find((a) => a.id === ammoId) ?? weapon.ammo[0];
 
   const gunV = toVec(gun);
   const targetV = toVec(target);
 
-  // Auto-select charge based on range
   useEffect(() => {
     if (!autoCharge || !gunV || !targetV) return;
     const range = Math.hypot(targetV.x - gunV.x, targetV.y - gunV.y);
@@ -65,6 +73,26 @@ export default function App() {
     if (!gunV || !targetV) return null;
     return computeSolution(weapon, ammo, chargeId, gunV, targetV);
   }, [gunV, targetV, weapon, ammo, chargeId]);
+
+  // Coordinate-bounds warnings derived locally
+  const boundsWarning = useMemo(() => {
+    const issues: string[] = [];
+    const w = map.worldSizeM;
+    function check(v: Vec3 | null, label: string) {
+      if (!v) return;
+      if (v.x < 0 || v.x > w) issues.push(`${label} X ${v.x.toFixed(0)} outside map 0–${w}`);
+      if (v.y < 0 || v.y > w) issues.push(`${label} Y ${v.y.toFixed(0)} outside map 0–${w}`);
+    }
+    check(gunV, "Gun");
+    check(targetV, "Target");
+    return issues;
+  }, [gunV?.x, gunV?.y, targetV?.x, targetV?.y, map.worldSizeM]);
+
+  const mergedSolution = useMemo(() => {
+    if (!solution) return null;
+    if (!boundsWarning.length) return solution;
+    return { ...solution, warnings: [...boundsWarning, ...solution.warnings] };
+  }, [solution, boundsWarning]);
 
   function saveMission() {
     if (!solution || !gunV || !targetV) return;
@@ -104,6 +132,16 @@ export default function App() {
     saveJSON(STORAGE.MISSIONS, []);
   }
 
+  function importMissions(extra: Mission[]) {
+    const byId = new Map<string, Mission>();
+    [...extra, ...missions].forEach((m) => byId.set(m.id, m));
+    const next = Array.from(byId.values())
+      .sort((a, b) => b.ts - a.ts)
+      .slice(0, 200);
+    setMissions(next);
+    saveJSON(STORAGE.MISSIONS, next);
+  }
+
   function addMap(m: MapDef) {
     const next = [...maps, m];
     setMaps(next);
@@ -122,20 +160,89 @@ export default function App() {
     );
   }
 
+  function resetPositions() {
+    setGun({ x: "", y: "", z: "0" });
+    setTarget({ x: "", y: "", z: "0" });
+    setImpactPoint(null);
+  }
+
+  function openHelp() {
+    setHelpOpen(true);
+  }
+  function closeHelp() {
+    setHelpOpen(false);
+    saveJSON(HELP_SEEN_KEY, true);
+  }
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT")) {
+        return;
+      }
+      if (e.key === "?" || (e.key === "/" && e.shiftKey)) {
+        setHelpOpen((v) => !v);
+        e.preventDefault();
+        return;
+      }
+      if (helpOpen) return;
+      switch (e.key.toLowerCase()) {
+        case "g":
+          setPlaceMode("gun");
+          break;
+        case "t":
+          setPlaceMode("target");
+          break;
+        case "s":
+          if (gunV && targetV) {
+            setGun(vecToStr(targetV));
+            setTarget(vecToStr(gunV));
+          }
+          break;
+        case "r":
+          resetPositions();
+          break;
+        case "a":
+          setAutoCharge(!autoCharge);
+          break;
+        default:
+          return;
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [helpOpen, gunV?.x, gunV?.y, targetV?.x, targetV?.y, autoCharge]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <header className="border-b border-line bg-panel/60 backdrop-blur">
-        <div className="max-w-[1700px] mx-auto px-4 py-2.5 flex items-center justify-between">
+        <div className="max-w-[1700px] mx-auto px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
             <span className="font-mono text-sm tracking-[0.18em] uppercase text-zinc-200">
               Arma Reforger · Artillery FDC
             </span>
-            <span className="font-mono text-[10px] text-zinc-600">v0.1</span>
+            <span className="font-mono text-[10px] text-zinc-600">v0.2</span>
           </div>
-          <div className="font-mono text-[10px] text-zinc-500">
-            {weapon.name} · {ammo.name} ·{" "}
-            <span className="text-accent">{solution?.chargeLabel ?? "—"}</span>
+          <div className="flex items-center gap-2">
+            <div className="font-mono text-[10px] text-zinc-500 hidden md:block">
+              {weapon.name} · {ammo.name} ·{" "}
+              <span className="text-accent">{solution?.chargeLabel ?? "—"}</span>
+            </div>
+            <button
+              className="btn !py-1 !px-2 !text-[10px]"
+              onClick={resetPositions}
+              title="Clear gun, target and impact positions. (R)"
+            >
+              Reset
+            </button>
+            <button
+              className="btn !py-1 !px-2 !text-[10px]"
+              onClick={openHelp}
+              title="Show quick-start help (? key)"
+            >
+              Help
+            </button>
           </div>
         </div>
       </header>
@@ -172,11 +279,17 @@ export default function App() {
             impact={impactPoint}
             setGun={(v) => setGun(vecToStr(v))}
             setTarget={(v) => setTarget(vecToStr(v))}
+            placeMode={placeMode}
+            setPlaceMode={setPlaceMode}
+            charges={ammo.charges}
+            activeChargeId={chargeId}
+            showRangeRings={showRangeRings}
+            setShowRangeRings={setShowRangeRings}
           />
         </section>
 
         <section className="col-span-12 lg:col-span-3 space-y-3">
-          <RightPanel solution={solution} onSave={saveMission} />
+          <RightPanel solution={mergedSolution} onSave={saveMission} />
           <CorrectionPanel
             gun={gunV}
             target={targetV}
@@ -191,6 +304,7 @@ export default function App() {
             onLoad={loadMission}
             onDelete={deleteMission}
             onClear={clearMissions}
+            onImport={importMissions}
           />
         </section>
       </main>
@@ -198,6 +312,8 @@ export default function App() {
       <footer className="border-t border-line py-2 text-center font-mono text-[10px] text-zinc-600">
         Tables: M252 81mm · 2B14 Podnos 82mm · M120 120mm · M119A2 105mm · D-30 122mm · M777 155mm · Mils NATO (6400/circle) · Local-only data
       </footer>
+
+      <HelpModal open={helpOpen} onClose={closeHelp} />
     </div>
   );
 }

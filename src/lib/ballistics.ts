@@ -92,17 +92,23 @@ export function computeSolution(
   if (Math.abs(dz) >= 25) {
     warnings.push(`Altitude delta ${dz >= 0 ? "+" : ""}${dz.toFixed(0)}m — tables assume level terrain`);
   }
+  // 800 mil ≈ 45°. Above that → high arc (mortar-style); below → low arc.
+  const elev = interp.elevation_mil;
+  const arc: "high" | "low" | "flat" =
+    elev >= 800 ? "high" : elev >= 400 ? "low" : "flat";
   return {
     rangeM: ground,
     bearingMil: radToMil(bRad),
     bearingDeg: radToDeg(bRad),
-    elevationMil: interp.elevation_mil,
+    elevationMil: elev,
     tofSec: interp.tof_sec,
     chargeId: charge.id,
     chargeLabel: charge.label,
     ammoId: ammo.id,
     weaponId: weapon.id,
     warnings,
+    arc,
+    altDeltaM: dz,
   };
 }
 
