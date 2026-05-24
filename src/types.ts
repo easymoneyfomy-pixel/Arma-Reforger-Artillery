@@ -53,6 +53,8 @@ export type FiringSolution = {
   ammoId: string;
   weaponId: string;
   warnings: string[];
+  arc: "high" | "low" | "flat";
+  altDeltaM: number;
 };
 
 export type Mission = {

@@ -102,6 +102,37 @@ export default function RightPanel({ solution, onSave }: Props) {
             />
           </div>
         )}
+        {solution && (
+          <div className="mt-3 grid grid-cols-2 gap-2 font-mono text-[10px] text-zinc-400">
+            <div
+              className="border border-line bg-black/30 px-2 py-1 flex items-center justify-between"
+              title="High arc (≥800 mil ≈ 45°) is mortar-style indirect fire; low arc is flatter and faster."
+            >
+              <span className="label !text-[9px]">Arc</span>
+              <span
+                className={
+                  solution.arc === "high"
+                    ? "text-accent"
+                    : solution.arc === "low"
+                      ? "text-amber-400"
+                      : "text-danger"
+                }
+              >
+                {solution.arc.toUpperCase()}
+              </span>
+            </div>
+            <div
+              className="border border-line bg-black/30 px-2 py-1 flex items-center justify-between"
+              title="Target altitude minus gun altitude. Tables assume level terrain — large deltas reduce accuracy."
+            >
+              <span className="label !text-[9px]">Δ Alt</span>
+              <span className={Math.abs(solution.altDeltaM) >= 25 ? "text-danger" : "text-zinc-300"}>
+                {solution.altDeltaM >= 0 ? "+" : "−"}
+                {Math.abs(solution.altDeltaM).toFixed(0)} m
+              </span>
+            </div>
+          </div>
+        )}
       </div>
 
       {solution && solution.warnings.length > 0 && (
