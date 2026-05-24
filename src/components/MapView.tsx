@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { MapDef, Vec3 } from "../types";
+import { Tooltip, InfoHint } from "./Tooltip";
 
 type Props = {
   map: MapDef;
@@ -16,9 +17,6 @@ type Props = {
 
 type CalibMode = null | "p1" | "p2";
 
-// Translate world (x_east, y_north) -> image pixel (px, py).
-// For built-in maps without calibration: linear mapping, image is square,
-// origin (0,0) at bottom-left (Y points up in-game; px Y points down).
 function worldToPx(map: MapDef, world: { x: number; y: number }, dispW: number, dispH: number) {
   const cal = map.calibration;
   if (cal) {
@@ -38,7 +36,6 @@ function worldToPx(map: MapDef, world: { x: number; y: number }, dispW: number, 
 function pxToWorld(map: MapDef, px: { x: number; y: number }, dispW: number, dispH: number) {
   const cal = map.calibration;
   if (cal) {
-    // Normalize displayed px back to 0..1000 logical space
     const lpx = (px.x / dispW) * 1000;
     const lpy = (px.y / dispH) * 1000;
     const dxp = cal.p2.px.x - cal.p1.px.x || 1;
@@ -73,6 +70,9 @@ export default function MapView({
   const [calibMode, setCalibMode] = useState<CalibMode>(null);
   const [calibDraft, setCalibDraft] = useState<MapDef["calibration"] | null>(null);
   const [calibWorldInput, setCalibWorldInput] = useState({ x: "0", y: "0" });
+  const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [customSize, setCustomSize] = useState("8192");
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -89,14 +89,13 @@ export default function MapView({
   }, []);
 
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {
-    const target = e.currentTarget.getBoundingClientRect();
-    const px = e.clientX - target.left;
-    const py = e.clientY - target.top;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
     const world = pxToWorld(map, { x: px, y: py }, size.w, size.h);
     if (calibMode) {
       const wx = Number(calibWorldInput.x) || 0;
       const wy = Number(calibWorldInput.y) || 0;
-      // Normalize displayed px to 0..1000 logical so calibration is image-size independent
       const lpx = { x: (px / size.w) * 1000, y: (py / size.h) * 1000 };
       const cur = calibDraft ?? {
         p1: { px: { x: 0, y: 1000 }, world: { x: 0, y: 0 } },
@@ -112,9 +111,33 @@ export default function MapView({
     else setTarget(v);
   }
 
+  function handleMove(e: React.MouseEvent<HTMLDivElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+    const world = pxToWorld(map, { x: px, y: py }, size.w, size.h);
+    setCursor(world);
+  }
+
+  function handleLeave() {
+    setCursor(null);
+  }
+
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    setUploadError(null);
     const f = e.target.files?.[0];
     if (!f) return;
+    if (!f.type.startsWith("image/")) {
+      setUploadError("File must be an image (PNG / JPG / WebP).");
+      e.target.value = "";
+      return;
+    }
+    if (f.size > 12 * 1024 * 1024) {
+      setUploadError("Image is larger than 12 MB. Use a smaller export.");
+      e.target.value = "";
+      return;
+    }
+    const size = Math.max(256, Math.min(20480, Number(customSize) || 8192));
     const reader = new FileReader();
     reader.onload = () => {
       const dataUrl = reader.result as string;
@@ -122,14 +145,22 @@ export default function MapView({
       onAddMap({
         id,
         name: f.name.replace(/\.[^.]+$/, "") + " (custom)",
-        worldSizeM: 8192,
+        worldSizeM: size,
         image: dataUrl,
         builtin: false,
       });
       setMapId(id);
     };
+    reader.onerror = () => setUploadError("Could not read the file. Try a different image.");
     reader.readAsDataURL(f);
     e.target.value = "";
+  }
+
+  function swap() {
+    if (gun && target) {
+      setGun(target);
+      setTarget(gun);
+    }
   }
 
   const markers: Array<{ pos: { x: number; y: number }; color: string; label: string }> = [];
@@ -138,14 +169,30 @@ export default function MapView({
   if (impact) markers.push({ pos: worldToPx(map, impact, size.w, size.h), color: "#fbbf24", label: "I" });
 
   const showLine = gun && target;
+  const rangeM = gun && target ? Math.hypot(target.x - gun.x, target.y - gun.y) : null;
 
   return (
     <div className="panel p-3 space-y-2 flex flex-col h-full">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <span className="section-title">Tactical Map</span>
+        <span className="section-title flex items-center">
+          Tactical Map
+          <InfoHint
+            side="bottom"
+            width={300}
+            text={
+              <>
+                Click the map to drop your <span className="text-emerald-400">Gun</span> or{" "}
+                <span className="text-red-400">Target</span> marker (toggle below). The
+                yellow line is the line of fire and the marker labels are{" "}
+                <b>G</b>=gun, <b>T</b>=target, <b>I</b>=impact (set in Correction panel).
+              </>
+            }
+          />
+        </span>
         <div className="flex items-center gap-1">
           <select
             className="field !py-1 !text-xs"
+            title="Switch map. Built-in maps don't need calibration; uploaded maps may."
             value={map.id}
             onChange={(e) => setMapId(e.target.value)}
           >
@@ -155,51 +202,118 @@ export default function MapView({
               </option>
             ))}
           </select>
-          <button className="btn" onClick={() => fileRef.current?.click()}>
-            Upload
-          </button>
+          <Tooltip
+            side="bottom"
+            width={300}
+            content={
+              <>
+                <b>Upload a custom map image.</b>
+                <br />· Format: <b>PNG / JPG / WebP</b> (any image).
+                <br />· Use a top-down screenshot of the in-game map (full map, square).
+                <br />· Set the <b>world size (m)</b> next to the button to match the
+                actual game world dimensions (e.g. <b>12800</b> for Everon, <b>4096</b>{" "}
+                for Arland).
+                <br />· After upload, use <b>Calibrate</b> to map two known points
+                exactly (recommended for accuracy).
+              </>
+            }
+          >
+            <button
+              className="btn"
+              onClick={() => fileRef.current?.click()}
+              title="Upload a PNG/JPG/WebP map screenshot. Set world size first to match the game world."
+            >
+              Upload
+            </button>
+          </Tooltip>
+          <Tooltip
+            side="bottom"
+            width={240}
+            content={
+              <>
+                World size in <b>meters</b> for the uploaded map. Examples: Everon =
+                12800, Arland = 4096. Used to convert clicks to coordinates.
+              </>
+            }
+          >
+            <input
+              className="field !py-1 !text-xs w-20"
+              type="number"
+              min={256}
+              max={20480}
+              value={customSize}
+              onChange={(e) => setCustomSize(e.target.value)}
+              title="World size in meters for the next uploaded map (e.g. 8192 or 12800)."
+              placeholder="size m"
+            />
+          </Tooltip>
           <input
             ref={fileRef}
             type="file"
-            accept="image/*"
+            accept="image/png,image/jpeg,image/webp,image/*"
             className="hidden"
             onChange={handleFile}
           />
         </div>
       </div>
+      {uploadError && (
+        <div className="font-mono text-[11px] text-danger border border-danger/40 px-2 py-1">
+          {uploadError}
+        </div>
+      )}
 
       <div className="flex items-center gap-1 flex-wrap">
         <button
           className={placeMode === "gun" ? "btn-primary" : "btn"}
           onClick={() => setPlaceMode("gun")}
+          title="Next click on the map places the GUN position."
         >
           Place Gun
         </button>
         <button
           className={placeMode === "target" ? "btn-primary" : "btn"}
           onClick={() => setPlaceMode("target")}
+          title="Next click on the map places the TARGET position."
         >
           Place Target
         </button>
+        <button
+          className="btn"
+          onClick={swap}
+          disabled={!gun || !target}
+          title="Swap Gun and Target positions."
+        >
+          Swap
+        </button>
         {!map.builtin && (
           <details className="ml-auto">
-            <summary className="btn cursor-pointer list-none">Calibrate</summary>
+            <summary
+              className="btn cursor-pointer list-none"
+              title="Calibrate a custom map by clicking two known points."
+            >
+              Calibrate
+            </summary>
             <div className="absolute right-0 z-10 mt-1 panel p-3 w-72 space-y-2">
-              <div className="text-[10px] font-mono text-zinc-400">
-                1) Type the world coordinate of a known map point.<br />
-                2) Click <b>Mark P1/P2</b> then click that pixel on the map.<br />
-                3) Repeat for second point, then <b>Save</b>.
+              <div className="text-[10px] font-mono text-zinc-400 leading-snug">
+                <b>How to calibrate</b><br />
+                1) Type the world coordinate (X, Y in meters) of a known map point —
+                e.g. a town center you read from the game map.<br />
+                2) Click <b>Mark P1</b>, then click that exact pixel on the map.<br />
+                3) Repeat for a second, distant point as <b>P2</b>.<br />
+                4) Press <b>Save Calibration</b>.
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <input
                   className="field"
-                  placeholder="world X"
+                  placeholder="world X (m)"
+                  title="Known world X coordinate, in meters."
                   value={calibWorldInput.x}
                   onChange={(e) => setCalibWorldInput({ ...calibWorldInput, x: e.target.value })}
                 />
                 <input
                   className="field"
-                  placeholder="world Y"
+                  placeholder="world Y (m)"
+                  title="Known world Y coordinate, in meters."
                   value={calibWorldInput.y}
                   onChange={(e) => setCalibWorldInput({ ...calibWorldInput, y: e.target.value })}
                 />
@@ -208,12 +322,14 @@ export default function MapView({
                 <button
                   className={calibMode === "p1" ? "btn-primary" : "btn"}
                   onClick={() => setCalibMode("p1")}
+                  title="Next map click stores this pixel as point 1."
                 >
                   Mark P1
                 </button>
                 <button
                   className={calibMode === "p2" ? "btn-primary" : "btn"}
                   onClick={() => setCalibMode("p2")}
+                  title="Next map click stores this pixel as point 2."
                 >
                   Mark P2
                 </button>
@@ -233,6 +349,7 @@ export default function MapView({
                 onClick={() => {
                   if (calibDraft) onCalibrate(calibDraft);
                 }}
+                title="Save calibration. Saved into local storage with the map."
               >
                 Save Calibration
               </button>
@@ -245,6 +362,8 @@ export default function MapView({
         ref={containerRef}
         className="relative flex-1 min-h-[300px] border border-line bg-black/60 overflow-hidden select-none"
         onClick={handleClick}
+        onMouseMove={handleMove}
+        onMouseLeave={handleLeave}
         style={{ cursor: calibMode ? "crosshair" : "pointer" }}
       >
         <div
@@ -268,7 +387,6 @@ export default function MapView({
               }}
             />
           )}
-          {/* coord overlay grid */}
           <svg className="absolute inset-0" width={size.w} height={size.h}>
             {[...Array(11)].map((_, i) => (
               <g key={i}>
@@ -291,16 +409,31 @@ export default function MapView({
             {showLine && gun && target && (() => {
               const a = worldToPx(map, gun, size.w, size.h);
               const b = worldToPx(map, target, size.w, size.h);
+              const mx = (a.x + b.x) / 2;
+              const my = (a.y + b.y) / 2;
               return (
-                <line
-                  x1={a.x}
-                  y1={a.y}
-                  x2={b.x}
-                  y2={b.y}
-                  stroke="#d6ff3a"
-                  strokeDasharray="4 3"
-                  strokeWidth={1}
-                />
+                <g>
+                  <line
+                    x1={a.x}
+                    y1={a.y}
+                    x2={b.x}
+                    y2={b.y}
+                    stroke="#d6ff3a"
+                    strokeDasharray="4 3"
+                    strokeWidth={1}
+                  />
+                  {rangeM !== null && (
+                    <text
+                      x={mx + 6}
+                      y={my - 6}
+                      fontSize={11}
+                      fontFamily="ui-monospace, monospace"
+                      fill="#d6ff3a"
+                    >
+                      {rangeM.toFixed(0)} m
+                    </text>
+                  )}
+                </g>
               );
             })()}
             {markers.map((m, i) => (
@@ -319,9 +452,23 @@ export default function MapView({
             ))}
           </svg>
         </div>
+        {cursor && (
+          <div
+            className="absolute bottom-1 right-1 font-mono text-[10px] text-accent/90 bg-black/70 px-1.5 py-0.5 border border-accentDim/40 pointer-events-none"
+            title="Cursor world coordinates"
+          >
+            X {cursor.x.toFixed(0)} · Y {cursor.y.toFixed(0)}
+          </div>
+        )}
       </div>
-      <div className="font-mono text-[10px] text-zinc-500">
-        Click map to place {placeMode === "gun" ? "GUN" : "TARGET"} (world size {map.worldSizeM}m).
+      <div className="font-mono text-[10px] text-zinc-500 flex items-center gap-2 flex-wrap">
+        <span>
+          Click map to place {placeMode === "gun" ? "GUN" : "TARGET"} (world size{" "}
+          {map.worldSizeM} m).
+        </span>
+        {rangeM !== null && (
+          <span className="text-zinc-400">· line of fire: <span className="text-accent">{rangeM.toFixed(0)} m</span></span>
+        )}
       </div>
     </div>
   );

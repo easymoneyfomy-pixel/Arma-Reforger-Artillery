@@ -1,4 +1,5 @@
 import type { Mission } from "../types";
+import { InfoHint } from "./Tooltip";
 
 type Props = {
   missions: Mission[];
@@ -11,8 +12,24 @@ export default function HistoryPanel({ missions, onLoad, onDelete, onClear }: Pr
   return (
     <div className="panel p-3 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="section-title">Combat Memory</span>
-        <button className="btn" onClick={onClear} disabled={!missions.length}>
+        <span className="section-title flex items-center">
+          Combat Memory
+          <InfoHint
+            width={260}
+            text={
+              <>
+                Saved fire missions stored locally in your browser. Click <b>Load</b>{" "}
+                to restore weapon, ammo, charge and coordinates from a past mission.
+              </>
+            }
+          />
+        </span>
+        <button
+          className="btn"
+          onClick={onClear}
+          disabled={!missions.length}
+          title="Delete all saved fire missions."
+        >
           Clear
         </button>
       </div>
@@ -26,6 +43,7 @@ export default function HistoryPanel({ missions, onLoad, onDelete, onClear }: Pr
           <div
             key={m.id}
             className="grid grid-cols-[1fr_auto_auto] items-center gap-2 border border-line bg-black/30 px-2 py-1.5 hover:border-accentDim"
+            title={`${m.label} · saved ${new Date(m.ts).toLocaleString()}`}
           >
             <div className="font-mono text-[11px] leading-tight">
               <div className="text-zinc-200">
@@ -38,10 +56,18 @@ export default function HistoryPanel({ missions, onLoad, onDelete, onClear }: Pr
                 {m.target.x.toFixed(0)},{m.target.y.toFixed(0)}
               </div>
             </div>
-            <button className="btn" onClick={() => onLoad(m)}>
+            <button
+              className="btn"
+              onClick={() => onLoad(m)}
+              title="Restore weapon, ammo, charge and coordinates from this mission."
+            >
               Load
             </button>
-            <button className="btn" onClick={() => onDelete(m.id)}>
+            <button
+              className="btn"
+              onClick={() => onDelete(m.id)}
+              title="Delete this saved mission."
+            >
               ✕
             </button>
           </div>

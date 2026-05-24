@@ -4,6 +4,7 @@
     "name": "M252 81mm Mortar",
     "category": "mortar",
     "isMod": false,
+    "faction": "US",
     "minElevationMil": 800,
     "maxElevationMil": 1500,
     "ammo": [
@@ -74,10 +75,86 @@
     ]
   },
   {
+    "id": "podnos_2b14_82mm",
+    "name": "2B14 Podnos 82mm Mortar",
+    "category": "mortar",
+    "isMod": false,
+    "faction": "USSR",
+    "minElevationMil": 800,
+    "maxElevationMil": 1500,
+    "ammo": [
+      {
+        "id": "o832du_he",
+        "name": "O-832DU HE",
+        "description": "82mm high-explosive fragmentation round",
+        "charges": [
+          {
+            "id": "0",
+            "label": "Charge 0",
+            "rows": [
+              { "range_m": 90,  "elevation_mil": 1470, "tof_sec": 11.0 },
+              { "range_m": 150, "elevation_mil": 1420, "tof_sec": 10.8 },
+              { "range_m": 200, "elevation_mil": 1375, "tof_sec": 10.5 },
+              { "range_m": 250, "elevation_mil": 1325, "tof_sec": 10.1 },
+              { "range_m": 300, "elevation_mil": 1268, "tof_sec": 9.6 },
+              { "range_m": 350, "elevation_mil": 1200, "tof_sec": 9.0 },
+              { "range_m": 400, "elevation_mil": 1115, "tof_sec": 8.3 },
+              { "range_m": 450, "elevation_mil": 1000, "tof_sec": 7.3 },
+              { "range_m": 480, "elevation_mil": 860,  "tof_sec": 6.0 }
+            ]
+          },
+          {
+            "id": "1",
+            "label": "Charge 1",
+            "rows": [
+              { "range_m": 200, "elevation_mil": 1488, "tof_sec": 15.6 },
+              { "range_m": 300, "elevation_mil": 1440, "tof_sec": 15.3 },
+              { "range_m": 400, "elevation_mil": 1392, "tof_sec": 14.9 },
+              { "range_m": 500, "elevation_mil": 1340, "tof_sec": 14.5 },
+              { "range_m": 600, "elevation_mil": 1285, "tof_sec": 14.0 },
+              { "range_m": 700, "elevation_mil": 1224, "tof_sec": 13.4 },
+              { "range_m": 800, "elevation_mil": 1156, "tof_sec": 12.7 },
+              { "range_m": 900, "elevation_mil": 1075, "tof_sec": 11.8 },
+              { "range_m": 1000, "elevation_mil": 970,  "tof_sec": 10.7 },
+              { "range_m": 1100, "elevation_mil": 830,  "tof_sec": 9.3  }
+            ]
+          },
+          {
+            "id": "2",
+            "label": "Charge 2",
+            "rows": [
+              { "range_m": 400,  "elevation_mil": 1472, "tof_sec": 20.0 },
+              { "range_m": 600,  "elevation_mil": 1396, "tof_sec": 19.3 },
+              { "range_m": 800,  "elevation_mil": 1316, "tof_sec": 18.5 },
+              { "range_m": 1000, "elevation_mil": 1230, "tof_sec": 17.5 },
+              { "range_m": 1200, "elevation_mil": 1134, "tof_sec": 16.4 },
+              { "range_m": 1400, "elevation_mil": 1020, "tof_sec": 15.0 },
+              { "range_m": 1600, "elevation_mil": 870,  "tof_sec": 13.1 }
+            ]
+          },
+          {
+            "id": "3",
+            "label": "Charge 3",
+            "rows": [
+              { "range_m": 700,  "elevation_mil": 1465, "tof_sec": 24.0 },
+              { "range_m": 1000, "elevation_mil": 1380, "tof_sec": 23.1 },
+              { "range_m": 1300, "elevation_mil": 1290, "tof_sec": 22.0 },
+              { "range_m": 1600, "elevation_mil": 1190, "tof_sec": 20.7 },
+              { "range_m": 1900, "elevation_mil": 1075, "tof_sec": 19.1 },
+              { "range_m": 2200, "elevation_mil": 935,  "tof_sec": 17.0 },
+              { "range_m": 2500, "elevation_mil": 730,  "tof_sec": 13.8 }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
     "id": "m120_120mm",
     "name": "M120 120mm Mortar",
     "category": "mortar",
     "isMod": false,
+    "faction": "US",
     "minElevationMil": 800,
     "maxElevationMil": 1500,
     "ammo": [
@@ -130,10 +207,156 @@
     ]
   },
   {
+    "id": "m119a2_105mm",
+    "name": "M119A2 105mm Howitzer (mod)",
+    "category": "howitzer",
+    "isMod": true,
+    "faction": "US",
+    "minElevationMil": 0,
+    "maxElevationMil": 1290,
+    "ammo": [
+      {
+        "id": "m1_he",
+        "name": "M1 HE",
+        "description": "105mm high-explosive projectile",
+        "charges": [
+          {
+            "id": "1",
+            "label": "Charge 1",
+            "rows": [
+              { "range_m": 800,  "elevation_mil": 1250, "tof_sec": 20.5 },
+              { "range_m": 1000, "elevation_mil": 1198, "tof_sec": 20.0 },
+              { "range_m": 1200, "elevation_mil": 1142, "tof_sec": 19.4 },
+              { "range_m": 1400, "elevation_mil": 1079, "tof_sec": 18.6 },
+              { "range_m": 1600, "elevation_mil": 1003, "tof_sec": 17.7 },
+              { "range_m": 1800, "elevation_mil": 905,  "tof_sec": 16.4 },
+              { "range_m": 2000, "elevation_mil": 760,  "tof_sec": 14.4 }
+            ]
+          },
+          {
+            "id": "2",
+            "label": "Charge 2",
+            "rows": [
+              { "range_m": 1200, "elevation_mil": 1260, "tof_sec": 26.0 },
+              { "range_m": 1500, "elevation_mil": 1192, "tof_sec": 25.2 },
+              { "range_m": 1800, "elevation_mil": 1118, "tof_sec": 24.2 },
+              { "range_m": 2100, "elevation_mil": 1036, "tof_sec": 23.0 },
+              { "range_m": 2400, "elevation_mil": 940,  "tof_sec": 21.5 },
+              { "range_m": 2700, "elevation_mil": 822,  "tof_sec": 19.5 }
+            ]
+          },
+          {
+            "id": "3",
+            "label": "Charge 3",
+            "rows": [
+              { "range_m": 1800, "elevation_mil": 1265, "tof_sec": 31.0 },
+              { "range_m": 2200, "elevation_mil": 1195, "tof_sec": 30.0 },
+              { "range_m": 2600, "elevation_mil": 1117, "tof_sec": 28.7 },
+              { "range_m": 3000, "elevation_mil": 1031, "tof_sec": 27.3 },
+              { "range_m": 3400, "elevation_mil": 932,  "tof_sec": 25.6 },
+              { "range_m": 3800, "elevation_mil": 805,  "tof_sec": 23.2 }
+            ]
+          },
+          {
+            "id": "4",
+            "label": "Charge 4",
+            "rows": [
+              { "range_m": 2400, "elevation_mil": 1268, "tof_sec": 36.0 },
+              { "range_m": 2900, "elevation_mil": 1198, "tof_sec": 34.8 },
+              { "range_m": 3400, "elevation_mil": 1120, "tof_sec": 33.3 },
+              { "range_m": 3900, "elevation_mil": 1032, "tof_sec": 31.6 },
+              { "range_m": 4400, "elevation_mil": 925,  "tof_sec": 29.4 },
+              { "range_m": 4900, "elevation_mil": 790,  "tof_sec": 26.6 }
+            ]
+          },
+          {
+            "id": "5",
+            "label": "Charge 5",
+            "rows": [
+              { "range_m": 3000, "elevation_mil": 1270, "tof_sec": 40.5 },
+              { "range_m": 3600, "elevation_mil": 1198, "tof_sec": 39.2 },
+              { "range_m": 4200, "elevation_mil": 1119, "tof_sec": 37.6 },
+              { "range_m": 4800, "elevation_mil": 1027, "tof_sec": 35.6 },
+              { "range_m": 5400, "elevation_mil": 916,  "tof_sec": 33.2 },
+              { "range_m": 6000, "elevation_mil": 770,  "tof_sec": 30.0 }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "d30_122mm",
+    "name": "D-30 122mm Howitzer (mod)",
+    "category": "howitzer",
+    "isMod": true,
+    "faction": "USSR",
+    "minElevationMil": 0,
+    "maxElevationMil": 1290,
+    "ammo": [
+      {
+        "id": "of462_he",
+        "name": "OF-462 HE",
+        "description": "122mm high-explosive fragmentation projectile",
+        "charges": [
+          {
+            "id": "1",
+            "label": "Charge 1",
+            "rows": [
+              { "range_m": 1000, "elevation_mil": 1255, "tof_sec": 23.0 },
+              { "range_m": 1300, "elevation_mil": 1188, "tof_sec": 22.2 },
+              { "range_m": 1600, "elevation_mil": 1115, "tof_sec": 21.3 },
+              { "range_m": 1900, "elevation_mil": 1035, "tof_sec": 20.2 },
+              { "range_m": 2200, "elevation_mil": 942,  "tof_sec": 19.0 },
+              { "range_m": 2500, "elevation_mil": 825,  "tof_sec": 17.3 }
+            ]
+          },
+          {
+            "id": "2",
+            "label": "Charge 2",
+            "rows": [
+              { "range_m": 1800, "elevation_mil": 1262, "tof_sec": 30.0 },
+              { "range_m": 2200, "elevation_mil": 1196, "tof_sec": 29.1 },
+              { "range_m": 2600, "elevation_mil": 1122, "tof_sec": 28.0 },
+              { "range_m": 3000, "elevation_mil": 1041, "tof_sec": 26.7 },
+              { "range_m": 3400, "elevation_mil": 950,  "tof_sec": 25.1 },
+              { "range_m": 3800, "elevation_mil": 838,  "tof_sec": 23.0 }
+            ]
+          },
+          {
+            "id": "3",
+            "label": "Charge 3",
+            "rows": [
+              { "range_m": 2800, "elevation_mil": 1268, "tof_sec": 38.0 },
+              { "range_m": 3300, "elevation_mil": 1200, "tof_sec": 37.0 },
+              { "range_m": 3800, "elevation_mil": 1127, "tof_sec": 35.7 },
+              { "range_m": 4300, "elevation_mil": 1045, "tof_sec": 34.2 },
+              { "range_m": 4800, "elevation_mil": 951,  "tof_sec": 32.4 },
+              { "range_m": 5300, "elevation_mil": 835,  "tof_sec": 30.0 }
+            ]
+          },
+          {
+            "id": "4",
+            "label": "Charge 4",
+            "rows": [
+              { "range_m": 3800, "elevation_mil": 1270, "tof_sec": 45.5 },
+              { "range_m": 4400, "elevation_mil": 1202, "tof_sec": 44.3 },
+              { "range_m": 5000, "elevation_mil": 1126, "tof_sec": 42.8 },
+              { "range_m": 5600, "elevation_mil": 1042, "tof_sec": 41.1 },
+              { "range_m": 6200, "elevation_mil": 945,  "tof_sec": 39.0 },
+              { "range_m": 6800, "elevation_mil": 825,  "tof_sec": 36.3 }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
     "id": "m777_155mm",
     "name": "M777 155mm Howitzer (mod)",
     "category": "howitzer",
     "isMod": true,
+    "faction": "US",
     "minElevationMil": 0,
     "maxElevationMil": 1290,
     "ammo": [
