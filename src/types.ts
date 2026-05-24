@@ -24,6 +24,7 @@ export type Weapon = {
   name: string;
   category: "mortar" | "howitzer" | "other";
   isMod?: boolean;
+  faction?: string;
   minElevationMil?: number;
   maxElevationMil?: number;
   ammo: Ammo[];

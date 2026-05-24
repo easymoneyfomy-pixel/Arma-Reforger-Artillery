@@ -196,7 +196,7 @@ export default function App() {
       </main>
 
       <footer className="border-t border-line py-2 text-center font-mono text-[10px] text-zinc-600">
-        Ballistics tables: M252 / M120 / M777 (M107 HE C1–C5) · Mils NATO (6400/circle) · Local-only data
+        Tables: M252 81mm · 2B14 Podnos 82mm · M120 120mm · M119A2 105mm · D-30 122mm · M777 155mm · Mils NATO (6400/circle) · Local-only data
       </footer>
     </div>
   );
