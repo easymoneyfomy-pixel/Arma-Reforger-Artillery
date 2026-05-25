@@ -87,13 +87,37 @@ export default function HelpModal({ open, onClose }: Props) {
         </section>
 
         <section className="space-y-2">
-          <div className="section-title text-accent/90">5 · Custom maps</div>
+          <div className="section-title text-accent/90">5 · Map zoom &amp; pan</div>
           <p className="font-mono text-xs text-zinc-300 leading-relaxed">
-            Click <b>Upload</b> to load a top-down map screenshot
-            (<b>PNG / JPG / WebP</b>, &lt;12 MB). Set the world size first — match it
-            to the actual game world (Everon = 12800 m, Arland = 4096 m). For pixel-perfect
-            coordinates use <b>Calibrate</b>: type the world X/Y of a landmark, click
-            that pixel on the map, and repeat for a second far-away point.
+            <b>Mouse wheel</b> over the map to zoom (anchors on the cursor).{" "}
+            <b>Shift+drag</b> or <b>middle-mouse drag</b> to pan. Use the{" "}
+            <b>+</b> / <b>−</b> / <b>⌂</b> buttons in the top-left of the map for
+            zoom in / out / reset. On 12.8 km maps like Everon, zoom in for precision
+            placement of gun and target.
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <div className="section-title text-accent/90">6 · Built-in &amp; custom maps</div>
+          <p className="font-mono text-xs text-zinc-300 leading-relaxed">
+            <b>Everon</b> and <b>Arland</b> ship with stylized topographic
+            backgrounds out of the box — no upload required. To use your own,
+            click <b>Upload</b> to load a top-down map screenshot
+            (<b>PNG / JPG / WebP</b>, &lt;12 MB). Set the world size first — match
+            it to the actual game world (Everon = 12800 m, Arland = 4096 m). For
+            pixel-perfect coordinates on a custom map, use <b>Calibrate</b>: type
+            the world X/Y of a landmark, click that pixel on the map, and repeat
+            for a second far-away point.
+          </p>
+        </section>
+
+        <section className="space-y-2">
+          <div className="section-title text-accent/90">7 · Share the solution</div>
+          <p className="font-mono text-xs text-zinc-300 leading-relaxed">
+            Press <b>Copy</b> on the Firing Solution panel to copy a plain-text,
+            radio-comms-formatted version of the firing data (weapon, charge,
+            azimuth, elevation, range, TOF) to your clipboard. Paste it into your
+            squad chat to call the fire mission.
           </p>
         </section>
 
@@ -114,6 +138,12 @@ export default function HelpModal({ open, onClose }: Props) {
             </div>
             <div>
               <span className="text-accent">A</span> — toggle auto charge
+            </div>
+            <div>
+              <span className="text-accent">Wheel</span> — zoom map
+            </div>
+            <div>
+              <span className="text-accent">Shift+drag</span> — pan map
             </div>
             <div>
               <span className="text-accent">?</span> — open / close help
