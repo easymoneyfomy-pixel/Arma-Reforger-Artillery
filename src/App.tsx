@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import weaponsData from "./data/weapons.json";
-import mapsData from "./data/maps.json";
+import mapsData from "./data/maps";
 import type { MapDef, Mission, Vec3, Weapon } from "./types";
 import { computeSolution, pickOptimalCharge } from "./lib/ballistics";
 import { STORAGE, loadJSON, saveJSON } from "./lib/storage";

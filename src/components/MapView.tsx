@@ -83,6 +83,7 @@ export default function MapView({
   setShowRangeRings,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 600, h: 600 });
   const [calibMode, setCalibMode] = useState<CalibMode>(null);
   const [calibDraft, setCalibDraft] = useState<MapDef["calibration"] | null>(null);
@@ -91,7 +92,45 @@ export default function MapView({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [customSize, setCustomSize] = useState("8192");
   const [dragging, setDragging] = useState<null | "gun" | "target">(null);
+  const [scale, setScale] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [panDrag, setPanDrag] = useState<null | { ox: number; oy: number; sx: number; sy: number }>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  function clampPan(p: { x: number; y: number }, s: number, w: number, h: number) {
+    const margin = 0.25;
+    const minX = -w * s + w * margin;
+    const maxX = w - w * margin;
+    const minY = -h * s + h * margin;
+    const maxY = h - h * margin;
+    return {
+      x: Math.max(minX, Math.min(maxX, p.x)),
+      y: Math.max(minY, Math.min(maxY, p.y)),
+    };
+  }
+
+  function zoomAt(factor: number, anchor: { x: number; y: number }) {
+    const next = Math.max(1, Math.min(8, scale * factor));
+    if (next === scale) return;
+    const lx = (anchor.x - pan.x) / scale;
+    const ly = (anchor.y - pan.y) / scale;
+    setScale(next);
+    setPan(clampPan({ x: anchor.x - lx * next, y: anchor.y - ly * next }, next, size.w, size.h));
+  }
+
+  function resetView() {
+    setScale(1);
+    setPan({ x: 0, y: 0 });
+  }
+
+  function eventLocalPx(e: React.MouseEvent | MouseEvent) {
+    const el = containerRef.current;
+    if (!el) return { cx: 0, cy: 0, x: 0, y: 0 };
+    const rect = el.getBoundingClientRect();
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    return { cx, cy, x: (cx - pan.x) / scale, y: (cy - pan.y) / scale };
+  }
 
   useEffect(() => {
     const obs = new ResizeObserver(() => {
@@ -107,10 +146,8 @@ export default function MapView({
   }, []);
 
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (dragging) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const px = e.clientX - rect.left;
-    const py = e.clientY - rect.top;
+    if (dragging || panDrag) return;
+    const { x: px, y: py } = eventLocalPx(e);
     const world = pxToWorld(map, { x: px, y: py }, size.w, size.h);
     if (calibMode) {
       const wx = Number(calibWorldInput.x) || 0;
@@ -131,11 +168,19 @@ export default function MapView({
   }
 
   function handleMove(e: React.MouseEvent<HTMLDivElement>) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const px = e.clientX - rect.left;
-    const py = e.clientY - rect.top;
-    const world = pxToWorld(map, { x: px, y: py }, size.w, size.h);
+    const lp = eventLocalPx(e);
+    const world = pxToWorld(map, { x: lp.x, y: lp.y }, size.w, size.h);
     setCursor(world);
+    if (panDrag) {
+      const np = clampPan(
+        { x: panDrag.ox + (lp.cx - panDrag.sx), y: panDrag.oy + (lp.cy - panDrag.sy) },
+        scale,
+        size.w,
+        size.h,
+      );
+      setPan(np);
+      return;
+    }
     if (dragging) {
       const v = { x: world.x, y: world.y, z: dragging === "gun" ? gun?.z ?? 0 : target?.z ?? 0 };
       if (dragging === "gun") setGun(v);
@@ -146,6 +191,7 @@ export default function MapView({
   function handleLeave() {
     setCursor(null);
     setDragging(null);
+    setPanDrag(null);
   }
 
   function startDrag(e: React.MouseEvent, which: "gun" | "target") {
@@ -156,7 +202,32 @@ export default function MapView({
 
   function stopDrag() {
     setDragging(null);
+    setPanDrag(null);
   }
+
+  function handleMouseDown(e: React.MouseEvent<HTMLDivElement>) {
+    // middle-button OR shift+left = pan
+    if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
+      e.preventDefault();
+      const lp = eventLocalPx(e);
+      setPanDrag({ ox: pan.x, oy: pan.y, sx: lp.cx, sy: lp.cy });
+    }
+  }
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const cx = e.clientX - rect.left;
+      const cy = e.clientY - rect.top;
+      const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
+      zoomAt(factor, { x: cx, y: cy });
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [scale, pan.x, pan.y, size.w, size.h]);
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     setUploadError(null);
@@ -434,14 +505,32 @@ export default function MapView({
         ref={containerRef}
         className="relative flex-1 min-h-[300px] border border-line bg-black/60 overflow-hidden select-none"
         onClick={handleClick}
+        onMouseDown={handleMouseDown}
         onMouseMove={handleMove}
         onMouseLeave={handleLeave}
         onMouseUp={stopDrag}
-        style={{ cursor: calibMode ? "crosshair" : dragging ? "grabbing" : "pointer" }}
+        onContextMenu={(e) => panDrag && e.preventDefault()}
+        style={{
+          cursor: calibMode
+            ? "crosshair"
+            : panDrag
+              ? "grabbing"
+              : dragging
+                ? "grabbing"
+                : "pointer",
+        }}
       >
         <div
+          ref={innerRef}
           className="absolute"
-          style={{ width: size.w, height: size.h, left: 0, top: 0 }}
+          style={{
+            width: size.w,
+            height: size.h,
+            left: 0,
+            top: 0,
+            transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
+            transformOrigin: "0 0",
+          }}
         >
           {map.image ? (
             <img
@@ -559,24 +648,62 @@ export default function MapView({
               </g>
             ))}
           </svg>
-          <div className="absolute top-2 right-2 pointer-events-none" title="North">
-            <svg width="34" height="34" viewBox="0 0 34 34">
-              <circle cx="17" cy="17" r="15" fill="rgba(0,0,0,0.55)" stroke="rgba(214,255,58,0.4)" />
-              <polygon points="17,4 21,18 17,15 13,18" fill="#d6ff3a" />
-              <text x="17" y="29" fontSize="9" fontFamily="ui-monospace, monospace" fill="#d6ff3a" textAnchor="middle">
-                N
-              </text>
-            </svg>
+        </div>
+        <div className="absolute top-2 right-2 pointer-events-none" title="North">
+          <svg width="34" height="34" viewBox="0 0 34 34">
+            <circle cx="17" cy="17" r="15" fill="rgba(0,0,0,0.55)" stroke="rgba(214,255,58,0.4)" />
+            <polygon points="17,4 21,18 17,15 13,18" fill="#d6ff3a" />
+            <text x="17" y="29" fontSize="9" fontFamily="ui-monospace, monospace" fill="#d6ff3a" textAnchor="middle">
+              N
+            </text>
+          </svg>
+        </div>
+        <div className="absolute top-2 left-2 flex flex-col gap-1 font-mono text-[10px]" title="Map zoom: wheel to zoom, Shift+drag or middle-button-drag to pan.">
+          <button
+            className="btn !py-0.5 !px-1.5 !text-[10px] bg-black/70"
+            onClick={() => {
+              const a = { x: size.w / 2, y: size.h / 2 };
+              zoomAt(1.4, a);
+            }}
+            title="Zoom in (wheel up)"
+          >
+            +
+          </button>
+          <button
+            className="btn !py-0.5 !px-1.5 !text-[10px] bg-black/70"
+            onClick={() => {
+              const a = { x: size.w / 2, y: size.h / 2 };
+              zoomAt(1 / 1.4, a);
+            }}
+            title="Zoom out (wheel down)"
+          >
+            −
+          </button>
+          <button
+            className="btn !py-0.5 !px-1.5 !text-[10px] bg-black/70"
+            onClick={resetView}
+            disabled={scale === 1 && pan.x === 0 && pan.y === 0}
+            title="Reset zoom and pan"
+          >
+            ⌂
+          </button>
+          <div className="bg-black/70 border border-line px-1 py-0.5 text-accent text-center">
+            {scale.toFixed(1)}×
           </div>
         </div>
-        {cursor && (
-          <div
-            className="absolute bottom-1 right-1 font-mono text-[10px] text-accent/90 bg-black/70 px-1.5 py-0.5 border border-accentDim/40 pointer-events-none"
-            title="Cursor world coordinates"
-          >
-            X {cursor.x.toFixed(0)} · Y {cursor.y.toFixed(0)}
-          </div>
-        )}
+        {cursor && (() => {
+          const gx = Math.floor(cursor.x / 10).toString().padStart(3, "0");
+          const gy = Math.floor(cursor.y / 10).toString().padStart(3, "0");
+          return (
+            <div
+              className="absolute bottom-1 right-1 font-mono text-[10px] text-accent/90 bg-black/70 px-1.5 py-0.5 border border-accentDim/40 pointer-events-none leading-tight text-right"
+              title="Cursor world coordinates (meters) and Arma-style 6-digit grid (10 m precision)"
+            >
+              <div>X {cursor.x.toFixed(0)} · Y {cursor.y.toFixed(0)}</div>
+              <div className="text-zinc-400">grid {gx} {gy}</div>
+            </div>
+          );
+        })()}
       </div>
       <div className="font-mono text-[10px] text-zinc-500 flex items-center gap-2 flex-wrap">
         <span>

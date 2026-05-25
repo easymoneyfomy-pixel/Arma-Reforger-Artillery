@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { FiringSolution } from "../types";
 import { InfoHint, Tooltip } from "./Tooltip";
 
@@ -5,6 +6,18 @@ type Props = {
   solution: FiringSolution | null;
   onSave: () => void;
 };
+
+function formatSolutionText(s: FiringSolution): string {
+  return [
+    "FIRE MISSION",
+    `WPN  ${s.weaponId.toUpperCase()}  AMMO ${s.ammoId.toUpperCase()}  ${s.chargeLabel.toUpperCase()}`,
+    `AZ   ${s.bearingMil.toFixed(0)} mil  (${s.bearingDeg.toFixed(1)} deg)`,
+    `ELEV ${s.elevationMil.toFixed(0)} mil`,
+    `RNG  ${s.rangeM.toFixed(0)} m`,
+    `TOF  ${s.tofSec.toFixed(1)} s`,
+    `ARC  ${s.arc.toUpperCase()}   ALT ${s.altDeltaM >= 0 ? "+" : "-"}${Math.abs(s.altDeltaM).toFixed(0)} m`,
+  ].join("\n");
+}
 
 function Stat({
   label,
@@ -32,10 +45,23 @@ function Stat({
 }
 
 export default function RightPanel({ solution, onSave }: Props) {
+  const [copied, setCopied] = useState(false);
+
+  async function copySolution() {
+    if (!solution) return;
+    try {
+      await navigator.clipboard.writeText(formatSolutionText(solution));
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch {
+      /* clipboard blocked — silently ignore */
+    }
+  }
+
   return (
     <div className="space-y-3">
       <div className="panel p-3">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center justify-between mb-3 gap-2">
           <span className="section-title flex items-center">
             Firing Solution
             <InfoHint
@@ -49,14 +75,29 @@ export default function RightPanel({ solution, onSave }: Props) {
               }
             />
           </span>
-          <Tooltip
-            side="left"
-            content="Save this fire mission to local history. Use the Combat Memory panel to reload it later."
-          >
-            <button className="btn-primary" onClick={onSave} disabled={!solution}>
-              Save Mission
-            </button>
-          </Tooltip>
+          <div className="flex items-center gap-1">
+            <Tooltip
+              side="left"
+              content="Copy the firing solution as plain text (radio-comms format) to your clipboard."
+            >
+              <button
+                className="btn !py-1 !px-2 !text-[10px]"
+                onClick={copySolution}
+                disabled={!solution}
+                title="Copy solution as text"
+              >
+                {copied ? "Copied" : "Copy"}
+              </button>
+            </Tooltip>
+            <Tooltip
+              side="left"
+              content="Save this fire mission to local history. Use the Combat Memory panel to reload it later."
+            >
+              <button className="btn-primary" onClick={onSave} disabled={!solution}>
+                Save Mission
+              </button>
+            </Tooltip>
+          </div>
         </div>
 
         {!solution ? (
