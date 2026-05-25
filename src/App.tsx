@@ -10,6 +10,9 @@ import MapView from "./components/MapView";
 import HistoryPanel from "./components/HistoryPanel";
 import CorrectionPanel from "./components/CorrectionPanel";
 import HelpModal from "./components/HelpModal";
+import TrajectoryProfile from "./components/TrajectoryProfile";
+import BallisticTable from "./components/BallisticTable";
+import WindPanel from "./components/WindPanel";
 
 const WEAPONS = weaponsData as Weapon[];
 const BUILTIN_MAPS = mapsData as MapDef[];
@@ -52,12 +55,15 @@ export default function App() {
 
   const [placeMode, setPlaceMode] = useState<"gun" | "target">("gun");
   const [showRangeRings, setShowRangeRings] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
+  const [snapMeters, setSnapMeters] = useState(0);
   const [helpOpen, setHelpOpen] = useState(() => {
     return !loadJSON<boolean>(HELP_SEEN_KEY, false);
   });
 
   const weapon = WEAPONS.find((w) => w.id === weaponId)!;
   const ammo = weapon.ammo.find((a) => a.id === ammoId) ?? weapon.ammo[0];
+  const charge = ammo.charges.find((c) => c.id === chargeId) ?? ammo.charges[0];
 
   const gunV = toVec(gun);
   const targetV = toVec(target);
@@ -74,7 +80,6 @@ export default function App() {
     return computeSolution(weapon, ammo, chargeId, gunV, targetV);
   }, [gunV, targetV, weapon, ammo, chargeId]);
 
-  // Coordinate-bounds warnings derived locally
   const boundsWarning = useMemo(() => {
     const issues: string[] = [];
     const w = map.worldSizeM;
@@ -93,6 +98,8 @@ export default function App() {
     if (!boundsWarning.length) return solution;
     return { ...solution, warnings: [...boundsWarning, ...solution.warnings] };
   }, [solution, boundsWarning]);
+
+  const targetRange = gunV && targetV ? Math.hypot(targetV.x - gunV.x, targetV.y - gunV.y) : null;
 
   function saveMission() {
     if (!solution || !gunV || !targetV) return;
@@ -222,7 +229,7 @@ export default function App() {
             <span className="font-mono text-sm tracking-[0.18em] uppercase text-zinc-200">
               Arma Reforger · Artillery FDC
             </span>
-            <span className="font-mono text-[10px] text-zinc-600">v0.2</span>
+            <span className="font-mono text-[10px] text-zinc-600">v0.3</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="font-mono text-[10px] text-zinc-500 hidden md:block">
@@ -265,6 +272,7 @@ export default function App() {
             target={target}
             setTarget={setTarget}
           />
+          <BallisticTable charge={charge} currentRangeM={targetRange} />
         </section>
 
         <section className="col-span-12 lg:col-span-6 flex flex-col gap-3 min-h-[500px]">
@@ -285,7 +293,13 @@ export default function App() {
             activeChargeId={chargeId}
             showRangeRings={showRangeRings}
             setShowRangeRings={setShowRangeRings}
+            splashM={ammo.splashM}
+            showSplash={showSplash}
+            setShowSplash={setShowSplash}
+            snapMeters={snapMeters}
+            setSnapMeters={setSnapMeters}
           />
+          <TrajectoryProfile solution={solution} />
         </section>
 
         <section className="col-span-12 lg:col-span-3 space-y-3">
@@ -297,6 +311,19 @@ export default function App() {
             onApplyCorrection={(corr) => {
               setTarget(vecToStr(corr));
               setImpactPoint(null);
+            }}
+          />
+          <WindPanel
+            gun={gunV}
+            target={targetV}
+            solution={solution}
+            onApplyAimOffset={(off) => {
+              if (!targetV) return;
+              setTarget(vecToStr({
+                x: targetV.x + off.dxM,
+                y: targetV.y + off.dyM,
+                z: targetV.z,
+              }));
             }}
           />
           <HistoryPanel

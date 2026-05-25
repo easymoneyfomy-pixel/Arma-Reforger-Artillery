@@ -16,6 +16,7 @@ export type Ammo = {
   id: string;
   name: string;
   description?: string;
+  splashM?: number;
   charges: ChargeTable[];
 };
 

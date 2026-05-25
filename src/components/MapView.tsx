@@ -19,6 +19,11 @@ type Props = {
   activeChargeId: string;
   showRangeRings: boolean;
   setShowRangeRings: (v: boolean) => void;
+  splashM?: number;
+  showSplash: boolean;
+  setShowSplash: (v: boolean) => void;
+  snapMeters: number;
+  setSnapMeters: (v: number) => void;
 };
 
 type CalibMode = null | "p1" | "p2";
@@ -81,6 +86,11 @@ export default function MapView({
   activeChargeId,
   showRangeRings,
   setShowRangeRings,
+  splashM,
+  showSplash,
+  setShowSplash,
+  snapMeters,
+  setSnapMeters,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 600, h: 600 });
@@ -106,6 +116,14 @@ export default function MapView({
     return () => obs.disconnect();
   }, []);
 
+  function snapWorld(w: { x: number; y: number }) {
+    if (!snapMeters || snapMeters <= 0) return w;
+    return {
+      x: Math.round(w.x / snapMeters) * snapMeters,
+      y: Math.round(w.y / snapMeters) * snapMeters,
+    };
+  }
+
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {
     if (dragging) return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -125,7 +143,8 @@ export default function MapView({
       setCalibMode(null);
       return;
     }
-    const v = { x: world.x, y: world.y, z: 0 };
+    const snapped = snapWorld(world);
+    const v = { x: snapped.x, y: snapped.y, z: 0 };
     if (placeMode === "gun") setGun(v);
     else setTarget(v);
   }
@@ -137,7 +156,12 @@ export default function MapView({
     const world = pxToWorld(map, { x: px, y: py }, size.w, size.h);
     setCursor(world);
     if (dragging) {
-      const v = { x: world.x, y: world.y, z: dragging === "gun" ? gun?.z ?? 0 : target?.z ?? 0 };
+      const snapped = snapWorld(world);
+      const v = {
+        x: snapped.x,
+        y: snapped.y,
+        z: dragging === "gun" ? gun?.z ?? 0 : target?.z ?? 0,
+      };
       if (dragging === "gun") setGun(v);
       else setTarget(v);
     }
@@ -357,6 +381,34 @@ export default function MapView({
           />
           Rings
         </label>
+        <label
+          className="btn cursor-pointer select-none flex items-center gap-1"
+          title="Show approximate splash / casualty radius around the target for the current ammo."
+        >
+          <input
+            type="checkbox"
+            className="accent-accent"
+            checked={showSplash}
+            onChange={(e) => setShowSplash(e.target.checked)}
+          />
+          Splash
+        </label>
+        <label
+          className="btn cursor-pointer select-none flex items-center gap-1"
+          title="Snap map clicks to this many meters. 0 = off. Useful for clean grid coords."
+        >
+          Snap
+          <input
+            type="number"
+            min={0}
+            max={1000}
+            step={5}
+            className="bg-black/40 border border-line w-12 px-1 py-0 font-mono text-[10px] text-zinc-100"
+            value={snapMeters}
+            onChange={(e) => setSnapMeters(Math.max(0, Number(e.target.value) || 0))}
+            title="Click snap (meters). 0 = off."
+          />
+        </label>
         {!map.builtin && (
           <details className="ml-auto">
             <summary
@@ -506,6 +558,32 @@ export default function MapView({
                 </g>
               );
             })}
+            {target && showSplash && splashM && splashM > 0 && (() => {
+              const c = worldToPx(map, target, size.w, size.h);
+              const rPx = metersToPx(map, target, splashM, size.w, size.h);
+              return (
+                <g key="splash">
+                  <circle
+                    cx={c.x}
+                    cy={c.y}
+                    r={rPx}
+                    fill="rgba(248,113,113,0.10)"
+                    stroke="rgba(248,113,113,0.55)"
+                    strokeDasharray="2 2"
+                    strokeWidth={1}
+                  />
+                  <text
+                    x={c.x + rPx + 2}
+                    y={c.y - rPx - 2}
+                    fontSize={9}
+                    fontFamily="ui-monospace, monospace"
+                    fill="#f87171"
+                  >
+                    ~{splashM}m
+                  </text>
+                </g>
+              );
+            })()}
             {showLine && gun && target && (() => {
               const a = worldToPx(map, gun, size.w, size.h);
               const b = worldToPx(map, target, size.w, size.h);
@@ -588,6 +666,14 @@ export default function MapView({
             · line of fire: <span className="text-accent">{rangeM.toFixed(0)} m</span>
           </span>
         )}
+      </div>
+      <div className="font-mono text-[10px] text-zinc-500 flex items-center gap-3 flex-wrap border-t border-line pt-1">
+        <span title="Place Gun mode"><span className="text-accent">G</span> gun</span>
+        <span title="Place Target mode"><span className="text-accent">T</span> target</span>
+        <span title="Swap gun & target"><span className="text-accent">S</span> swap</span>
+        <span title="Reset all positions"><span className="text-accent">R</span> reset</span>
+        <span title="Toggle auto charge"><span className="text-accent">A</span> auto</span>
+        <span title="Open help"><span className="text-accent">?</span> help</span>
       </div>
     </div>
   );

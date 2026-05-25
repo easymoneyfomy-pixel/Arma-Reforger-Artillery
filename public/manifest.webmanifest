@@ -1,0 +1,19 @@
+{
+  "name": "Arma Reforger Artillery FDC",
+  "short_name": "AR FDC",
+  "description": "Fire Direction Center for Arma Reforger mortars and howitzers.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#06070a",
+  "theme_color": "#d6ff3a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

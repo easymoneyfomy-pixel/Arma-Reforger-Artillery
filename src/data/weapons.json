@@ -12,6 +12,7 @@
         "id": "m821_he",
         "name": "M821 HE",
         "description": "81mm high-explosive round",
+        "splashM": 30,
         "charges": [
           {
             "id": "0",
@@ -87,6 +88,7 @@
         "id": "o832du_he",
         "name": "O-832DU HE",
         "description": "82mm high-explosive fragmentation round",
+        "splashM": 32,
         "charges": [
           {
             "id": "0",
@@ -162,6 +164,7 @@
         "id": "m934_he",
         "name": "M934 HE",
         "description": "120mm high-explosive round",
+        "splashM": 55,
         "charges": [
           {
             "id": "1",
@@ -219,6 +222,7 @@
         "id": "m1_he",
         "name": "M1 HE",
         "description": "105mm high-explosive projectile",
+        "splashM": 40,
         "charges": [
           {
             "id": "1",
@@ -298,6 +302,7 @@
         "id": "of462_he",
         "name": "OF-462 HE",
         "description": "122mm high-explosive fragmentation projectile",
+        "splashM": 60,
         "charges": [
           {
             "id": "1",
@@ -364,6 +369,7 @@
         "id": "m107_he",
         "name": "M107 HE",
         "description": "155mm high-explosive projectile",
+        "splashM": 75,
         "charges": [
           {
             "id": "1",

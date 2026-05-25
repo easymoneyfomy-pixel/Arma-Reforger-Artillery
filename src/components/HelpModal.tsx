@@ -125,6 +125,38 @@ export default function HelpModal({ open, onClose }: Props) {
         </section>
 
         <section className="space-y-2">
+          <div className="section-title text-accent/90">Tips &amp; extras</div>
+          <ul className="font-mono text-xs text-zinc-300 leading-relaxed list-disc pl-5 space-y-1">
+            <li>
+              <b>Range rings</b> show min / max for every charge from the gun. Active
+              charge is solid yellow.
+            </li>
+            <li>
+              <b>Splash</b> draws an approximate casualty radius around the target.
+            </li>
+            <li>
+              <b>Snap</b> rounds your map clicks to the nearest N meters — useful for
+              clean grid coords (try 50 or 100).
+            </li>
+            <li>
+              <b>Trajectory</b> shows the approximate arc &amp; apex height for the
+              current solution — sanity-check terrain clearance.
+            </li>
+            <li>
+              <b>Wind Correction</b> estimates drift from wind-from direction (°) and
+              speed (m/s). Click <i>Apply Aim Offset</i> to nudge the target.
+            </li>
+            <li>
+              <b>Ballistic Table</b> (left panel) opens the raw range/elevation/TOF
+              rows the solver interpolates.
+            </li>
+            <li>
+              You can <b>Export / Import</b> mission history as JSON.
+            </li>
+          </ul>
+        </section>
+
+        <section className="space-y-2">
           <div className="section-title text-accent/90">Data &amp; privacy</div>
           <p className="font-mono text-xs text-zinc-300 leading-relaxed">
             Everything (maps, missions, calibration) is stored locally in your
