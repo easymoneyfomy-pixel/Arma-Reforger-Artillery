@@ -136,3 +136,21 @@ body::after {
   animation: fadeSlideUp 0.4s ease-out;
 }
 
+/* Radar sweep animation */
+@keyframes radar-sweep {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+.radar-sweep-line {
+  transform-origin: 50px 50px;
+  animation: radar-sweep 4s linear infinite;
+}
+
+
+
+
+
+
+
+
+

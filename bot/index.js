@@ -348,8 +348,23 @@ if (!token) {
 const bot = new TelegramBot(token, { polling: true });
 console.log("[SYS] Telegram bot FDC listener is ACTIVE. Polling for inputs...");
 
+// Set global Web App menu button
+bot.setChatMenuButton({
+  menu_button: {
+    type: "web_app",
+    text: "💻 FDC ВЕБ-HUD",
+    web_app: {
+      url: "https://easymoneyfomy-pixel.github.io/Arma-Reforger-Artillery/"
+    }
+  }
+}).then(() => {
+  console.log("[SYS] Global Web App Menu Button configured successfully.");
+}).catch((err) => {
+  console.error("[ERR] Failed to set Chat Menu Button:", err);
+});
+
 // Helper: Rich HUD styling headers
-const HUD_HEADER = `🤖 <b>[FDC TERMINAL v1.1]</b>\n───────────────────\n`;
+const HUD_HEADER = `🤖 <b>[FDC TERMINAL v1.2]</b>\n───────────────────\n`;
 
 // Whitelist and Security Helpers
 function getAdminId() {
@@ -428,7 +443,29 @@ bot.onText(/\/start/, (msg) => {
 ───────────────────
 Введи <code>/help</code> для полной сводки по координатам и командам.`;
 
-  bot.sendMessage(msg.chat.id, helpText, { parse_mode: "HTML" });
+  const keyboard = {
+    inline_keyboard: [
+      [
+        {
+          text: "🖥️ ОТКРЫТЬ ТАКТИЧЕСКИЙ ВЕБ-HUD",
+          web_app: { url: "https://easymoneyfomy-pixel.github.io/Arma-Reforger-Artillery/" }
+        }
+      ],
+      [
+        { text: "🔫 Орудие", callback_data: "menu_weapon" },
+        { text: "🔋 Заряд", callback_data: "menu_charge" }
+      ],
+      [
+        { text: "🛰️ Статус", callback_data: "menu_status" },
+        { text: "📊 Дальности", callback_data: "menu_range" }
+      ]
+    ]
+  };
+
+  bot.sendMessage(msg.chat.id, helpText, { 
+    parse_mode: "HTML",
+    reply_markup: keyboard
+  });
 });
 
 // Command: /help
@@ -731,6 +768,75 @@ bot.on("callback_query", (query) => {
   const state = getUserState(userId);
 
   bot.answerCallbackQuery(query.id);
+
+  if (data === "menu_weapon") {
+    const keyboard = {
+      inline_keyboard: weapons.map((w) => [
+        { text: `${w.faction === "US" ? "🇺🇸" : "🇷🇺"} ${w.name} ${w.isMod ? "[MOD]" : ""}`, callback_data: `wpn_${w.id}` }
+      ])
+    };
+    bot.sendMessage(chatId, `${HUD_HEADER}🛰️ <b>ВЫБЕРИ ОРУЖЕЙНУЮ СИСТЕМУ:</b>`, {
+      parse_mode: "HTML",
+      reply_markup: keyboard
+    });
+    return;
+  }
+
+  if (data === "menu_charge") {
+    const wpn = weapons.find(w => w.id === state.activeWeaponId) || weapons[0];
+    const ammo = wpn.ammo[0];
+    const buttons = [[{ text: "⚡ АВТОВЫБОР (Оптимальный)", callback_data: "chg_auto" }]];
+    ammo.charges.forEach((c) => {
+      buttons.push([{ text: `🔋 ${c.label}`, callback_data: `chg_${c.id}` }]);
+    });
+    bot.sendMessage(chatId, `${HUD_HEADER}🔋 <b>ВЫБЕРИ СИЛУ ЗАРЯДА:</b>\nСистема: <i>${wpn.name}</i>`, {
+      parse_mode: "HTML",
+      reply_markup: { inline_keyboard: buttons }
+    });
+    return;
+  }
+
+  if (data === "menu_status") {
+    const weapon = weapons.find(w => w.id === state.activeWeaponId) || weapons[0];
+    let text = `${HUD_HEADER}🛰️ <b>ТЕКУЩИЙ СТАТУС ВЫЧИСЛИТЕЛЯ (FDC TELEMETRY):</b>\n\n`;
+    text += `🔫 <b>Орудие:</b> <code>${weapon.name}</code> ${weapon.isMod ? "[MOD]" : "[VANILLA]"}\n`;
+    text += `🔋 <b>Режим заряда:</b> <code>${state.activeChargeId === "auto" ? "АВТОВЫБОР (Оптимальный)" : "Заряд " + state.activeChargeId}</code>\n`;
+    text += `📍 <b>Позиция орудия:</b> <code>${formatFullGrid(state.activeGun)}</code>\n`;
+    
+    if (state.lastTarget) {
+      text += `───────────────────\n`;
+      text += `🎯 <b>Последняя цель:</b> <code>${formatFullGrid(state.lastTarget)}</code>\n`;
+      if (state.lastSolution) {
+        text += `📏 <b>Дальность:</b> <code>${state.lastSolution.rangeM.toFixed(0)} м</code>\n`;
+        text += `🧭 <b>Азимут:</b> <code>${state.lastSolution.bearingMil.toFixed(0)} mils</code> (${state.lastSolution.bearingDeg.toFixed(1)}°)\n`;
+        text += `📐 <b>Прицел:</b> <code>${state.lastSolution.elevationMil.toFixed(0)} mils</code>\n`;
+        text += `⏱️ <b>TOF (Время полета):</b> <code>${state.lastSolution.tofSec.toFixed(1)} сек</code>\n`;
+      }
+    } else {
+      text += `───────────────────\n`;
+      text += `🎯 <i>Цели еще не рассчитывались. Используй /fire.</i>\n`;
+    }
+    bot.sendMessage(chatId, text, { parse_mode: "HTML" });
+    return;
+  }
+
+  if (data === "menu_range") {
+    const weapon = weapons.find(w => w.id === state.activeWeaponId);
+    if (!weapon) {
+      return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Орудие не выбрано!</b>`, { parse_mode: "HTML" });
+    }
+    const ammo = weapon.ammo[0];
+    let text = `${HUD_HEADER}📊 <b>ДИАПАЗОНЫ ДАЛЬНОСТЕЙ ДЛЯ:</b>\n🔫 <i>${weapon.name}</i>\n📦 <i>Снаряд: ${ammo.name}</i>\n───────────────────\n`;
+    ammo.charges.forEach((c) => {
+      const band = chargeRangeBand(c);
+      text += `🔋 <b>${c.label}</b> (Заряд: <code>${c.id}</code>):\n`;
+      text += `• Минимальная: <code>${band.min.toFixed(0)} м</code>\n`;
+      text += `• Максимальная: <code>${band.max.toFixed(0)} м</code>\n\n`;
+    });
+    text += `<i>Система автоматически выберет оптимальный заряд, если включен Автовыбор.</i>`;
+    bot.sendMessage(chatId, text, { parse_mode: "HTML" });
+    return;
+  }
 
   if (data.startsWith("wpn_")) {
     const wpnId = data.substring(4);
