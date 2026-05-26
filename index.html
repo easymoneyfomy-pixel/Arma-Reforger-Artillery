@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- === PERFORMANCE PRECONNECTIONS === -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preconnect" href="https://unpkg.com" crossorigin />
+
+    <!-- === FONTS === -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+
+    <!-- === LEAFLET CSS === -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <!-- === PWA DETAILS === -->
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="manifest" href="./manifest.json" />
+    <meta name="theme-color" content="#d1a65c" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+    <!-- === SEO & HEADINGS === -->
+    <title>Наводчик · Arma Reforger Artillery Fire Control</title>
+    <meta name="description" content="Тактический калькулятор и система навигации артиллерии для Arma Reforger. Поддержка Everon, Arland, Malden." />
+
+    <style>
+      :root {
+        --bg: #07090e;
+        --accent: #d4a843;
+        --accent-dim: #70551e;
+        --font-mono: 'Share Tech Mono', monospace;
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background-color: var(--bg);
+        color: #e0e6ed;
+        font-family: 'Rajdhani', sans-serif;
+        overflow: hidden;
+      }
+
+      #root {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #splash {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        opacity: 1;
+        transition: opacity 0.5s ease;
+      }
+
+      .splash-reticle {
+        position: relative;
+        width: 60px;
+        height: 60px;
+        border: 2px dashed var(--accent-dim);
+        border-radius: 50%;
+        animation: spin 6s linear infinite;
+      }
+
+      .splash-reticle::before, .splash-reticle::after {
+        content: '';
+        position: absolute;
+        background: var(--accent);
+      }
+
+      /* Horizontal line */
+      .splash-reticle::before {
+        top: 29px;
+        left: -10px;
+        width: 80px;
+        height: 2px;
+      }
+
+      /* Vertical line */
+      .splash-reticle::after {
+        left: 29px;
+        top: -10px;
+        width: 2px;
+        height: 80px;
+      }
+
+      .splash-dot {
+        position: absolute;
+        top: 27px;
+        left: 27px;
+        width: 6px;
+        height: 6px;
+        background: var(--accent);
+        border-radius: 50%;
+        box-shadow: 0 0 8px var(--accent);
+      }
+
+      #splash-title {
+        font-family: var(--font-mono);
+        font-size: 14px;
+        letter-spacing: 0.4em;
+        text-transform: uppercase;
+        color: var(--accent);
+        text-shadow: 0 0 10px rgba(212, 168, 67, 0.4);
+      }
+
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
+    <script type="module" crossorigin src="./assets/index-482f6676.js"></script>
+    <link rel="stylesheet" href="./assets/index-e424700a.css">
+  </head>
+
+  <body>
+    <div id="root">
+      <div id="splash" aria-hidden="true">
+        <div class="splash-reticle">
+          <div class="splash-dot"></div>
+        </div>
+        <div id="splash-title">НАВОДЧИК · ЗАГРУЗКА</div>
+      </div>
+    </div>
+
+    
+
+    <!-- Service Worker registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('./sw.js')
+            .catch(err => console.warn('[SW] Ошибка регистрации SW:', err));
+        });
+      }
+    </script>
+  </body>
+</html>
