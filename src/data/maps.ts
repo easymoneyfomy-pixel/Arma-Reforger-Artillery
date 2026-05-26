@@ -1,5 +1,5 @@
 import type { MapDef } from "../types";
-import everonImg from "../assets/maps/everon.svg";
+import everonImg from "../assets/maps/everon.jpg";
 import arlandImg from "../assets/maps/arland.svg";
 
 // Built-in maps ship with stylized topographic images so they work out of the
