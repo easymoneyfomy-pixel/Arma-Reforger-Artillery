@@ -387,7 +387,7 @@ export default function App() {
               )}
             </button>
             <a
-              href="https://t.me/reforger_fdc_admin_bot"
+              href="https://t.me/Arma_Artillery_Bot"
               target="_blank"
               rel="noopener noreferrer"
               className="btn !py-1 !px-2 !text-[10px] text-accent border-accent/40 bg-accentDim/10 hover:bg-accentDim/20 flex items-center gap-1.5"
