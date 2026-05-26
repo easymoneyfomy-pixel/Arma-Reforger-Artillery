@@ -194,7 +194,6 @@ export default function HelpModal({ open, onClose }: Props) {
           <div className="text-zinc-400">
             <span className="text-accent font-semibold">[SEC] LOCAL STORAGE:</span> Все данные сохраняются в браузере. Никаких серверов.
           </div>
-          <div className="text-[10px] text-zinc-500">FDC ENGINE v1.0</div>
         </div>
 
         {/* Close Button */}
