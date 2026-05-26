@@ -14,6 +14,18 @@ if (!token) {
 
 const webAppUrl = "https://easymoneyfomy-pixel.github.io/Arma-Reforger-Artillery/";
 
+// ============================================================================
+// Cryptographic License Generation
+// ============================================================================
+const crypto = require("crypto");
+const licenseSalt = process.env.LICENSE_SALT || "fdc_hud_secret_2026";
+
+function generateLicenseKey(userId) {
+  const data = userId + ":" + licenseSalt;
+  const hash = crypto.createHash("sha256").update(data).digest("hex");
+  return `${userId}-${hash.substring(0, 16)}`;
+}
+
 // Securely validate and retrieve Admin ID as a positive integer
 function getAdminId() {
   const val = Number(process.env.ADMIN_ID);
@@ -46,13 +58,15 @@ function updateEnvWhitelist(adminId, allowedSet) {
 // Set up the menu button for a user based on their access
 function configureUserMenuButton(userId, isAllowed) {
   if (isAllowed) {
+    const lic = generateLicenseKey(userId);
+    const urlWithLic = `${webAppUrl}?lic=${lic}`;
     bot.setChatMenuButton({
       chat_id: userId,
       menu_button: {
         type: "web_app",
         text: "💻 FDC ВЕБ-HUD",
         web_app: {
-          url: webAppUrl
+          url: urlWithLic
         }
       }
     }).catch((err) => {
@@ -131,8 +145,9 @@ bot.onText(/\/start/, (msg) => {
     const allowed = new Set([userId]);
     updateEnvWhitelist(userId, allowed);
     configureUserMenuButton(userId, true);
+    const lic = generateLicenseKey(userId);
     
-    const welcomeText = `👑 <b>СИСТЕМА FDC ИНИЦИАЛИЗИРОВАНА!</b>\n───────────────────\nВы зарегистрированы как главный Администратор.\n\n<b>Доступные команды управления:</b>\n• <code>/allow [ID]</code> — разрешить доступ игроку\n• <code>/block [ID]</code> — заблокировать игрока\n• <code>/whitelist</code> — список авторизованных стрелков\n• <code>/broadcast [текст]</code> — отправить сообщение всем пользователям\n\nВеб-интерфейс готов и доступен по кнопке <b>💻 FDC ВЕБ-HUD</b> в левом нижнем углу!`;
+    const welcomeText = `👑 <b>СИСТЕМА FDC ИНИЦИАЛИЗИРОВАНА!</b>\n───────────────────\nВы зарегистрированы как главный Администратор.\n\n🔑 <b>Ваш лицензионный ключ (для внешних браузеров):</b>\n<code>${lic}</code>\n\n<b>Доступные команды управления:</b>\n• <code>/allow [ID]</code> — разрешить доступ игроку\n• <code>/block [ID]</code> — заблокировать игрока\n• <code>/whitelist</code> — список авторизованных стрелков\n• <code>/broadcast [текст]</code> — отправить сообщение всем пользователям\n\nВеб-интерфейс готов и доступен по кнопке <b>💻 FDC ВЕБ-HUD</b> в левом нижнем углу!`;
     bot.sendMessage(userId, welcomeText, { parse_mode: "HTML" });
     return;
   }
@@ -142,7 +157,8 @@ bot.onText(/\/start/, (msg) => {
 
   if (isAllowed) {
     configureUserMenuButton(userId, true);
-    let text = `🎯 <b>ДОСТУП АКТИВИРОВАН</b>\n───────────────────\nДобро пожаловать в тактический вычислитель артиллерии.\n\nВеб-HUD готов к работе! Для открытия нажмите на кнопку <b>💻 FDC ВЕБ-HUD</b> в левом нижнем углу чата.`;
+    const lic = generateLicenseKey(userId);
+    let text = `🎯 <b>ДОСТУП АКТИВИРОВАН</b>\n───────────────────\nДобро пожаловать в тактический вычислитель артиллерии.\n\n🔑 <b>Ваш лицензионный ключ (для внешних браузеров):</b>\n<code>${lic}</code>\n\nВеб-HUD готов к работе! Для открытия нажмите на кнопку <b>💻 FDC ВЕБ-HUD</b> в левом нижнем углу чата.`;
     
     if (userId === adminId) {
       text += `\n\n👑 <b>Панель управления:</b>\n• <code>/allow [ID]</code> — дать доступ\n• <code>/block [ID]</code> — забрать доступ\n• <code>/whitelist</code> — список стрелков\n• <code>/broadcast [текст]</code> — объявление для всех`;
@@ -375,6 +391,33 @@ bot.on("callback_query", (query) => {
       .catch(() => {});
 
     bot.answerCallbackQuery(query.id, { text: "Доступ аннулирован!" });
+  }
+});
+
+// Command: /license or /key (Get License key)
+bot.onText(/\/(?:license|key)/, (msg) => {
+  const userId = msg.from.id;
+  if (isRateLimited(userId)) return;
+
+  const adminId = getAdminId();
+  if (!adminId) return;
+
+  const allowed = getAllowedUsers();
+  const isAllowed = (userId === adminId || allowed.has(userId));
+
+  if (isAllowed) {
+    const lic = generateLicenseKey(userId);
+    bot.sendMessage(
+      userId,
+      `🔑 <b>Ваш лицензионный ключ:</b>\n<code>${lic}</code>\n\nСкопируйте этот ключ и вставьте в настройки веб-калькулятора во внешнем браузере, чтобы разблокировать премиум-функции. При запуске напрямую через Telegram-бота авторизация происходит автоматически!`,
+      { parse_mode: "HTML" }
+    );
+  } else {
+    bot.sendMessage(
+      userId,
+      `❌ <b>Доступ ограничен!</b>\nДля получения лицензии обратитесь к администратору. Ваш ID: <code>${userId}</code>`,
+      { parse_mode: "HTML" }
+    );
   }
 });
 

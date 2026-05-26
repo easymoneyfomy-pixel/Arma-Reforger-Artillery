@@ -10,6 +10,8 @@ import MapView from "./components/MapView";
 import HistoryPanel from "./components/HistoryPanel";
 import CorrectionPanel from "./components/CorrectionPanel";
 import HelpModal from "./components/HelpModal";
+import LicenseModal from "./components/LicenseModal";
+import { getSavedLicenseKey, saveLicenseKey, clearSavedLicenseKey, verifyLicenseKey } from "./utils/license";
 
 const WEAPONS = weaponsData as Weapon[];
 const BUILTIN_MAPS = mapsData as MapDef[];
@@ -82,6 +84,62 @@ function playHudSound(type: "click" | "success" | "warning" | "beep", enabled: b
 }
 
 export default function App() {
+  const [licenseKey, setLicenseKey] = useState(() => getSavedLicenseKey());
+  const [isPremium, setIsPremium] = useState(false);
+  const [licenseModalOpen, setLicenseModalOpen] = useState(false);
+
+  // Auto-detect Telegram WebApp / URL lic query parameter
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const lic = params.get("lic");
+    if (lic) {
+      verifyLicenseKey(lic).then((ok) => {
+        if (ok) {
+          saveLicenseKey(lic);
+          setLicenseKey(lic);
+          setIsPremium(true);
+        }
+      });
+      // Clean query parameter from URL bar
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  // React to licenseKey state change
+  useEffect(() => {
+    let active = true;
+    async function check() {
+      if (!licenseKey) {
+        if (active) setIsPremium(false);
+        return;
+      }
+      const ok = await verifyLicenseKey(licenseKey);
+      if (active) setIsPremium(ok);
+    }
+    check();
+    return () => {
+      active = false;
+    };
+  }, [licenseKey]);
+
+  async function handleActivateLicense(key: string): Promise<boolean> {
+    const ok = await verifyLicenseKey(key);
+    if (ok) {
+      saveLicenseKey(key);
+      setLicenseKey(key);
+      setIsPremium(true);
+      playHudSound("success", soundEnabled);
+    }
+    return ok;
+  }
+
+  function handleDeactivateLicense() {
+    clearSavedLicenseKey();
+    setLicenseKey("");
+    setIsPremium(false);
+    playHudSound("warning", soundEnabled);
+  }
+
   const [weaponId, setWeaponId] = useState(WEAPONS[0].id);
   const [ammoId, setAmmoId] = useState(WEAPONS[0].ammo[0].id);
   const [chargeId, setChargeId] = useState(WEAPONS[0].ammo[0].charges[0].id);
@@ -399,6 +457,23 @@ export default function App() {
               </span>
               <span>TELEGRAM BOT</span>
             </a>
+            {isPremium ? (
+              <button
+                className="btn !py-1 !px-2 !text-[10px] text-amber-400 border-amber-400/40 bg-amber-400/10 hover:bg-amber-400/20 flex items-center gap-1.5"
+                onClick={() => setLicenseModalOpen(true)}
+                title="Premium Access Active"
+              >
+                <span>👑 PREMIUM</span>
+              </button>
+            ) : (
+              <button
+                className="btn !py-1 !px-2 !text-[10px] text-zinc-500 border-zinc-700 hover:border-zinc-500 flex items-center gap-1.5"
+                onClick={() => setLicenseModalOpen(true)}
+                title="Activate Premium Features"
+              >
+                <span>🔓 FREE VERSION</span>
+              </button>
+            )}
             <button
               className="btn !py-1 !px-2 !text-[10px]"
               onClick={resetPositions}
@@ -440,6 +515,8 @@ export default function App() {
             onDeletePreset={deletePreset}
             targetV={targetV}
             gunV={gunV}
+            isPremium={isPremium}
+            onOpenLicense={() => setLicenseModalOpen(true)}
           />
         </section>
 
@@ -461,11 +538,19 @@ export default function App() {
             activeChargeId={chargeId}
             showRangeRings={showRangeRings}
             setShowRangeRings={setShowRangeRings}
+            isPremium={isPremium}
+            onOpenLicense={() => setLicenseModalOpen(true)}
           />
         </section>
 
         <section className="col-span-12 lg:col-span-3 space-y-3">
-          <RightPanel solution={mergedSolution} onSave={saveMission} soundEnabled={soundEnabled} />
+          <RightPanel
+            solution={mergedSolution}
+            onSave={saveMission}
+            soundEnabled={soundEnabled}
+            isPremium={isPremium}
+            onOpenLicense={() => setLicenseModalOpen(true)}
+          />
           <CorrectionPanel
             gun={gunV}
             target={targetV}
@@ -495,6 +580,14 @@ export default function App() {
       </footer>
 
       <HelpModal open={helpOpen} onClose={closeHelp} />
+      <LicenseModal
+        open={licenseModalOpen}
+        onClose={() => setLicenseModalOpen(false)}
+        isPremium={isPremium}
+        licenseKey={licenseKey}
+        onActivate={handleActivateLicense}
+        onDeactivate={handleDeactivateLicense}
+      />
     </div>
   );
 }

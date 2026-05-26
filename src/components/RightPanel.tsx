@@ -6,6 +6,8 @@ type Props = {
   solution: FiringSolution | null;
   onSave: () => void;
   soundEnabled: boolean;
+  isPremium: boolean;
+  onOpenLicense: () => void;
 };
 
 function formatSolutionText(s: FiringSolution): string {
@@ -45,7 +47,7 @@ function Stat({
   );
 }
 
-export default function RightPanel({ solution, onSave, soundEnabled }: Props) {
+export default function RightPanel({ solution, onSave, soundEnabled, isPremium, onOpenLicense }: Props) {
   const [copied, setCopied] = useState(false);
 
   // --- Mission Impact Timer States ---
@@ -356,113 +358,135 @@ export default function RightPanel({ solution, onSave, soundEnabled }: Props) {
 
       {/* --- MET: Wind Correction Tool --- */}
       {solution && (
-        <div className="panel p-3 space-y-2">
-          <button
-            className="w-full flex items-center justify-between font-mono"
-            onClick={() => setShowWind(!showWind)}
-          >
+        <div className="panel p-3 space-y-2 relative overflow-hidden">
+          <div className="flex items-center justify-between border-b border-line/45 pb-1">
             <span className="section-title">
               <span className="text-zinc-600 mr-1">MET:</span>Wind Correction
             </span>
-            <span className="text-[10px] text-zinc-500 hover:text-accent">
-              {showWind ? "COLLAPSE ▲" : "EXPAND ▼"}
-            </span>
-          </button>
+            <span className="text-[10px] text-zinc-500">PREMIUM</span>
+          </div>
 
-          {showWind && (
-            <div className="space-y-2.5 pt-1 animate-fadeIn">
-              <div className="text-[9px] font-mono text-zinc-400 leading-snug">
-                Enter the wind speed and compass direction (where it blows FROM).
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex flex-col gap-1">
-                  <span className="label !text-[8px]">SPEED (M/S)</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="50"
-                    step="0.5"
-                    placeholder="0.0"
-                    className="field w-full font-mono text-xs text-accent"
-                    value={windSpeed}
-                    onChange={(e) => setWindSpeed(e.target.value)}
-                  />
-                </div>
-                <div className="flex flex-col gap-1">
-                  <span className="label !text-[8px]">DIRECTION (DEG)</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="359"
-                    step="1"
-                    placeholder="000°"
-                    className="field w-full font-mono text-xs text-accent"
-                    value={windDir}
-                    onChange={(e) => setWindDir(e.target.value)}
-                  />
-                </div>
-              </div>
+          {!isPremium ? (
+            <div className="bg-black/30 border border-line/20 p-3.5 rounded-sm text-center font-mono text-[9px] text-zinc-500 space-y-2 relative z-10 py-5">
+              <div className="text-amber-400 font-semibold uppercase tracking-wider">🔒 MET WORKSTATION LOCKED</div>
+              <p className="text-[8px] text-zinc-400 leading-relaxed px-1">
+                Real-time headwind, crosswind, and drift vector solvers require premium authorization.
+              </p>
+              <button
+                type="button"
+                className="btn border-accentDim/40 hover:bg-accentDim/10 text-accent text-[9px] px-3 py-1 uppercase tracking-wider"
+                onClick={onOpenLicense}
+              >
+                Unlock Premium
+              </button>
+            </div>
+          ) : (
+            <>
+              <button
+                className="w-full flex items-center justify-between font-mono pt-1"
+                onClick={() => setShowWind(!showWind)}
+              >
+                <span className="text-[10px] text-zinc-500 hover:text-accent">
+                  {showWind ? "COLLAPSE WIND PANEL ▲" : "EXPAND WIND PANEL ▼"}
+                </span>
+              </button>
 
-              {(windSpeed || windDir) && (() => {
-                const fireDeg = solution.bearingDeg;
-                const wDir = Number(windDir) || 0;
-                const wSpeed = Number(windSpeed) || 0;
-
-                const fireRad = (fireDeg * Math.PI) / 180;
-                const windRad = (wDir * Math.PI) / 180;
-                const alpha = fireRad - windRad;
-
-                const headwind = wSpeed * Math.cos(alpha);
-                const crosswind = wSpeed * Math.sin(alpha);
-
-                // Approx drift coefficients
-                const driftCross = crosswind * solution.tofSec * 0.45;
-                const driftAlong = headwind * solution.tofSec * 0.55;
-
-                return (
-                  <div className="border border-line/40 bg-black/20 p-2 rounded-sm space-y-1.5 font-mono text-[10px]">
-                    <div className="flex justify-between border-b border-line/20 pb-1">
-                      <span className="text-zinc-500">Crosswind:</span>
-                      <span className={Math.abs(crosswind) > 0.1 ? "text-accent" : "text-zinc-400"}>
-                        {Math.abs(crosswind).toFixed(1)} m/s {crosswind > 0 ? "L ➔ R" : crosswind < 0 ? "R ➔ L" : ""}
-                      </span>
+              {showWind && (
+                <div className="space-y-2.5 pt-1 animate-fadeIn">
+                  <div className="text-[9px] font-mono text-zinc-400 leading-snug">
+                    Enter the wind speed and compass direction (where it blows FROM).
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-col gap-1">
+                      <span className="label !text-[8px]">SPEED (M/S)</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="50"
+                        step="0.5"
+                        placeholder="0.0"
+                        className="field w-full font-mono text-xs text-accent"
+                        value={windSpeed}
+                        onChange={(e) => setWindSpeed(e.target.value)}
+                      />
                     </div>
-                    <div className="flex justify-between border-b border-line/20 pb-1">
-                      <span className="text-zinc-500">Headwind:</span>
-                      <span className={Math.abs(headwind) > 0.1 ? "text-amber-400" : "text-zinc-400"}>
-                        {Math.abs(headwind).toFixed(1)} m/s {headwind > 0 ? "HEAD" : headwind < 0 ? "TAIL" : ""}
-                      </span>
-                    </div>
-                    <div className="pt-1.5 space-y-1">
-                      <div className="section-title !text-red-400">🚨 ESTIMATED DRIFT</div>
-                      <div className="flex justify-between text-[9px] text-zinc-400">
-                        <span>Lateral:</span>
-                        <span className={Math.abs(driftCross) > 0.5 ? "text-red-400" : ""}>
-                          {Math.abs(driftCross).toFixed(0)}m {driftCross > 0 ? "RIGHT" : driftCross < 0 ? "LEFT" : "NONE"}
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-[9px] text-zinc-400">
-                        <span>Longitudinal:</span>
-                        <span className={Math.abs(driftAlong) > 0.5 ? "text-red-400" : ""}>
-                          {Math.abs(driftAlong).toFixed(0)}m {driftAlong > 0 ? "SHORT" : driftAlong < 0 ? "OVER" : "NONE"}
-                        </span>
-                      </div>
-
-                      <div className="section-title !text-emerald-400 pt-1.5">⚡ COMPENSATE TARGET</div>
-                      <div className="text-[10px] text-emerald-400 flex items-center justify-between font-bold border border-emerald-500/30 bg-emerald-950/20 px-1.5 py-0.5 rounded-sm">
-                        <span>AIM OFFSET:</span>
-                        <span>
-                          {Math.abs(driftCross) > 0.5 ? `${Math.abs(driftCross).toFixed(0)}m ${driftCross > 0 ? "LEFT" : "RIGHT"}` : ""}
-                          {Math.abs(driftCross) > 0.5 && Math.abs(driftAlong) > 0.5 ? " · " : ""}
-                          {Math.abs(driftAlong) > 0.5 ? `${Math.abs(driftAlong).toFixed(0)}m ${driftAlong > 0 ? "OVER" : "SHORT"}` : ""}
-                          {Math.abs(driftCross) <= 0.5 && Math.abs(driftAlong) <= 0.5 ? "0m" : ""}
-                        </span>
-                      </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="label !text-[8px]">DIRECTION (DEG)</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="359"
+                        step="1"
+                        placeholder="000°"
+                        className="field w-full font-mono text-xs text-accent"
+                        value={windDir}
+                        onChange={(e) => setWindDir(e.target.value)}
+                      />
                     </div>
                   </div>
-                );
-              })()}
-            </div>
+
+                  {(windSpeed || windDir) && (() => {
+                    const fireDeg = solution.bearingDeg;
+                    const wDir = Number(windDir) || 0;
+                    const wSpeed = Number(windSpeed) || 0;
+
+                    const fireRad = (fireDeg * Math.PI) / 180;
+                    const windRad = (wDir * Math.PI) / 180;
+                    const alpha = fireRad - windRad;
+
+                    const headwind = wSpeed * Math.cos(alpha);
+                    const crosswind = wSpeed * Math.sin(alpha);
+
+                    // Approx drift coefficients
+                    const driftCross = crosswind * solution.tofSec * 0.45;
+                    const driftAlong = headwind * solution.tofSec * 0.55;
+
+                    return (
+                      <div className="border border-line/40 bg-black/20 p-2 rounded-sm space-y-1.5 font-mono text-[10px]">
+                        <div className="flex justify-between border-b border-line/20 pb-1">
+                          <span className="text-zinc-500">Crosswind:</span>
+                          <span className={Math.abs(crosswind) > 0.1 ? "text-accent" : "text-zinc-400"}>
+                            {Math.abs(crosswind).toFixed(1)} m/s {crosswind > 0 ? "L ➔ R" : crosswind < 0 ? "R ➔ L" : ""}
+                          </span>
+                        </div>
+                        <div className="flex justify-between border-b border-line/20 pb-1">
+                          <span className="text-zinc-500">Headwind:</span>
+                          <span className={Math.abs(headwind) > 0.1 ? "text-amber-400" : "text-zinc-400"}>
+                            {Math.abs(headwind).toFixed(1)} m/s {headwind > 0 ? "HEAD" : headwind < 0 ? "TAIL" : ""}
+                          </span>
+                        </div>
+                        <div className="pt-1.5 space-y-1">
+                          <div className="section-title !text-red-400">🚨 ESTIMATED DRIFT</div>
+                          <div className="flex justify-between text-[9px] text-zinc-400">
+                            <span>Lateral:</span>
+                            <span className={Math.abs(driftCross) > 0.5 ? "text-red-400" : ""}>
+                              {Math.abs(driftCross).toFixed(0)}m {driftCross > 0 ? "RIGHT" : driftCross < 0 ? "LEFT" : "NONE"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-[9px] text-zinc-400">
+                            <span>Longitudinal:</span>
+                            <span className={Math.abs(driftAlong) > 0.5 ? "text-red-400" : ""}>
+                              {Math.abs(driftAlong).toFixed(0)}m {driftAlong > 0 ? "SHORT" : driftAlong < 0 ? "OVER" : "NONE"}
+                            </span>
+                          </div>
+
+                          <div className="section-title !text-emerald-400 pt-1.5">⚡ COMPENSATE TARGET</div>
+                          <div className="text-[10px] text-emerald-400 flex items-center justify-between font-bold border border-emerald-500/30 bg-emerald-950/20 px-1.5 py-0.5 rounded-sm">
+                            <span>AIM OFFSET:</span>
+                            <span>
+                              {Math.abs(driftCross) > 0.5 ? `${Math.abs(driftCross).toFixed(0)}m ${driftCross > 0 ? "LEFT" : "RIGHT"}` : ""}
+                              {Math.abs(driftCross) > 0.5 && Math.abs(driftAlong) > 0.5 ? " · " : ""}
+                              {Math.abs(driftAlong) > 0.5 ? `${Math.abs(driftAlong).toFixed(0)}m ${driftAlong > 0 ? "OVER" : "SHORT"}` : ""}
+                              {Math.abs(driftCross) <= 0.5 && Math.abs(driftAlong) <= 0.5 ? "0m" : ""}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

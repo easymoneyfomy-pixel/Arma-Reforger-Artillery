@@ -24,6 +24,8 @@ type Props = {
   onDeletePreset: (name: string) => void;
   targetV: { x: number; y: number; z: number } | null;
   gunV: { x: number; y: number; z: number } | null;
+  isPremium: boolean;
+  onOpenLicense: () => void;
 };
 
 export default function LeftPanel(p: Props) {
@@ -66,9 +68,13 @@ export default function LeftPanel(p: Props) {
             title="Select the artillery piece. Vanilla weapons exist in stock Arma Reforger; [mod] weapons require a community mod."
             value={p.weaponId}
             onChange={(e) => {
-              p.setWeaponId(e.target.value);
               const w = p.weapons.find((w) => w.id === e.target.value);
               if (w) {
+                if (w.isMod && !p.isPremium) {
+                  p.onOpenLicense();
+                  return;
+                }
+                p.setWeaponId(e.target.value);
                 p.setAmmoId(w.ammo[0].id);
                 p.setChargeId(w.ammo[0].charges[0].id);
               }
@@ -78,7 +84,7 @@ export default function LeftPanel(p: Props) {
               <option key={w.id} value={w.id}>
                 {w.faction ? `[${w.faction}] ` : ""}
                 {w.name}
-                {w.isMod ? "  [mod]" : ""}
+                {w.isMod ? `  ${p.isPremium ? "[mod]" : "🔒 [mod]"}` : ""}
               </option>
             ))}
           </select>
@@ -192,175 +198,193 @@ export default function LeftPanel(p: Props) {
       />
 
       {/* Saved Landmarks Panel */}
-      <div className="panel p-3 space-y-3">
+      <div className="panel p-3 space-y-3 relative overflow-hidden">
         <div className="flex items-center justify-between">
           <span className="section-title"><span className="text-zinc-600 mr-1">MEM:</span>Tactical Landmarks</span>
           <span className="text-[10px] font-mono text-zinc-600">PRESETS</span>
         </div>
 
-        {Object.keys(p.presets).length === 0 ? (
-          <div className="text-[10px] text-zinc-500 font-mono py-2 text-center">
-            No saved landmarks.
+        {!p.isPremium ? (
+          <div className="bg-black/40 border border-line/30 p-4 rounded-sm text-center font-mono text-[10px] text-zinc-500 space-y-3 py-6 relative z-10">
+            <div className="text-amber-400 font-semibold tracking-wider">🔒 PRESETS MEMORY LOCKED</div>
+            <p className="text-[9px] text-zinc-400 leading-relaxed px-2">
+              Unlock tactical landmarks and preset templates by activating your Premium FDC license.
+            </p>
+            <button
+              type="button"
+              className="btn border-accentDim/40 hover:bg-accentDim/10 text-accent text-[9px] px-4 py-1.5 uppercase tracking-wider"
+              onClick={p.onOpenLicense}
+            >
+              Unlock Premium
+            </button>
           </div>
         ) : (
-          <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1 border border-line/30 bg-black/10 p-1.5 rounded-sm">
-            {Object.entries(p.presets).map(([name, pos]) => {
-              const kmX = (pos.x / 1000).toFixed(2);
-              const kmY = (pos.y / 1000).toFixed(2);
-              return (
-                <div key={name} className="flex items-center justify-between gap-1.5 p-1 border border-line/40 bg-panelAlt/30 text-[10px] font-mono hover:border-accent/40 rounded-sm">
-                  <div className="truncate flex-1" title={name}>
-                    <span className="text-accent font-bold">{name}</span>
-                    <span className="text-zinc-500 ml-1">({kmX}, {kmY}, {pos.z}m)</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <button
-                      className="px-1 border border-emerald-500/40 text-emerald-400 bg-emerald-950/20 hover:bg-emerald-950/50 rounded-sm text-[9px]"
-                      onClick={() => p.onSelectPreset(pos, "gun")}
-                      title="Set as Gun Position"
-                    >
-                      G
-                    </button>
-                    <button
-                      className="px-1 border border-red-500/40 text-red-400 bg-red-950/20 hover:bg-red-950/50 rounded-sm text-[9px]"
-                      onClick={() => p.onSelectPreset(pos, "target")}
-                      title="Set as Target Position"
-                    >
-                      T
-                    </button>
-                    <button
-                      className="px-1 border border-zinc-700 text-zinc-400 hover:text-red-400 hover:border-red-500/40 rounded-sm text-[9px]"
-                      onClick={() => p.onDeletePreset(name)}
-                      title="Delete Preset"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+          <>
+            {Object.keys(p.presets).length === 0 ? (
+              <div className="text-[10px] text-zinc-500 font-mono py-2 text-center">
+                No saved landmarks.
+              </div>
+            ) : (
+              <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1 border border-line/30 bg-black/10 p-1.5 rounded-sm">
+                {Object.entries(p.presets).map(([name, pos]) => {
+                  const kmX = (pos.x / 1000).toFixed(2);
+                  const kmY = (pos.y / 1000).toFixed(2);
+                  return (
+                    <div key={name} className="flex items-center justify-between gap-1.5 p-1 border border-line/40 bg-panelAlt/30 text-[10px] font-mono hover:border-accent/40 rounded-sm">
+                      <div className="truncate flex-1" title={name}>
+                        <span className="text-accent font-bold">{name}</span>
+                        <span className="text-zinc-500 ml-1">({kmX}, {kmY}, {pos.z}m)</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          className="px-1 border border-emerald-500/40 text-emerald-400 bg-emerald-950/20 hover:bg-emerald-950/50 rounded-sm text-[9px]"
+                          onClick={() => p.onSelectPreset(pos, "gun")}
+                          title="Set as Gun Position"
+                        >
+                          G
+                        </button>
+                        <button
+                          className="px-1 border border-red-500/40 text-red-400 bg-red-950/20 hover:bg-red-950/50 rounded-sm text-[9px]"
+                          onClick={() => p.onSelectPreset(pos, "target")}
+                          title="Set as Target Position"
+                        >
+                          T
+                        </button>
+                        <button
+                          className="px-1 border border-zinc-700 text-zinc-400 hover:text-red-400 hover:border-red-500/40 rounded-sm text-[9px]"
+                          onClick={() => p.onDeletePreset(name)}
+                          title="Delete Preset"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
-        {/* Add Preset Form */}
-        <div className="pt-1 space-y-2">
-          <div className="flex gap-1.5">
-            <input
-              type="text"
-              placeholder="LANDMARK_NAME"
-              className="field flex-1 text-[10px] font-mono uppercase"
-              value={newPresetName}
-              onChange={(e) => setNewPresetName(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
-            />
-            <button
-              className="btn-primary !py-1 !px-2 !text-[9px] whitespace-nowrap"
-              disabled={!p.targetV || !newPresetName.trim()}
-              onClick={() => {
-                if (p.targetV && newPresetName.trim()) {
-                  p.onSavePreset(newPresetName.trim(), p.targetV);
-                  setNewPresetName("");
-                }
-              }}
-              title="Save current target coordinates as preset landmark."
-            >
-              SAVE TARGET
-            </button>
-          </div>
-          
-          <div className="flex gap-1.5">
-            <button
-              className={`flex-1 btn !py-1 !text-[9px] font-mono ${copiedExport ? "text-accent border-accent/40 bg-accentDim/10" : ""}`}
-              onClick={async () => {
-                try {
-                  const dataStr = JSON.stringify(p.presets, null, 2);
-                  await navigator.clipboard.writeText(dataStr);
-                  setCopiedExport(true);
-                  setTimeout(() => setCopiedExport(false), 2000);
-                } catch (e) {
-                  // fallback
-                }
-              }}
-              disabled={Object.keys(p.presets).length === 0}
-              title="Copy all saved landmarks to clipboard as a JSON file to share."
-            >
-              {copiedExport ? "COPIED LANDMARKS!" : "📤 EXPORT LANDMARKS"}
-            </button>
-            <button
-              className={`flex-1 btn !py-1 !text-[9px] font-mono ${importMode ? "text-accent border-accent/40 bg-accentDim/10" : ""}`}
-              onClick={() => {
-                setImportMode(!importMode);
-                setImportErr("");
-              }}
-              title="Import saved landmarks JSON from your clipboard."
-            >
-              📥 IMPORT
-            </button>
-          </div>
-
-          {importMode && (
-            <div className="border border-line/30 bg-black/25 p-2 rounded-sm space-y-1.5 animate-fadeIn">
-              <textarea
-                placeholder='Paste landmarks JSON here... (e.g. {"everon_airport": {"x": 1400, "y": 11000, "z": 120}})'
-                className="field w-full h-14 text-[9px] font-mono p-1 bg-black/40 border-line/40 rounded-sm resize-none"
-                value={importVal}
-                onChange={(e) => setImportVal(e.target.value)}
-              />
-              {importErr && (
-                <div className="text-[9px] text-red-400 font-mono">
-                  ⚠️ ERROR: {importErr}
-                </div>
-              )}
-              <div className="flex gap-1.5 justify-end">
+            {/* Add Preset Form */}
+            <div className="pt-1 space-y-2">
+              <div className="flex gap-1.5">
+                <input
+                  type="text"
+                  placeholder="LANDMARK_NAME"
+                  className="field flex-1 text-[10px] font-mono uppercase"
+                  value={newPresetName}
+                  onChange={(e) => setNewPresetName(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
+                />
                 <button
-                  className="btn !py-0.5 !px-2 !text-[9px] border-zinc-700 text-zinc-400"
+                  className="btn-primary !py-1 !px-2 !text-[9px] whitespace-nowrap"
+                  disabled={!p.targetV || !newPresetName.trim()}
                   onClick={() => {
-                    setImportMode(false);
-                    setImportErr("");
-                  }}
-                >
-                  CANCEL
-                </button>
-                <button
-                  className="btn-primary !py-0.5 !px-2 !text-[9px]"
-                  onClick={() => {
-                    try {
-                      setImportErr("");
-                      if (!importVal.trim()) {
-                        setImportErr("DATA IS EMPTY");
-                        return;
-                      }
-                      const parsed = JSON.parse(importVal);
-                      if (typeof parsed !== "object" || parsed === null) {
-                        setImportErr("INVALID FORMAT (MUST BE OBJECT)");
-                        return;
-                      }
-                      let count = 0;
-                      for (const [key, val] of Object.entries(parsed)) {
-                        const name = key.toLowerCase().trim().replace(/[^a-z0-9_-]/g, "_");
-                        if (!name) continue;
-                        const pos = val as any;
-                        if (pos && typeof pos.x === "number" && typeof pos.y === "number" && typeof pos.z === "number") {
-                          p.onSavePreset(name, { x: pos.x, y: pos.y, z: pos.z });
-                          count++;
-                        }
-                      }
-                      if (count === 0) {
-                        setImportErr("NO VALID LANDMARKS FOUND");
-                      } else {
-                        setImportVal("");
-                        setImportMode(false);
-                      }
-                    } catch (err: any) {
-                      setImportErr(`JSON ERROR: ${err.message.substring(0, 20).toUpperCase()}`);
+                    if (p.targetV && newPresetName.trim()) {
+                      p.onSavePreset(newPresetName.trim(), p.targetV);
+                      setNewPresetName("");
                     }
                   }}
+                  title="Save current target coordinates as preset landmark."
                 >
-                  LOAD
+                  SAVE TARGET
                 </button>
               </div>
+              
+              <div className="flex gap-1.5">
+                <button
+                  className={`flex-1 btn !py-1 !text-[9px] font-mono ${copiedExport ? "text-accent border-accent/40 bg-accentDim/10" : ""}`}
+                  onClick={async () => {
+                    try {
+                      const dataStr = JSON.stringify(p.presets, null, 2);
+                      await navigator.clipboard.writeText(dataStr);
+                      setCopiedExport(true);
+                      setTimeout(() => setCopiedExport(false), 2000);
+                    } catch (e) {
+                      // fallback
+                    }
+                  }}
+                  disabled={Object.keys(p.presets).length === 0}
+                  title="Copy all saved landmarks to clipboard as a JSON file to share."
+                >
+                  {copiedExport ? "COPIED LANDMARKS!" : "📤 EXPORT LANDMARKS"}
+                </button>
+                <button
+                  className={`flex-1 btn !py-1 !text-[9px] font-mono ${importMode ? "text-accent border-accent/40 bg-accentDim/10" : ""}`}
+                  onClick={() => {
+                    setImportMode(!importMode);
+                    setImportErr("");
+                  }}
+                  title="Import saved landmarks JSON from your clipboard."
+                >
+                  📥 IMPORT
+                </button>
+              </div>
+
+              {importMode && (
+                <div className="border border-line/30 bg-black/25 p-2 rounded-sm space-y-1.5 animate-fadeIn">
+                  <textarea
+                    placeholder='Paste landmarks JSON here... (e.g. {"everon_airport": {"x": 1400, "y": 11000, "z": 120}})'
+                    className="field w-full h-14 text-[9px] font-mono p-1 bg-black/40 border-line/40 rounded-sm resize-none"
+                    value={importVal}
+                    onChange={(e) => setImportVal(e.target.value)}
+                  />
+                  {importErr && (
+                    <div className="text-[9px] text-red-400 font-mono">
+                      ⚠️ ERROR: {importErr}
+                    </div>
+                  )}
+                  <div className="flex gap-1.5 justify-end">
+                    <button
+                      className="btn !py-0.5 !px-2 !text-[9px] border-zinc-700 text-zinc-400"
+                      onClick={() => {
+                        setImportMode(false);
+                        setImportErr("");
+                      }}
+                    >
+                      CANCEL
+                    </button>
+                    <button
+                      className="btn-primary !py-0.5 !px-2 !text-[9px]"
+                      onClick={() => {
+                        try {
+                          setImportErr("");
+                          if (!importVal.trim()) {
+                            setImportErr("DATA IS EMPTY");
+                            return;
+                          }
+                          const parsed = JSON.parse(importVal);
+                          if (typeof parsed !== "object" || parsed === null) {
+                            setImportErr("INVALID FORMAT (MUST BE OBJECT)");
+                            return;
+                          }
+                          let count = 0;
+                          for (const [key, val] of Object.entries(parsed)) {
+                            const name = key.toLowerCase().trim().replace(/[^a-z0-9_-]/g, "_");
+                            if (!name) continue;
+                            const pos = val as any;
+                            if (pos && typeof pos.x === "number" && typeof pos.y === "number" && typeof pos.z === "number") {
+                              p.onSavePreset(name, { x: pos.x, y: pos.y, z: pos.z });
+                              count++;
+                            }
+                          }
+                          if (count === 0) {
+                            setImportErr("NO VALID LANDMARKS FOUND");
+                          } else {
+                            setImportVal("");
+                            setImportMode(false);
+                          }
+                        } catch (err: any) {
+                          setImportErr(`JSON ERROR: ${err.message.substring(0, 20).toUpperCase()}`);
+                        }
+                      }}
+                    >
+                      LOAD
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

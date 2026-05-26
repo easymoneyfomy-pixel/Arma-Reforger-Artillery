@@ -19,6 +19,8 @@ type Props = {
   activeChargeId: string;
   showRangeRings: boolean;
   setShowRangeRings: (v: boolean) => void;
+  isPremium: boolean;
+  onOpenLicense: () => void;
 };
 
 type CalibMode = null | "p1" | "p2";
@@ -81,6 +83,8 @@ export default function MapView({
   activeChargeId,
   showRangeRings,
   setShowRangeRings,
+  isPremium,
+  onOpenLicense,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
@@ -429,18 +433,29 @@ export default function MapView({
           />
           Rings
         </label>
-        <label
-          className="btn cursor-pointer select-none flex items-center gap-1"
-          title="Show Circular Error Probable (CEP) dispersion circle around target."
-        >
-          <input
-            type="checkbox"
-            className="accent-accent"
-            checked={showCep}
-            onChange={(e) => setShowCep(e.target.checked)}
-          />
-          CEP
-        </label>
+        {isPremium ? (
+          <label
+            className="btn cursor-pointer select-none flex items-center gap-1"
+            title="Show Circular Error Probable (CEP) dispersion circle around target."
+          >
+            <input
+              type="checkbox"
+              className="accent-accent"
+              checked={showCep}
+              onChange={(e) => setShowCep(e.target.checked)}
+            />
+            CEP
+          </label>
+        ) : (
+          <button
+            type="button"
+            className="btn flex items-center gap-1 text-zinc-500 border-zinc-700/60"
+            onClick={onOpenLicense}
+            title="Show Circular Error Probable (CEP) dispersion circle (Premium)"
+          >
+            🔒 CEP
+          </button>
+        )}
         {!map.builtin && (
           <details className="ml-auto">
             <summary
@@ -533,6 +548,43 @@ export default function MapView({
                 : "pointer",
         }}
       >
+        {!isPremium && map.builtin && (
+          <div className="absolute inset-0 bg-[#06070adc]/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center space-y-4 font-mono select-none">
+            <span className="text-amber-400 text-3xl">🔒</span>
+            <div className="text-zinc-200 font-semibold tracking-[0.2em] text-sm uppercase">
+              OFFICIAL SATELLITE TERRAIN DISENGAGED
+            </div>
+            <p className="text-zinc-400 text-xs max-w-sm leading-relaxed">
+              Topographic satellite telemetry for <span className="text-accent">{map.name}</span> requires an active Premium license.
+            </p>
+            <div className="text-[10px] text-zinc-500 max-w-sm">
+              Use custom map uploads or unlock premium features using our Telegram Bot.
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                className="btn border-zinc-700 text-zinc-400 hover:border-zinc-500 text-xs px-4 py-2"
+                onClick={() => {
+                  const firstCustom = maps.find((m) => !m.builtin);
+                  if (firstCustom) {
+                    setMapId(firstCustom.id);
+                  } else {
+                    alert("Please upload a custom map image in the calibration/upload settings below the map.");
+                  }
+                }}
+              >
+                Use Custom Map
+              </button>
+              <button
+                type="button"
+                className="btn-primary text-xs px-5 py-2 uppercase tracking-wider font-semibold animate-pulse"
+                onClick={onOpenLicense}
+              >
+                Unlock Premium
+              </button>
+            </div>
+          </div>
+        )}
         <div
           ref={innerRef}
           className="absolute"
@@ -638,7 +690,7 @@ export default function MapView({
                 </g>
               );
             })()}
-            {showCep && gun && target && (() => {
+            {isPremium && showCep && gun && target && (() => {
               const b = worldToPx(map, target, size.w, size.h);
               const dist = Math.hypot(target.x - gun.x, target.y - gun.y);
               const cepM = dist * 0.003; // 3 mils dispersion
