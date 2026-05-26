@@ -1,89 +1,102 @@
-# 🤖 Telegram Artillery FDC Admin Bot
+# 🤖 Telegram Artillery FDC License Bot
 
-This is a premium, portable **Fire Direction Control (FDC) Artillery Calculator Telegram Bot** for **Arma Reforger**. It runs directly on Node.js and integrates all the exact same ballistics, coordinate grid parsing, and impact correction calculations as your web application.
+This is a lightweight **License & Access Manager Bot** for the **Arma Reforger Artillery Calculator**. It controls who can access the premium tactical Web-HUD interface directly inside Telegram.
 
-With this bot, you can have a highly interactive, fast, and feature-rich artillery computer right on your phone, inside overlay chats, or shared in your team's tactical group chat!
-
----
-
-## 🎯 Bot Features
-
-1. **Active Gun Tracking**: Save your player coordinates (`/setgun`).
-2. **Interactive Selection**: Tap inline keyboard buttons to choose weapons (M252, Podnos, M120, D-30, M777, etc.) and charges.
-3. **Fire Calculations**: Enter grid targets (`/fire 028045`) to get Azimuth, Elevation, Time of Flight, and formatted radio comms commands.
-4. **Spotter Impact Corrections**: Type in where a shell actually landed (`/correct 027044`) to compute range/lateral deviations, target aim offsets, and mirror correction solutions (`/mirror`).
-5. **Preset Landmarks**: Save key map coordinates (`/save grid_target 016073`) and query them on the fly.
-6. **Quick Calculates**: Perform direct calculators between two points (`/calc`) without altering your active profile.
-7. **Persistent State Storage**: Automatically saves all active guns, customized presets, and whitelists to `bot_db.json`. Your data survives restarts!
-8. **Mission History Tracking**: Tracks your last 10 calculations (`/history`).
-9. **One-Click Windows Launchers**: Easily run the bot anywhere using standard Batch or interactive PowerShell scripts.
+The bot does NOT perform any calculations itself — all ballistic computation happens in the [Web-HUD](https://easymoneyfomy-pixel.github.io/Arma-Reforger-Artillery/), which is embedded as a Telegram Mini App.
 
 ---
 
-## ⚡ Quick Start: One-Click Launchers
+## 🎯 How It Works
 
-This bot folder is fully **portable**. You can copy the `bot/` folder to any other computer running Node.js and run it instantly.
+1. A user finds your bot (`@Arma_Artillery_Bot`) and presses `/start`.
+2. If the user is **NOT whitelisted**, they see a "Access Denied" message with their Telegram ID and instructions to contact you.
+3. You (the Admin) use `/allow [ID]` to grant them access.
+4. Once whitelisted, the user gets a **💻 FDC ВЕБ-HUD** button in the bottom-left corner of the chat. Tapping it opens the full artillery calculator web app natively inside Telegram.
+5. If you want to revoke access, use `/block [ID]`.
 
-### Option A: Double-Click `start_bot.bat` (Batch)
+---
+
+## ⚡ Quick Start
+
+### Option A: Double-Click `start_bot.bat`
 - Simply double-click `start_bot.bat` in Windows Explorer.
-- The script checks if Node.js is installed.
-- If dependencies are missing, it runs `npm install` automatically.
-- If `.env` configuration file is missing, it auto-generates a template and opens the directory.
-- Runs the bot in a terminal loop with **auto-restart on crash**.
+- The script checks Node.js, installs dependencies, handles `.env`, and runs with auto-restart.
 
-### Option B: Right-Click `start_bot.ps1` -> "Run with PowerShell"
-- Includes the same features as the batch launcher, plus:
-  - Custom visual FDC console logo and colored log levels (`[OK]`, `[SYS]`, `[WARN]`, `[ERR]`, `[SEC]`).
-  - Interactive token prompt: If `.env` is missing, you can paste your token directly into the terminal, and it writes the config for you.
-  - Session tracker.
+### Option B: Right-Click `start_bot.ps1` → "Run with PowerShell"
+- Same features as batch, plus colored logs, ASCII art, and interactive token prompt.
+
+### Option C: Manual
+```powershell
+cd bot
+npm install
+node index.js
+```
 
 ---
 
-## 🛠️ Step-by-Step Installation Guide
+## 🛠️ First-Time Setup
 
 ### Step 1: Create a Bot via `@BotFather`
-1. Open your Telegram client and search for the official [@BotFather](https://t.me/BotFather).
-2. Start a chat and send the command:
-   ```
-   /newbot
-   ```
-3. Enter a friendly name for your bot (e.g. `My Reforger FDC Bot`).
-4. Enter a unique username ending with `_bot` (e.g. `reforger_fdc_admin_bot`).
-5. Copy the **HTTP API Access Token** provided by BotFather (it looks like `123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ`).
+1. Open Telegram → search `@BotFather` → `/newbot`
+2. Set a name and username (e.g. `Arma_Artillery_Bot`)
+3. Copy the **HTTP API Token**
 
-### Step 2: Run with Launchers
-1. Just double-click `start_bot.bat` or run `start_bot.ps1`.
-2. Enter your Bot HTTP token if prompted.
-3. *Success!* You should see in the console:
-   ```
-   [SYS] Loaded 6 weapon systems from weapons.json.
-   [SYS] Loaded user states from persistent DB.
-   [SYS] Telegram bot FDC listener is ACTIVE. Polling for inputs...
-   ```
+### Step 2: Configure BotFather Mini App (Optional but Recommended)
+1. Go to `@BotFather` → select your bot → **Bot Settings** → **Menu Button**
+2. Set URL: `https://easymoneyfomy-pixel.github.io/Arma-Reforger-Artillery/`
+3. Set Title: `💻 FDC ВЕБ-HUD`
+4. Go to **Main App** → Set URL to the same link → Choose **Fullsize** or **Fullscreen**
+
+### Step 3: Run the Bot
+1. Double-click `start_bot.bat` or run `node index.js`
+2. Open Telegram, go to your bot, and press `/start`
+3. The first user to `/start` becomes the **Admin** automatically
+
+## 📖 Admin Commands
+
+| Command | Description |
+|---------|-------------|
+| `/allow [ID]` | Grant a user access to the Web-HUD. Also supports clicking directly on `/allow_[ID]`. |
+| `/block [ID]` | Revoke a user's access. Also supports clicking directly on `/block_[ID]`. |
+| `/whitelist` | Show all authorized users with quick `/block_[ID]` clickable shortcuts. |
+| `/broadcast [сообщение]` | Send a broadcast announcement to all authorized users (squad members). |
+
+### ⚡ Interactive Access Requests
+When a non-whitelisted user sends `/start` to the bot:
+1. They see their Telegram ID and instructions to wait for authorization.
+2. The **Admin** receives an instant notification with the user's name, username, and ID.
+3. The Admin can approve or deny the request in **one click** using the inline `[✅ Разрешить]` and `[❌ Заблокировать]` buttons or by tapping the clickable links in `/whitelist`.
+
+> Regular users see NO commands. They only see the access status and the Web-HUD button (if whitelisted).
 
 ---
 
-## 📖 Command Checklist Reference
+## 🔒 Security
 
-* **`/start`** — Re-verify system profile and list quick-commands.
-* **`/help`** — Show complete command syntax and coordinate formats.
-* **`/setgun [grid/X Y] [Alt]`** — Set player gun position.
-  * *Example: `/setgun 024036 120`*
-* **`/weapon`** — Inline buttons to select weapon systems (M252, Podnos, Howitzers).
-* **`/charge`** — Select Charge level (defaults to optimal Auto-selection).
-* **`/fire [grid/X Y/landmark] [Alt]`** — Calculate solution to target.
-  * *Example: `/fire 028045 150`*
-* **`/correct [grid/X Y] [Alt]`** — Spotter feedback on observed shell impact.
-  * *Example: `/correct 027044 140`*
-* **`/mirror`** — Calculate solution for the corrected target offset.
-* **`/distance [grid1/landmark] [grid2/landmark]`** — Calculate distance, azimuth, slope, and elevation delta between two coordinates.
-* **`/save [name] [grid] [Alt]`** — Save coordinates to preset library.
-  * *Example: `/save main_depot 016073 80`*
-* **`/presets`** — List all saved landmarks.
-* **`/delete [name]`** — Remove saved landmark preset.
-* **`/export`** — Generate copy-pasteable `/save` commands to share presets.
-* **`/history`** — View the last 10 firing solutions.
-* **`/info`** — System telemetry, system uptime, and User ID security level.
-* **`/about`** — Project information and Web-HUD links.
-* **`/calc [gun_grid] [target_grid] [gun_alt] [target_alt]`** — Rapid one-off calculation.
-  * *Example: `/calc 024036 028045 120 150`*
+- Bot token is stored in `.env` (gitignored, never pushed to GitHub)
+- Admin ID auto-bootstraps on first `/start`
+- Whitelist is persisted in `.env` and survives restarts
+- Non-whitelisted users cannot open the Web-HUD menu button
+
+---
+
+## 📦 Portability
+
+The `bot/` folder is fully portable:
+1. Copy the entire folder to any machine with Node.js
+2. Double-click `start_bot.bat`
+3. Enter your bot token if prompted
+4. Done!
+
+---
+
+## ❓ FAQ
+
+**Q: Does the bot need to run 24/7?**
+A: The bot runs on YOUR computer. If you turn off the PC, the bot stops. To run 24/7, deploy to a VPS server.
+
+**Q: What happens if a non-whitelisted user messages the bot?**
+A: They see a "Access Denied" message with their Telegram ID, which they can send to you for authorization.
+
+**Q: Where do the calculations happen?**
+A: All ballistic calculations happen in the Web-HUD (the website). The bot only manages access permissions.

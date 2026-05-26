@@ -29,6 +29,9 @@ type Props = {
 export default function LeftPanel(p: Props) {
   const [newPresetName, setNewPresetName] = useState("");
   const [copiedExport, setCopiedExport] = useState(false);
+  const [importMode, setImportMode] = useState(false);
+  const [importVal, setImportVal] = useState("");
+  const [importErr, setImportErr] = useState("");
   const weapon = p.weapons.find((w) => w.id === p.weaponId)!;
   const ammo = (weapon?.ammo.find((a) => a.id === p.ammoId) ?? weapon?.ammo[0]) as Ammo;
   const chargeBands = ammo?.charges.map((c) => ({
@@ -264,36 +267,99 @@ export default function LeftPanel(p: Props) {
             </button>
           </div>
           
-          <button
-            className={`w-full btn !py-1 !text-[9px] font-mono ${copiedExport ? "text-accent border-accent/40 bg-accentDim/10" : ""}`}
-            onClick={async () => {
-              const keys = Object.keys(p.presets);
-              if (keys.length === 0) return;
-              
-              function formatGridVal(m: number) {
-                const km = m / 1000;
-                const v = Math.floor(km * 100);
-                return v.toString().padStart(3, "0");
-              }
+          <div className="flex gap-1.5">
+            <button
+              className={`flex-1 btn !py-1 !text-[9px] font-mono ${copiedExport ? "text-accent border-accent/40 bg-accentDim/10" : ""}`}
+              onClick={async () => {
+                try {
+                  const dataStr = JSON.stringify(p.presets, null, 2);
+                  await navigator.clipboard.writeText(dataStr);
+                  setCopiedExport(true);
+                  setTimeout(() => setCopiedExport(false), 2000);
+                } catch (e) {
+                  // fallback
+                }
+              }}
+              disabled={Object.keys(p.presets).length === 0}
+              title="Copy all saved landmarks to clipboard as a JSON file to share."
+            >
+              {copiedExport ? "COPIED LANDMARKS!" : "📤 EXPORT LANDMARKS"}
+            </button>
+            <button
+              className={`flex-1 btn !py-1 !text-[9px] font-mono ${importMode ? "text-accent border-accent/40 bg-accentDim/10" : ""}`}
+              onClick={() => {
+                setImportMode(!importMode);
+                setImportErr("");
+              }}
+              title="Import saved landmarks JSON from your clipboard."
+            >
+              📥 IMPORT
+            </button>
+          </div>
 
-              const commandText = keys.map(k => {
-                const pt = p.presets[k];
-                return `/save ${k} ${formatGridVal(pt.x)}${formatGridVal(pt.y)} ${Math.round(pt.z)}`;
-              }).join("\n");
-
-              try {
-                await navigator.clipboard.writeText(commandText);
-                setCopiedExport(true);
-                setTimeout(() => setCopiedExport(false), 2000);
-              } catch (e) {
-                // ignore
-              }
-            }}
-            disabled={Object.keys(p.presets).length === 0}
-            title="Export all presets as copy-pasteable Telegram bot save commands."
-          >
-            {copiedExport ? "COPIED BOT COMMANDS!" : "📤 EXPORT PRESETS FOR TELEGRAM BOT"}
-          </button>
+          {importMode && (
+            <div className="border border-line/30 bg-black/25 p-2 rounded-sm space-y-1.5 animate-fadeIn">
+              <textarea
+                placeholder='Paste landmarks JSON here... (e.g. {"everon_airport": {"x": 1400, "y": 11000, "z": 120}})'
+                className="field w-full h-14 text-[9px] font-mono p-1 bg-black/40 border-line/40 rounded-sm resize-none"
+                value={importVal}
+                onChange={(e) => setImportVal(e.target.value)}
+              />
+              {importErr && (
+                <div className="text-[9px] text-red-400 font-mono">
+                  ⚠️ ERROR: {importErr}
+                </div>
+              )}
+              <div className="flex gap-1.5 justify-end">
+                <button
+                  className="btn !py-0.5 !px-2 !text-[9px] border-zinc-700 text-zinc-400"
+                  onClick={() => {
+                    setImportMode(false);
+                    setImportErr("");
+                  }}
+                >
+                  CANCEL
+                </button>
+                <button
+                  className="btn-primary !py-0.5 !px-2 !text-[9px]"
+                  onClick={() => {
+                    try {
+                      setImportErr("");
+                      if (!importVal.trim()) {
+                        setImportErr("DATA IS EMPTY");
+                        return;
+                      }
+                      const parsed = JSON.parse(importVal);
+                      if (typeof parsed !== "object" || parsed === null) {
+                        setImportErr("INVALID FORMAT (MUST BE OBJECT)");
+                        return;
+                      }
+                      let count = 0;
+                      for (const [key, val] of Object.entries(parsed)) {
+                        const name = key.toLowerCase().trim().replace(/[^a-z0-9_-]/g, "_");
+                        if (!name) continue;
+                        const pos = val as any;
+                        if (pos && typeof pos.x === "number" && typeof pos.y === "number" && typeof pos.z === "number") {
+                          p.onSavePreset(name, { x: pos.x, y: pos.y, z: pos.z });
+                          count++;
+                        }
+                      }
+                      if (count === 0) {
+                        setImportErr("NO VALID LANDMARKS FOUND");
+                      } else {
+                        setImportVal("");
+                        setImportMode(false);
+                      }
+                    } catch (err: any) {
+                      setImportErr(`JSON ERROR: ${err.message.substring(0, 20).toUpperCase()}`);
+                    }
+                  }}
+                >
+                  LOAD
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
