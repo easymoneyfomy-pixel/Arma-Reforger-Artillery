@@ -447,6 +447,8 @@ bot.onText(/\/help/, (msg) => {
 • <code>/fire [грид] [высота]</code> — Расчет Azimuth/Elevation/TOF с <b>визуализацией на векторной миникарте</b>.
 • <code>/correct [грид_вспышки] [высота]</code> — Расчет боковых и продольных отклонений и построение зеркальной миникарты корректировки.
 • <code>/mirror</code> — Огневое решение по скорректированной цели.
+• <code>/status</code> — Показать текущее состояние вычислителя (орудие, заряд, позиция).
+• <code>/range</code> — Показать диапазоны дальности для текущего орудия.
 
 <b>3️⃣ Команды Безопасности (только для Админа):</b>
 • <code>/allow [user_id]</code> — Авторизовать пользователя (дать доступ к боту).
@@ -454,6 +456,63 @@ bot.onText(/\/help/, (msg) => {
 • <code>/whitelist</code> — Показать всех авторизованных стрелков.`;
 
   bot.sendMessage(msg.chat.id, helpText, { parse_mode: "HTML" });
+});
+
+// Command: /status
+bot.onText(/\/status/, (msg) => {
+  if (!checkAccess(msg)) return;
+
+  const chatId = msg.chat.id;
+  const state = getUserState(msg.from.id);
+  const weapon = weapons.find(w => w.id === state.activeWeaponId) || weapons[0];
+  
+  let text = `${HUD_HEADER}🛰️ <b>ТЕКУЩИЙ СТАТУС ВЫЧИСЛИТЕЛЯ (FDC TELEMETRY):</b>\n\n`;
+  text += `🔫 <b>Орудие:</b> <code>${weapon.name}</code> ${weapon.isMod ? "[MOD]" : "[VANILLA]"}\n`;
+  text += `🔋 <b>Режим заряда:</b> <code>${state.activeChargeId === "auto" ? "АВТОВЫБОР (Оптимальный)" : "Заряд " + state.activeChargeId}</code>\n`;
+  text += `📍 <b>Позиция орудия:</b> <code>${formatFullGrid(state.activeGun)}</code>\n`;
+  
+  if (state.lastTarget) {
+    text += `───────────────────\n`;
+    text += `🎯 <b>Последняя цель:</b> <code>${formatFullGrid(state.lastTarget)}</code>\n`;
+    if (state.lastSolution) {
+      text += `📏 <b>Дальность:</b> <code>${state.lastSolution.rangeM.toFixed(0)} м</code>\n`;
+      text += `🧭 <b>Азимут:</b> <code>${state.lastSolution.bearingMil.toFixed(0)} mils</code> (${state.lastSolution.bearingDeg.toFixed(1)}°)\n`;
+      text += `📐 <b>Прицел:</b> <code>${state.lastSolution.elevationMil.toFixed(0)} mils</code>\n`;
+      text += `⏱️ <b>TOF (Время полета):</b> <code>${state.lastSolution.tofSec.toFixed(1)} сек</code>\n`;
+    }
+  } else {
+    text += `───────────────────\n`;
+    text += `🎯 <i>Цели еще не рассчитывались. Используй /fire.</i>\n`;
+  }
+  
+  bot.sendMessage(chatId, text, { parse_mode: "HTML" });
+});
+
+// Command: /range
+bot.onText(/\/range/, (msg) => {
+  if (!checkAccess(msg)) return;
+
+  const chatId = msg.chat.id;
+  const state = getUserState(msg.from.id);
+  const weapon = weapons.find(w => w.id === state.activeWeaponId);
+
+  if (!weapon) {
+    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Орудие не выбрано!</b>`, { parse_mode: "HTML" });
+  }
+
+  const ammo = weapon.ammo[0];
+  let text = `${HUD_HEADER}📊 <b>ДИАПАЗОНЫ ДАЛЬНОСТЕЙ ДЛЯ:</b>\n🔫 <i>${weapon.name}</i>\n📦 <i>Снаряд: ${ammo.name}</i>\n───────────────────\n`;
+
+  ammo.charges.forEach((c) => {
+    const band = chargeRangeBand(c);
+    text += `🔋 <b>${c.label}</b> (Заряд: <code>${c.id}</code>):\n`;
+    text += `• Минимальная: <code>${band.min.toFixed(0)} м</code>\n`;
+    text += `• Максимальная: <code>${band.max.toFixed(0)} м</code>\n\n`;
+  });
+
+  text += `<i>Система автоматически выберет оптимальный заряд, если включен Автовыбор (/charge -> Автовыбор).</i>`;
+
+  bot.sendMessage(chatId, text, { parse_mode: "HTML" });
 });
 
 // Whitelist Command: /allow (Admin Only)
