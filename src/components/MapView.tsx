@@ -96,7 +96,7 @@ export default function MapView({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [customSize, setCustomSize] = useState("8192");
   const [dragging, setDragging] = useState<null | "gun" | "target">(null);
-  const [showCep, setShowCep] = useState(true);
+  const [showCep, setShowCep] = useState(false);
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [panDrag, setPanDrag] = useState<null | { ox: number; oy: number; sx: number; sy: number }>(null);
@@ -325,138 +325,150 @@ export default function MapView({
             }
           />
         </span>
-        <div className="flex items-center gap-1">
-          <select
-            className="field !py-1 !text-xs"
-            title="Switch map. Built-in maps don't need calibration; uploaded maps may."
-            value={map.id}
-            onChange={(e) => setMapId(e.target.value)}
-          >
-            {maps.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name} · {(m.worldSizeM / 1000).toFixed(1)}km
-              </option>
-            ))}
-          </select>
-          <Tooltip
-            side="bottom"
-            width={300}
-            content={
-              <>
-                <b>Upload a custom map image.</b>
-                <br />· Format: <b>PNG / JPG / WebP</b> (any image).
-                <br />· Use a top-down screenshot of the in-game map (full map, square).
-                <br />· Set the <b>world size (m)</b> next to the button to match the
-                actual game world dimensions (e.g. <b>12800</b> for Everon, <b>4096</b>{" "}
-                for Arland).
-                <br />· After upload, use <b>Calibrate</b> to map two known points
-                exactly (recommended for accuracy).
-              </>
-            }
-          >
-            <button
-              className="btn"
-              onClick={() => fileRef.current?.click()}
-              title="Upload a PNG/JPG/WebP map screenshot. Set world size first to match the game world."
-            >
-              Upload
-            </button>
-          </Tooltip>
-          <Tooltip
-            side="bottom"
-            width={240}
-            content={
-              <>
-                World size in <b>meters</b> for the uploaded map. Examples: Everon =
-                12800, Arland = 4096. Used to convert clicks to coordinates.
-              </>
-            }
-          >
-            <input
-              className="field !py-1 !text-xs w-20"
-              type="number"
-              min={256}
-              max={20480}
-              value={customSize}
-              onChange={(e) => setCustomSize(e.target.value)}
-              title="World size in meters for the next uploaded map (e.g. 8192 or 12800)."
-              placeholder="size m"
-            />
-          </Tooltip>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/png,image/jpeg,image/webp,image/*"
-            className="hidden"
-            onChange={handleFile}
-          />
-        </div>
-      </div>
-      {uploadError && (
-        <div className="font-mono text-[11px] text-danger border border-danger/40 px-2 py-1">
-          {uploadError}
-        </div>
-      )}
+<div className="flex items-center gap-1">
+           <select
+             className="field !py-1 !text-xs"
+             title="Switch map. Built-in maps don't need calibration; uploaded maps may."
+             value={map.id}
+             onChange={(e) => setMapId(e.target.value)}
+           >
+             {maps.map((m) => (
+               <option key={m.id} value={m.id}>
+                 {m.name} · {(m.worldSizeM / 1000).toFixed(1)}km
+               </option>
+             ))}
+           </select>
+           {isPremium ? (
+             <>
+               <Tooltip
+                 side="bottom"
+                 width={300}
+                 content={
+                   <>
+                     <b>Upload a custom map image.</b>
+                     <br />· Format: <b>PNG / JPG / WebP</b> (any image).
+                     <br />· Use a top-down screenshot of the in-game map (full map, square).
+                     <br />· Set the <b>world size (m)</b> next to the button to match the
+                     actual game world dimensions (e.g. <b>12800</b> for Everon, <b>4096</b>{" "}
+                     for Arland).
+                     <br />· After upload, use <b>Calibrate</b> to map two known points
+                     exactly (recommended for accuracy).
+                   </>
+                 }
+               >
+                 <button
+                   className="btn"
+                   onClick={() => fileRef.current?.click()}
+                   title="Upload a PNG/JPG/WebP map screenshot. Set world size first to match the game world."
+                 >
+                   Upload
+                 </button>
+               </Tooltip>
+               <Tooltip
+                 side="bottom"
+                 width={240}
+                 content={
+                   <>
+                     World size in <b>meters</b> for the uploaded map. Examples: Everon =
+                     12800, Arland = 4096. Used to convert clicks to coordinates.
+                   </>
+                 }
+               >
+                 <input
+                   className="field !py-1 !text-xs w-20"
+                   type="number"
+                   min={256}
+                   max={20480}
+                   value={customSize}
+                   onChange={(e) => setCustomSize(e.target.value)}
+                   title="World size in meters for the next uploaded map (e.g. 8192 or 12800)."
+                   placeholder="size m"
+                 />
+               </Tooltip>
+               <input
+                 ref={fileRef}
+                 type="file"
+                 accept="image/png,image/jpeg,image/webp,image/*"
+                 className="hidden"
+                 onChange={handleFile}
+               />
+             </>
+           ) : (
+             <button
+               className="btn flex items-center gap-1 text-zinc-500 border-zinc-700/60"
+               onClick={onOpenLicense}
+               title="Upload custom maps (Premium)"
+             >
+               🔒 Upload
+             </button>
+           )}
+         </div>
+       </div>
+       {uploadError && (
+         <div className="font-mono text-[11px] text-danger border border-danger/40 px-2 py-1">
+           {uploadError}
+         </div>
+       )}
 
-      <div className="flex items-center gap-1 flex-wrap">
-        <button
-          className={placeMode === "gun" ? "btn-primary" : "btn"}
-          onClick={() => setPlaceMode("gun")}
-          title="Next click on the map places the GUN position. (G)"
-        >
-          Place Gun
-        </button>
-        <button
-          className={placeMode === "target" ? "btn-primary" : "btn"}
-          onClick={() => setPlaceMode("target")}
-          title="Next click on the map places the TARGET position. (T)"
-        >
-          Place Target
-        </button>
-        <button
-          className="btn"
-          onClick={swap}
-          disabled={!gun || !target}
-          title="Swap Gun and Target positions. (S)"
-        >
-          Swap
-        </button>
-        <label
-          className="btn cursor-pointer select-none flex items-center gap-1"
-          title="Show min/max range rings around the gun for the current charge (all charges shown dimmer)."
-        >
-          <input
-            type="checkbox"
-            className="accent-accent"
-            checked={showRangeRings}
-            onChange={(e) => setShowRangeRings(e.target.checked)}
-          />
-          Rings
-        </label>
-        {isPremium ? (
-          <label
-            className="btn cursor-pointer select-none flex items-center gap-1"
-            title="Show Circular Error Probable (CEP) dispersion circle around target."
-          >
-            <input
-              type="checkbox"
-              className="accent-accent"
-              checked={showCep}
-              onChange={(e) => setShowCep(e.target.checked)}
-            />
-            CEP
-          </label>
-        ) : (
-          <button
-            type="button"
-            className="btn flex items-center gap-1 text-zinc-500 border-zinc-700/60"
-            onClick={onOpenLicense}
-            title="Show Circular Error Probable (CEP) dispersion circle (Premium)"
-          >
-            🔒 CEP
-          </button>
-        )}
-        {!map.builtin && (
+       <div className="flex items-center gap-1 flex-wrap">
+         <button
+           className={placeMode === "gun" ? "btn-primary" : "btn"}
+           onClick={() => setPlaceMode("gun")}
+           title="Next click on the map places the GUN position. (G)"
+         >
+           Place Gun
+         </button>
+         <button
+           className={placeMode === "target" ? "btn-primary" : "btn"}
+           onClick={() => setPlaceMode("target")}
+           title="Next click on the map places the TARGET position. (T)"
+         >
+           Place Target
+         </button>
+         <button
+           className="btn"
+           onClick={swap}
+           disabled={!gun || !target}
+           title="Swap Gun and Target positions. (S)"
+         >
+           Swap
+         </button>
+         <label
+           className="btn cursor-pointer select-none flex items-center gap-1"
+           title="Show min/max range rings around the gun for the current charge (all charges shown dimmer)."
+         >
+           <input
+             type="checkbox"
+             className="accent-accent"
+             checked={showRangeRings}
+             onChange={(e) => setShowRangeRings(e.target.checked)}
+           />
+           Rings
+         </label>
+         {isPremium ? (
+           <label
+             className="btn cursor-pointer select-none flex items-center gap-1"
+             title="Show Circular Error Probable (CEP) dispersion circle around target."
+           >
+             <input
+               type="checkbox"
+               className="accent-accent"
+               checked={showCep}
+               onChange={(e) => setShowCep(e.target.checked)}
+             />
+             CEP
+           </label>
+         ) : (
+           <button
+             type="button"
+             className="btn flex items-center gap-1 text-zinc-500 border-zinc-700/60"
+             onClick={onOpenLicense}
+             title="Show Circular Error Probable (CEP) dispersion circle (Premium)"
+           >
+             🔒 CEP
+           </button>
+         )}
+         {isPremium && !map.builtin && (
           <details className="ml-auto">
             <summary
               className="btn cursor-pointer list-none"
@@ -548,43 +560,41 @@ export default function MapView({
                 : "pointer",
         }}
       >
-        {!isPremium && map.builtin && (
-          <div className="absolute inset-0 bg-[#06070adc]/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center space-y-4 font-mono select-none">
-            <span className="text-amber-400 text-3xl">🔒</span>
-            <div className="text-zinc-200 font-semibold tracking-[0.2em] text-sm uppercase">
-              OFFICIAL SATELLITE TERRAIN DISENGAGED
-            </div>
-            <p className="text-zinc-400 text-xs max-w-sm leading-relaxed">
-              Topographic satellite telemetry for <span className="text-accent">{map.name}</span> requires an active Premium license.
-            </p>
-            <div className="text-[10px] text-zinc-500 max-w-sm">
-              Use custom map uploads or unlock premium features using our Telegram Bot.
-            </div>
-            <div className="flex gap-3 pt-2">
-              <button
-                type="button"
-                className="btn border-zinc-700 text-zinc-400 hover:border-zinc-500 text-xs px-4 py-2"
-                onClick={() => {
-                  const firstCustom = maps.find((m) => !m.builtin);
-                  if (firstCustom) {
-                    setMapId(firstCustom.id);
-                  } else {
-                    alert("Please upload a custom map image in the calibration/upload settings below the map.");
-                  }
-                }}
-              >
-                Use Custom Map
-              </button>
-              <button
-                type="button"
-                className="btn-primary text-xs px-5 py-2 uppercase tracking-wider font-semibold animate-pulse"
-                onClick={onOpenLicense}
-              >
-                Unlock Premium
-              </button>
-            </div>
-          </div>
-        )}
+{!isPremium && !map.builtin && (
+           <div className="absolute inset-0 bg-[#06070adc]/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center space-y-4 font-mono select-none">
+             <span className="text-amber-400 text-3xl">🔒</span>
+             <div className="text-zinc-200 font-semibold tracking-[0.2em] text-sm uppercase">
+               CUSTOM MAPS LOCKED
+             </div>
+             <p className="text-zinc-400 text-xs max-w-sm leading-relaxed">
+               Custom map uploads and calibration require a Premium license.
+             </p>
+             <div className="text-[10px] text-zinc-500 max-w-sm">
+               Use built-in maps (Everon, Arland) or unlock premium features via Telegram Bot.
+             </div>
+             <div className="flex gap-3 pt-2">
+               <button
+                 type="button"
+                 className="btn border-zinc-700 text-zinc-400 hover:border-zinc-500 text-xs px-4 py-2"
+                 onClick={() => {
+                   const firstBuiltin = maps.find((m) => m.builtin);
+                   if (firstBuiltin) {
+                     setMapId(firstBuiltin.id);
+                   }
+                 }}
+               >
+                 Use Built-in Map
+               </button>
+               <button
+                 type="button"
+                 className="btn-primary text-xs px-5 py-2 uppercase tracking-wider font-semibold animate-pulse"
+                 onClick={onOpenLicense}
+               >
+                 Unlock Premium
+               </button>
+             </div>
+           </div>
+         )}
         <div
           ref={innerRef}
           className="absolute"

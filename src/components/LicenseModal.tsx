@@ -91,9 +91,9 @@ export default function LicenseModal({
               <div className="text-amber-400 font-semibold text-center tracking-wider uppercase">
                 👑 PREMIUM HUD ACTIVE
               </div>
-              <p className="text-zinc-400 text-[11px] text-center leading-relaxed">
-                All features, modded howitzers, satellite maps, wind met parameters, and telemetry circles are unlocked.
-              </p>
+<p className="text-zinc-400 text-[11px] text-center leading-relaxed">
+                 All features unlocked: modded howitzers, custom maps, wind correction, CEP circles, and preset landmarks.
+               </p>
             </div>
 
             <div className="space-y-1">
@@ -122,15 +122,19 @@ export default function LicenseModal({
           /* Locked / Free State */
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2 font-mono text-xs text-zinc-400 leading-relaxed">
-              <p>
-                You are currently running the <strong className="text-zinc-300">Free Vanilla Edition</strong>.
-              </p>
+<p>
+                 You are currently running the <strong className="text-zinc-300">Free Vanilla Edition</strong>.
+                 <br />Built-in maps (Everon, Arland) and vanilla weapons work without restrictions.
+               </p>
               <div className="bg-black/25 border border-line/30 p-3 rounded-sm text-[11px] space-y-1">
                 <div className="text-zinc-300 font-semibold uppercase tracking-wider text-[10px] mb-1">
                   🔒 Premium Features Locked:
                 </div>
                 <div className="flex items-center gap-1.5 text-zinc-400">
-                  <span className="text-red-400">✕</span> Official Satellite Maps (Everon, Arland)
+                  <span className="text-red-400">✕</span> Custom Map Uploads
+                </div>
+                <div className="flex items-center gap-1.5 text-zinc-400">
+                  <span className="text-red-400">✕</span> Map Calibration
                 </div>
                 <div className="flex items-center gap-1.5 text-zinc-400">
                   <span className="text-red-400">✕</span> Community Modded Weapons (Howitzers)
