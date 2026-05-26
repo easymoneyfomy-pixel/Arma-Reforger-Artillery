@@ -11,6 +11,7 @@ import HistoryPanel from "./components/HistoryPanel";
 import CorrectionPanel from "./components/CorrectionPanel";
 import HelpModal from "./components/HelpModal";
 import LicenseModal from "./components/LicenseModal";
+import AdminPanel from "./components/AdminPanel";
 import { getSavedLicenseKey, saveLicenseKey, clearSavedLicenseKey, verifyLicenseKey } from "./utils/license";
 
 const WEAPONS = weaponsData as Weapon[];
@@ -88,10 +89,10 @@ export default function App() {
   const [isPremium, setIsPremium] = useState(false);
   const [licenseModalOpen, setLicenseModalOpen] = useState(false);
 
-  // Auto-detect Telegram WebApp / URL lic query parameter
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const lic = params.get("lic");
+    const adminMode = params.get("admin") === "1";
     if (lic) {
       verifyLicenseKey(lic).then((ok) => {
         if (ok) {
@@ -100,12 +101,13 @@ export default function App() {
           setIsPremium(true);
         }
       });
-      // Clean query parameter from URL bar
       window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    if (adminMode) {
+      sessionStorage.setItem("ar_fdc_admin_mode", "true");
     }
   }, []);
 
-  // React to licenseKey state change
   useEffect(() => {
     let active = true;
     async function check() {
@@ -158,12 +160,12 @@ export default function App() {
   const [missions, setMissions] = useState<Mission[]>(() => loadJSON<Mission[]>(STORAGE.MISSIONS, []));
   const [impactPoint, setImpactPoint] = useState<Vec3 | null>(null);
 
-  const [presets, setPresets] = useState<Record<string, Vec3>>(() => {
-    return loadJSON<Record<string, Vec3>>("ar_fdc_presets", {
+  const [presets, setPresets] = useState<Record<string, Vec3>>(() =>
+    loadJSON<Record<string, Vec3>>("ar_fdc_presets", {
       everon_airport: { x: 1400, y: 11000, z: 120 },
-      arland_airbase: { x: 1200, y: 3200, z: 45 }
-    });
-  });
+      arland_airbase: { x: 1200, y: 3200, z: 45 },
+    }),
+  );
 
   function savePreset(name: string, pos: Vec3) {
     const key = name.toLowerCase().trim().replace(/[^a-z0-9_-]/g, "_");
@@ -194,13 +196,10 @@ export default function App() {
 
   const [placeMode, setPlaceMode] = useState<"gun" | "target">("gun");
   const [showRangeRings, setShowRangeRings] = useState(true);
-  const [helpOpen, setHelpOpen] = useState(() => {
-    return !loadJSON<boolean>(HELP_SEEN_KEY, false);
-  });
+  const [helpOpen, setHelpOpen] = useState(() => !loadJSON<boolean>(HELP_SEEN_KEY, false));
+  const [showAdmin, setShowAdmin] = useState(() => sessionStorage.getItem("ar_fdc_admin_mode") === "true");
 
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
-    return loadJSON<boolean>("ar_fdc_sound_enabled", true);
-  });
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => loadJSON<boolean>("ar_fdc_sound_enabled", true));
   const [isMounted, setIsMounted] = useState(false);
 
   function toggleSound() {
@@ -236,7 +235,6 @@ export default function App() {
     return computeSolution(weapon, ammo, chargeId, gunV, targetV);
   }, [gunV, targetV, weapon, ammo, chargeId]);
 
-  // Coordinate-bounds warnings derived locally
   const boundsWarning = useMemo(() => {
     const issues: string[] = [];
     const w = map.worldSizeM;
@@ -301,9 +299,7 @@ export default function App() {
   function importMissions(extra: Mission[]) {
     const byId = new Map<string, Mission>();
     [...extra, ...missions].forEach((m) => byId.set(m.id, m));
-    const next = Array.from(byId.values())
-      .sort((a, b) => b.ts - a.ts)
-      .slice(0, 200);
+    const next = Array.from(byId.values()).sort((a, b) => b.ts - a.ts).slice(0, 200);
     setMissions(next);
     saveJSON(STORAGE.MISSIONS, next);
   }
@@ -311,19 +307,13 @@ export default function App() {
   function addMap(m: MapDef) {
     const next = [...maps, m];
     setMaps(next);
-    saveJSON(
-      STORAGE.MAPS,
-      next.filter((mm) => !mm.builtin),
-    );
+    saveJSON(STORAGE.MAPS, next.filter((mm) => !mm.builtin));
   }
 
   function calibrate(cal: MapDef["calibration"]) {
     const next = maps.map((m) => (m.id === mapId ? { ...m, calibration: cal } : m));
     setMaps(next);
-    saveJSON(
-      STORAGE.MAPS,
-      next.filter((mm) => !mm.builtin),
-    );
+    saveJSON(STORAGE.MAPS, next.filter((mm) => !mm.builtin));
   }
 
   function resetPositions() {
@@ -346,9 +336,7 @@ export default function App() {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const target = e.target as HTMLElement | null;
-      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT")) {
-        return;
-      }
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT")) return;
       if (e.key === "?" || (e.key === "/" && e.shiftKey)) {
         setHelpOpen((v) => !v);
         e.preventDefault();
@@ -387,27 +375,20 @@ export default function App() {
       <header className="border-b border-line bg-panel/60 backdrop-blur">
         <div className="max-w-[1700px] mx-auto px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            {/* Animated Vector Radar */}
             <div className="relative w-8 h-8 flex items-center justify-center bg-black/40 border border-line/50 rounded-sm overflow-hidden hidden sm:flex">
               <svg className="w-7 h-7 text-accent" viewBox="0 0 100 100">
-                {/* Outer Ring */}
                 <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.3" />
                 <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.2" />
                 <circle cx="50" cy="50" r="15" fill="none" stroke="currentColor" strokeWidth="1" strokeOpacity="0.15" />
-                {/* Crosshairs */}
                 <line x1="5" y1="50" x2="95" y2="50" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.25" />
                 <line x1="50" y1="5" x2="50" y2="95" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.25" />
-                {/* Sweep Line */}
                 <line x1="50" y1="50" x2="50" y2="5" stroke="currentColor" strokeWidth="1.5" className="radar-sweep-line" style={{ filter: 'drop-shadow(0 0 4px rgba(214, 255, 58, 0.6))' }} />
-                {/* Blips */}
                 <circle cx="35" cy="40" r="2" fill="currentColor" className="animate-ping" style={{ animationDelay: '1.2s', animationDuration: '4s' }} />
                 <circle cx="35" cy="40" r="2.5" fill="currentColor" style={{ opacity: 0.8 }} />
-                
                 <circle cx="68" cy="62" r="1.5" fill="currentColor" className="animate-ping" style={{ animationDelay: '2.8s', animationDuration: '4s' }} />
                 <circle cx="68" cy="62" r="2" fill="currentColor" style={{ opacity: 0.6 }} />
               </svg>
             </div>
-            
             <div className="flex flex-col">
               <span className="font-mono text-sm tracking-[0.18em] uppercase text-zinc-200" style={{ textShadow: '0 0 20px rgba(214, 255, 58, 0.15)' }}>
                 Arma Reforger · Artillery FDC
@@ -418,10 +399,8 @@ export default function App() {
           </div>
           <div className="flex items-center gap-2">
             <div className="font-mono text-[10px] text-zinc-500 hidden md:block">
-              {weapon.name} · {ammo.name} ·{" "}
-              <span className="text-accent">{solution?.chargeLabel ?? "—"}</span>
+              {weapon.name} · {ammo.name} · <span className="text-accent">{solution?.chargeLabel ?? "—"}</span>
             </div>
-            {/* Audio Toggle */}
             <button
               className={`btn !py-1 !px-2 !text-[10px] flex items-center gap-1.5 ${soundEnabled ? 'text-accent border-accent/40 bg-accentDim/10' : 'text-zinc-500 border-zinc-700'}`}
               onClick={toggleSound}
@@ -474,19 +453,21 @@ export default function App() {
                 <span>🔓 FREE VERSION</span>
               </button>
             )}
-            <button
-              className="btn !py-1 !px-2 !text-[10px]"
-              onClick={resetPositions}
-              title="Clear gun, target and impact positions. (R)"
-            >
+            <button className="btn !py-1 !px-2 !text-[10px]" onClick={resetPositions} title="Clear gun, target and impact positions. (R)">
               Reset
             </button>
-            <button
-              className="btn !py-1 !px-2 !text-[10px]"
-              onClick={openHelp}
-              title="Show quick-start help (? key)"
-            >
+            <button className="btn !py-1 !px-2 !text-[10px]" onClick={openHelp} title="Show quick-start help (? key)">
               Help
+            </button>
+            <button
+              className="btn !py-1 !px-2 !text-[10px] text-amber-400 border-amber-400/40 bg-amber-400/10"
+              onClick={() => {
+                sessionStorage.setItem("ar_fdc_admin_mode", "true");
+                setShowAdmin(true);
+              }}
+              title="Admin: Show license generator"
+            >
+              🔧 Admin
             </button>
           </div>
         </div>
@@ -567,6 +548,7 @@ export default function App() {
             onClear={clearMissions}
             onImport={importMissions}
           />
+          {showAdmin && <AdminPanel />}
         </section>
       </main>
 
