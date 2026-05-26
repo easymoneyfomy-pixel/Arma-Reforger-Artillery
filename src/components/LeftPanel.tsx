@@ -33,7 +33,7 @@ export default function LeftPanel(p: Props) {
     <div className="space-y-3">
       <div className="panel p-3 space-y-3">
         <div className="flex items-center justify-between">
-          <span className="section-title">Fire Mission · Input</span>
+          <span className="section-title"><span className="text-zinc-600 mr-1">SYS:</span>Fire Mission · Input</span>
           <span className="text-[10px] font-mono text-zinc-600">FDC-01</span>
         </div>
         <div>

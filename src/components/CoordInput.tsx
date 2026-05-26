@@ -38,8 +38,8 @@ export default function CoordInput({
   return (
     <div className="panel-alt p-3 space-y-2">
       <div className="flex items-center gap-2">
-        <span className={`w-2 h-2 rounded-full ${dot[accent]}`} />
-        <span className="section-title">{label}</span>
+        <span className={`w-2 h-2 rounded-full ${dot[accent]} shadow-[0_0_6px_currentColor]`} />
+        <span className="section-title">// {label}</span>
         <InfoHint
           side="bottom"
           text={
@@ -62,7 +62,7 @@ export default function CoordInput({
       <div className="grid grid-cols-3 gap-2">
         <div>
           <div className="label mb-1 flex items-center" title="Easting (X) in meters">
-            X (East)
+            [X] Easting
             <InfoHint
               side="bottom"
               text={`Easting in meters from the western map edge. Max ${worldSizeM} m on this map.`}
@@ -79,7 +79,7 @@ export default function CoordInput({
         </div>
         <div>
           <div className="label mb-1 flex items-center" title="Northing (Y) in meters">
-            Y (North)
+            [Y] Northing
             <InfoHint
               side="bottom"
               text={`Northing in meters from the southern map edge. Max ${worldSizeM} m on this map.`}
@@ -96,7 +96,7 @@ export default function CoordInput({
         </div>
         <div>
           <div className="label mb-1 flex items-center" title="Altitude / elevation in meters above sea level">
-            Z (Alt m)
+            [Z] Altitude
             <InfoHint
               side="bottom"
               text={
@@ -119,7 +119,7 @@ export default function CoordInput({
       </div>
       <div>
         <div className="label mb-1 flex items-center">
-          Grid (e.g. 016073)
+          [G] Grid String (e.g. 016073)
           <InfoHint
             side="bottom"
             width={280}

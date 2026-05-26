@@ -218,11 +218,11 @@ export default function App() {
       <header className="border-b border-line bg-panel/60 backdrop-blur">
         <div className="max-w-[1700px] mx-auto px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
-            <span className="font-mono text-sm tracking-[0.18em] uppercase text-zinc-200">
+            <div className="w-2 h-2 rounded-full bg-accent animate-pulse glow-active" />
+            <span className="font-mono text-sm tracking-[0.18em] uppercase text-zinc-200" style={{ textShadow: '0 0 20px rgba(214, 255, 58, 0.15)' }}>
               Arma Reforger · Artillery FDC
             </span>
-            <span className="font-mono text-[10px] text-zinc-600">v0.2</span>
+            <span className="font-mono text-[10px] text-zinc-600">v0.3</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="font-mono text-[10px] text-zinc-500 hidden md:block">

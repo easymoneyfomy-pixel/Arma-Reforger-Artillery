@@ -305,7 +305,7 @@ export default function MapView({
     <div className="panel p-3 space-y-2 flex flex-col h-full">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <span className="section-title flex items-center">
-          Tactical Map
+          <span className="text-zinc-600 mr-1">TAC:</span>Tactical Map
           <InfoHint
             side="bottom"
             width={320}
@@ -625,6 +625,34 @@ export default function MapView({
                 </g>
               );
             })()}
+            {/* === Satellite crosshair tracking guidelines === */}
+            {cursor && (() => {
+              const cp = worldToPx(map, cursor, size.w, size.h);
+              return (
+                <g>
+                  {/* Horizontal tracking line */}
+                  <line
+                    x1={0} y1={cp.y} x2={size.w} y2={cp.y}
+                    stroke="rgba(214, 255, 58, 0.08)"
+                    strokeDasharray="2 4"
+                    strokeWidth={0.5}
+                  />
+                  {/* Vertical tracking line */}
+                  <line
+                    x1={cp.x} y1={0} x2={cp.x} y2={size.h}
+                    stroke="rgba(214, 255, 58, 0.08)"
+                    strokeDasharray="2 4"
+                    strokeWidth={0.5}
+                  />
+                  {/* Crosshair center diamond */}
+                  <rect
+                    x={cp.x - 3} y={cp.y - 3} width={6} height={6}
+                    fill="none" stroke="rgba(214, 255, 58, 0.25)" strokeWidth={0.5}
+                    transform={`rotate(45 ${cp.x} ${cp.y})`}
+                  />
+                </g>
+              );
+            })()}
             {markers.map((m, i) => (
               <g
                 key={i}
@@ -632,16 +660,27 @@ export default function MapView({
                 style={{ cursor: m.which ? "grab" : "default" }}
                 onMouseDown={(e) => m.which && startDrag(e, m.which)}
               >
-                <circle r={7} fill={m.color} stroke="#000" strokeWidth={1} />
+                {/* Outer radar pulse ring */}
                 {m.which && (
-                  <circle r={11} fill="transparent" stroke={m.color} strokeOpacity={0.35} strokeWidth={1} />
+                  <circle r={18} fill="none" stroke={m.color} strokeOpacity={0.12} strokeWidth={0.5}>
+                    <animate attributeName="r" values="12;22" dur="2s" repeatCount="indefinite" />
+                    <animate attributeName="stroke-opacity" values="0.2;0" dur="2s" repeatCount="indefinite" />
+                  </circle>
                 )}
+                {/* Inner glow ring */}
+                {m.which && (
+                  <circle r={11} fill="none" stroke={m.color} strokeOpacity={0.35} strokeWidth={1} />
+                )}
+                {/* Core marker dot */}
+                <circle r={7} fill={m.color} stroke="#000" strokeWidth={1} />
+                {/* Marker label */}
                 <text
                   x={12}
                   y={4}
                   fontSize={11}
                   fontFamily="ui-monospace, monospace"
                   fill={m.color}
+                  style={{ textShadow: `0 0 6px ${m.color}` }}
                 >
                   {m.label}
                 </text>

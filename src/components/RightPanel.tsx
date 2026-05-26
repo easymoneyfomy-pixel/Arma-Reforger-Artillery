@@ -62,19 +62,30 @@ export default function RightPanel({ solution, onSave }: Props) {
     <div className="space-y-3">
       <div className="panel p-3">
         <div className="flex items-center justify-between mb-3 gap-2">
-          <span className="section-title flex items-center">
-            Firing Solution
-            <InfoHint
-              width={280}
-              text={
-                <>
-                  Computed firing data from the selected ballistic table.
-                  Set <b>Azimuth</b> (compass) and <b>Elevation</b> (mils) on the gun.
-                  Time of Flight is the projectile travel time after firing.
-                </>
-              }
-            />
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="section-title flex items-center">
+              <span className="text-zinc-600 mr-1">FDC:</span>Firing Solution
+              <InfoHint
+                width={280}
+                text={
+                  <>
+                    Computed firing data from the selected ballistic table.
+                    Set <b>Azimuth</b> (compass) and <b>Elevation</b> (mils) on the gun.
+                    Time of Flight is the projectile travel time after firing.
+                  </>
+                }
+              />
+            </span>
+            {solution ? (
+              <div className="flex items-center gap-1.5 px-1.5 py-0.5 border border-accentDim bg-accentDim/10 text-[8px] text-accent animate-pulse font-mono tracking-widest rounded-sm">
+                ONLINE
+              </div>
+            ) : (
+              <div className="flex items-center gap-1.5 px-1.5 py-0.5 border border-line bg-panelAlt/50 text-[8px] text-zinc-500 font-mono tracking-widest rounded-sm">
+                STANDBY
+              </div>
+            )}
+          </div>
           <div className="flex items-center gap-1">
             <Tooltip
               side="left"
@@ -177,9 +188,9 @@ export default function RightPanel({ solution, onSave }: Props) {
       </div>
 
       {solution && solution.warnings.length > 0 && (
-        <div className="panel border-danger/40 p-3 space-y-1">
+        <div className="panel border-danger/40 p-3 space-y-1 shadow-[0_0_12px_rgba(224,70,70,0.06)]">
           <div className="section-title text-danger flex items-center">
-            Warnings
+            // WARNINGS
             <InfoHint
               width={260}
               text={

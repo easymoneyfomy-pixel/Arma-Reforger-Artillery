@@ -52,7 +52,7 @@ export default function HistoryPanel({ missions, onLoad, onDelete, onClear, onIm
     <div className="panel p-3 space-y-2">
       <div className="flex items-center justify-between">
         <span className="section-title flex items-center">
-          Combat Memory
+          <span className="text-zinc-600 mr-1">MEM:</span>Combat Memory
           <InfoHint
             width={280}
             text={
@@ -106,7 +106,7 @@ export default function HistoryPanel({ missions, onLoad, onDelete, onClear, onIm
         {missions.map((m) => (
           <div
             key={m.id}
-            className="grid grid-cols-[1fr_auto_auto] items-center gap-2 border border-line bg-black/30 px-2 py-1.5 hover:border-accentDim"
+            className="grid grid-cols-[1fr_auto_auto] items-center gap-2 border border-line bg-black/30 px-2 py-1.5 hover:border-accentDim transition-colors"
             title={`${m.label} · saved ${new Date(m.ts).toLocaleString()}`}
           >
             <div className="font-mono text-[11px] leading-tight">
@@ -121,14 +121,14 @@ export default function HistoryPanel({ missions, onLoad, onDelete, onClear, onIm
               </div>
             </div>
             <button
-              className="btn"
+              className="btn !py-0.5 !px-2 !text-[10px]"
               onClick={() => onLoad(m)}
               title="Restore weapon, ammo, charge and coordinates from this mission."
             >
               Load
             </button>
             <button
-              className="btn"
+              className="btn !py-0.5 !px-1.5 !text-[10px] hover:border-danger hover:text-danger hover:shadow-[0_0_8px_rgba(224,70,70,0.15)]"
               onClick={() => onDelete(m.id)}
               title="Delete this saved mission."
             >

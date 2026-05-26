@@ -36,7 +36,7 @@ export default function CorrectionPanel({ gun, target, solution, onApplyCorrecti
     <div className="panel p-3 space-y-2">
       <div className="flex items-center justify-between">
         <span className="section-title flex items-center">
-          Impact Correction
+          <span className="text-zinc-600 mr-1">COR:</span>Impact Correction
           <InfoHint
             width={300}
             text={
@@ -60,7 +60,7 @@ export default function CorrectionPanel({ gun, target, solution, onApplyCorrecti
       </div>
       <div className="grid grid-cols-3 gap-2">
         <div>
-          <div className="label mb-1">Impact X</div>
+          <div className="label mb-1">[X] Impact X</div>
           <input
             className="field"
             value={ix}
@@ -70,7 +70,7 @@ export default function CorrectionPanel({ gun, target, solution, onApplyCorrecti
           />
         </div>
         <div>
-          <div className="label mb-1">Impact Y</div>
+          <div className="label mb-1">[Y] Impact Y</div>
           <input
             className="field"
             value={iy}
@@ -80,7 +80,7 @@ export default function CorrectionPanel({ gun, target, solution, onApplyCorrecti
           />
         </div>
         <div>
-          <div className="label mb-1">Impact Z</div>
+          <div className="label mb-1">[Z] Impact Z</div>
           <input
             className="field"
             value={iz}
@@ -97,12 +97,12 @@ export default function CorrectionPanel({ gun, target, solution, onApplyCorrecti
             className="panel-alt p-2"
             title="Along the line of fire from gun to target. Positive = past the target; negative = short of it."
           >
-            <div className="label">Range delta</div>
-            <div className="font-mono text-lg text-accent">
+            <div className="label">// Range delta</div>
+            <div className="font-mono text-lg text-accent mt-0.5">
               {delta.alongM >= 0 ? "+" : "−"}
               {Math.abs(delta.alongM).toFixed(0)} m
             </div>
-            <div className="font-mono text-[10px] text-zinc-500">
+            <div className="font-mono text-[9px] text-zinc-500 leading-tight">
               {delta.alongM >= 0 ? "OVER target → drop" : "SHORT of target → add"}
             </div>
           </div>
@@ -110,12 +110,12 @@ export default function CorrectionPanel({ gun, target, solution, onApplyCorrecti
             className="panel-alt p-2"
             title="Perpendicular to the line of fire. Positive = right of target; negative = left of target."
           >
-            <div className="label">Lateral delta</div>
-            <div className="font-mono text-lg text-accent">
+            <div className="label">// Lateral delta</div>
+            <div className="font-mono text-lg text-accent mt-0.5">
               {delta.crossM >= 0 ? "+" : "−"}
               {Math.abs(delta.crossM).toFixed(0)} m
             </div>
-            <div className="font-mono text-[10px] text-zinc-500">
+            <div className="font-mono text-[9px] text-zinc-500 leading-tight">
               {delta.crossM >= 0 ? "RIGHT of target → shift left" : "LEFT of target → shift right"}
             </div>
           </div>

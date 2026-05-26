@@ -14,23 +14,60 @@ body {
     radial-gradient(900px 500px at 110% 110%, rgba(214, 255, 58, 0.03), transparent 60%),
     #06070a;
   -webkit-font-smoothing: antialiased;
+  position: relative;
 }
 
-input[type="number"]::-webkit-outer-spin-button,
-input[type="number"]::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.02;
+  z-index: 100;
+  background-image: radial-gradient(#d6ff3a 1px, transparent 0);
+  background-size: 16px 16px;
 }
-input[type="number"] {
-  -moz-appearance: textfield;
+
+/* Custom telemetry scrollbars */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(11, 12, 13, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: #1f2226;
+  border-radius: 1px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #7a9610;
 }
 
 .panel {
-  @apply bg-panel border border-line rounded-sm;
+  @apply bg-panel/75 backdrop-blur-md border border-line rounded-[2px] relative overflow-hidden;
 }
+.panel::before {
+  content: '';
+  @apply absolute top-0 left-0 w-2 h-2 border-t border-l border-accentDim/30 pointer-events-none;
+}
+.panel::after {
+  content: '';
+  @apply absolute bottom-0 right-0 w-2 h-2 border-b border-r border-accentDim/30 pointer-events-none;
+}
+
 .panel-alt {
-  @apply bg-panelAlt border border-line rounded-sm;
+  @apply bg-panelAlt/80 backdrop-blur-md border border-line rounded-[2px] relative overflow-hidden;
 }
+.panel-alt::before {
+  content: '';
+  @apply absolute top-0 left-0 w-1.5 h-1.5 border-t border-l border-accentDim/20 pointer-events-none;
+}
+.panel-alt::after {
+  content: '';
+  @apply absolute bottom-0 right-0 w-1.5 h-1.5 border-b border-r border-accentDim/20 pointer-events-none;
+}
+
 .label {
   @apply text-[10px] uppercase tracking-[0.18em] text-zinc-500 font-mono;
 }
@@ -38,16 +75,19 @@ input[type="number"] {
   @apply font-mono text-zinc-100;
 }
 .field {
-  @apply w-full bg-black/40 border border-line px-2 py-1 font-mono text-sm text-zinc-100
-    focus:outline-none focus:border-accentDim focus:ring-1 focus:ring-accentDim/60;
+  @apply w-full bg-black/50 border border-line px-2.5 py-1.5 font-mono text-sm text-zinc-100 rounded-sm
+    transition-all duration-200 outline-none
+    focus:border-accent focus:shadow-[0_0_10px_rgba(214,255,58,0.12)] focus:ring-0;
 }
 .btn {
-  @apply font-mono text-xs uppercase tracking-wider px-3 py-1.5 border border-line bg-panelAlt
-    text-zinc-200 hover:border-accentDim hover:text-accent transition-colors;
+  @apply font-mono text-xs uppercase tracking-wider px-3 py-1.5 border border-line bg-panelAlt/80 backdrop-blur-sm
+    text-zinc-300 hover:border-accent hover:text-accent hover:shadow-[0_0_8px_rgba(214,255,58,0.08)]
+    transition-all duration-200 cursor-pointer rounded-sm select-none;
 }
 .btn-primary {
-  @apply font-mono text-xs uppercase tracking-wider px-3 py-1.5 border border-accentDim bg-accentDim/15
-    text-accent hover:bg-accentDim/30 transition-colors;
+  @apply font-mono text-xs uppercase tracking-wider px-3 py-1.5 border border-accentDim bg-accentDim/10
+    text-accent hover:bg-accentDim/20 hover:border-accent hover:shadow-[0_0_12px_rgba(214,255,58,0.15)]
+    transition-all duration-200 cursor-pointer rounded-sm select-none;
 }
 .section-title {
   @apply text-[11px] uppercase tracking-[0.2em] text-accent/80 font-mono;
@@ -55,3 +95,44 @@ input[type="number"] {
 .hairline {
   @apply border-t border-line;
 }
+
+/* Scanline CRT overlay — extremely subtle, adds telemetry immersion */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+}
+
+/* Text selection styling */
+::selection {
+  background: rgba(214, 255, 58, 0.25);
+  color: #fff;
+}
+
+/* Glow pulse animation for active elements */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(214, 255, 58, 0.05); }
+  50% { box-shadow: 0 0 12px rgba(214, 255, 58, 0.12); }
+}
+.glow-active {
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+/* Smooth fade-in for panels on page load */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.panel {
+  animation: fadeSlideUp 0.4s ease-out;
+}
+
