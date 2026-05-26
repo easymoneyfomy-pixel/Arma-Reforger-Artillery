@@ -356,7 +356,7 @@ export default function App() {
               </span>
               <span className="font-mono text-[9px] text-zinc-500 uppercase tracking-wider">TACTICAL TELEMETRY HUD</span>
             </div>
-            <span className="font-mono text-[10px] text-zinc-600 self-end mb-0.5">v0.3</span>
+            <span className="font-mono text-[10px] text-zinc-600 self-end mb-0.5">v1.0</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="font-mono text-[10px] text-zinc-500 hidden md:block">
@@ -485,8 +485,13 @@ export default function App() {
         </section>
       </main>
 
-      <footer className="border-t border-line py-2 text-center font-mono text-[10px] text-zinc-600">
-        Tables: M252 81mm · 2B14 Podnos 82mm · M120 120mm · M119A2 105mm · D-30 122mm · M777 155mm · Mils NATO (6400/circle) · Local-only data
+      <footer className="border-t border-line py-3 text-center font-mono text-[10px] text-zinc-600 space-y-1">
+        <div>
+          FDC Artillery Calculator v1.0 · Tables: M252 81mm · 2B14 Podnos 82mm · M120 120mm · M119A2 105mm · D-30 122mm · M777 155mm
+        </div>
+        <div className="text-zinc-700">
+          Mils NATO (6400/circle) · All computations are 100% client-side · Zero server calls · © {new Date().getFullYear()} FDC Systems
+        </div>
       </footer>
 
       <HelpModal open={helpOpen} onClose={closeHelp} />

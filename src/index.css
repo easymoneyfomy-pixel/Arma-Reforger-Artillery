@@ -146,9 +146,14 @@ body::after {
   animation: radar-sweep 4s linear infinite;
 }
 
-
-
-
+/* Smooth fade-in for collapsible elements */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.25s ease-out;
+}
 
 
 

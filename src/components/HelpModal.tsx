@@ -154,7 +154,7 @@ export default function HelpModal({ open, onClose }: Props) {
             <span className="text-accent font-semibold">[SEC] DATA PARITY &amp; COOKIES:</span> Everything stays on client storage. Zero server calls are executed. 
           </div>
           <div className="text-[10px] text-zinc-500 whitespace-nowrap mt-1.5 sm:mt-0">
-            FDC LOCAL ENGINE v0.3
+            FDC LOCAL ENGINE v1.0
           </div>
         </div>
 
