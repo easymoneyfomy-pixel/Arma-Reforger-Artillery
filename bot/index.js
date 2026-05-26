@@ -204,16 +204,127 @@ function correctedTarget(target, impact) {
 }
 
 // ============================================================================
-// 4. In-Memory User States Database
+// 4. Dynamic Vector Map Generator (QuickChart Scatter Plot)
+// ============================================================================
+function generateTacticalChartUrl(gun, target, impact = null) {
+  // Determine viewport bounds automatically to fit all points beautifully
+  const points = [gun, target];
+  if (impact) points.push(impact);
+  
+  const xs = points.map(p => p.x);
+  const ys = points.map(p => p.y);
+  
+  const minX = Math.min(...xs);
+  const maxX = Math.max(...xs);
+  const minY = Math.min(...ys);
+  const maxY = Math.max(...ys);
+  
+  const dx = maxX - minX || 100;
+  const dy = maxY - minY || 100;
+  
+  const padX = dx * 0.25;
+  const padY = dy * 0.25;
+  
+  const scaleMinX = Math.max(0, minX - padX);
+  const scaleMaxX = maxX + padX;
+  const scaleMinY = Math.max(0, minY - padY);
+  const scaleMaxY = maxY + padY;
+
+  const datasets = [
+    {
+      label: `Gun position [${formatGrid(gun.x, 3)} ${formatGrid(gun.y, 3)}]`,
+      data: [{ x: gun.x, y: gun.y }],
+      backgroundColor: "#d6ff3a",
+      pointRadius: 9,
+      pointStyle: "circle"
+    },
+    {
+      label: `Target coordinates [${formatGrid(target.x, 3)} ${formatGrid(target.y, 3)}]`,
+      data: [{ x: target.x, y: target.y }],
+      backgroundColor: "#e04646",
+      pointRadius: 9,
+      pointStyle: "crossRot"
+    },
+    {
+      label: "Aiming Vector",
+      data: [{ x: gun.x, y: gun.y }, { x: target.x, y: target.y }],
+      showLine: true,
+      fill: false,
+      borderColor: "rgba(214, 255, 58, 0.45)",
+      borderDash: [6, 4],
+      borderWidth: 2.5,
+      pointRadius: 0
+    }
+  ];
+
+  if (impact) {
+    datasets.push({
+      label: `Impact spot [${formatGrid(impact.x, 3)} ${formatGrid(impact.y, 3)}]`,
+      data: [{ x: impact.x, y: impact.y }],
+      backgroundColor: "#f59e0b",
+      pointRadius: 9,
+      pointStyle: "triangle"
+    });
+    datasets.push({
+      label: "Miss deviation",
+      data: [{ x: target.x, y: target.y }, { x: impact.x, y: impact.y }],
+      showLine: true,
+      fill: false,
+      borderColor: "rgba(245, 158, 11, 0.5)",
+      borderDash: [3, 3],
+      borderWidth: 1.5,
+      pointRadius: 0
+    });
+  }
+
+  const chartConfig = {
+    type: "scatter",
+    data: { datasets },
+    options: {
+      backgroundColor: "#06070a",
+      title: {
+        display: true,
+        text: "SYS: FDC TACTICAL VECTOR PLOT",
+        fontColor: "#d6ff3a",
+        fontSize: 14,
+        fontFamily: "monospace"
+      },
+      legend: {
+        position: "bottom",
+        labels: {
+          fontColor: "#a1a1aa",
+          fontFamily: "monospace",
+          fontSize: 9,
+          padding: 10
+        }
+      },
+      scales: {
+        xAxes: [{
+          gridLines: { color: "rgba(255, 255, 255, 0.06)", zeroLineColor: "#1e293b", drawBorder: true },
+          ticks: { fontColor: "#52525b", fontFamily: "monospace", fontSize: 9, min: Math.round(scaleMinX), max: Math.round(scaleMaxX) }
+        }],
+        yAxes: [{
+          gridLines: { color: "rgba(255, 255, 255, 0.06)", zeroLineColor: "#1e293b", drawBorder: true },
+          ticks: { fontColor: "#52525b", fontFamily: "monospace", fontSize: 9, min: Math.round(scaleMinY), max: Math.round(scaleMaxY) }
+        }]
+      }
+    }
+  };
+
+  return `https://quickchart.io/chart?width=500&height=400&c=${encodeURIComponent(JSON.stringify(chartConfig))}`;
+}
+
+// ============================================================================
+// 5. In-Memory User States Database
 // ============================================================================
 const userStates = new Map();
 
 function getUserState(userId) {
   if (!userStates.has(userId)) {
     userStates.set(userId, {
-      activeGun: { x: 6400, y: 6400, z: 100 }, // Defaults
+      activeGun: { x: 6400, y: 6400, z: 100 },
       activeWeaponId: "m252_81mm",
-      activeChargeId: "auto", // "auto" or specific index
+      activeChargeId: "auto",
       lastTarget: null,
       lastSolution: null,
       presets: {
@@ -226,7 +337,7 @@ function getUserState(userId) {
 }
 
 // ============================================================================
-// 5. Telegram Bot Handlers
+// 6. Telegram Bot Handlers & Access Control
 // ============================================================================
 const token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token) {
@@ -238,81 +349,205 @@ const bot = new TelegramBot(token, { polling: true });
 console.log("[SYS] Telegram bot FDC listener is ACTIVE. Polling for inputs...");
 
 // Helper: Rich HUD styling headers
-const HUD_HEADER = `🤖 <b>[FDC TERMINAL v1.0]</b>\n───────────────────\n`;
+const HUD_HEADER = `🤖 <b>[FDC TERMINAL v1.1]</b>\n───────────────────\n`;
+
+// Whitelist and Security Helpers
+function getAdminId() {
+  return process.env.ADMIN_ID ? Number(process.env.ADMIN_ID) : null;
+}
+
+function getAllowedUsers() {
+  const adminId = getAdminId();
+  const allowed = new Set(
+    (process.env.ALLOWED_USERS || "")
+      .split(",")
+      .map(id => Number(id.trim()))
+      .filter(Boolean)
+  );
+  if (adminId) allowed.add(adminId);
+  return allowed;
+}
+
+function updateEnvWhitelist(adminId, allowedSet) {
+  const envPath = path.join(__dirname, ".env");
+  const array = Array.from(allowedSet);
+  const content = `TELEGRAM_BOT_TOKEN=${token}\nADMIN_ID=${adminId}\nALLOWED_USERS=${array.join(",")}\n`;
+  fs.writeFileSync(envPath, content);
+  
+  // Set in current process
+  process.env.ADMIN_ID = adminId.toString();
+  process.env.ALLOWED_USERS = array.join(",");
+}
+
+// Main Guard Middleware Function
+function checkAccess(msg) {
+  const userId = msg.from.id;
+  const adminId = getAdminId();
+
+  // 1. Auto-bootstrap the first user who starts the bot as Admin
+  if (!adminId) {
+    console.log(`[SEC] Bootstrapping Admin settings for User ID: ${userId}`);
+    const allowed = new Set([userId]);
+    updateEnvWhitelist(userId, allowed);
+    return true;
+  }
+
+  // 2. Validate user ID is in whitelist
+  const allowed = getAllowedUsers();
+  if (userId !== adminId && !allowed.has(userId)) {
+    console.warn(`[SEC] Unauthorized connection attempt from User ID: ${userId}`);
+    bot.sendMessage(msg.chat.id, `🔴 <b>ДОСТУП ЗАБЛОКИРОВАН (SEC_GUARD_ALERT)</b>\n───────────────────\nТвой Telegram User ID (<code>${userId}</code>) не авторизован для работы с этим тактическим вычислителем.\n\nЗапроси разрешение у администратора терминала.`, { parse_mode: "HTML" });
+    return false;
+  }
+  return true;
+}
+
+// ============================================================================
+// 7. Core Command Handlers
+// ============================================================================
 
 // Command: /start
 bot.onText(/\/start/, (msg) => {
+  if (!checkAccess(msg)) return;
+
   const state = getUserState(msg.from.id);
-  const helpText = `${HUD_HEADER}🎯 <b>ДОБРО ПОЖАЛОВАТЬ, АРТИЛЛЕРИСТ!</b>
-Это твой портативный тактический FDC-вычислитель для <b>Arma Reforger</b>.
+  const helpText = `${HUD_HEADER}🎯 <b>FDC СИСТЕМА ГОТОВА К РАБОТЕ!</b>
+Это твой зашифрованный мобильный FDC-калькулятор для <b>Arma Reforger</b>.
 
-<b>📍 БЫСТРЫЕ КОМАНДЫ:</b>
-🔹 <code>/setgun [grid/X Y] [Alt]</code> — Задать позицию орудия.
-<i>Пример: <code>/setgun 024036 120</code> (грид 024 036, высота 120м)</i>
+<b>📍 ТАКТИЧЕСКИЕ КОМАНДЫ:</b>
+🔹 <code>/setgun [grid/X Y] [Alt]</code> — Развернуть орудие.
+🔹 <code>/fire [grid/X Y] [Alt]</code> — Выдать баллистическое решение.
+🔹 <code>/correct [grid/X Y] [Alt]</code> — Ввести поправку по разрыву.
+🔹 <code>/weapon</code> — Сменить тип орудия.
+🔹 <code>/charge</code> — Задать режим заряда.
+🔹 <code>/presets</code> — Ориентиры и координаты.
 
-🔹 <code>/fire [grid/X Y] [Alt]</code> — Расчет огневого решения по цели.
-<i>Пример: <code>/fire 028045 150</code></i>
-
-🔹 <code>/correct [grid/X Y] [Alt]</code> — Корректировка огня по месту падения.
-<i>Сравнит с последней целью, выдаст поправки и скорректированную позицию.</i>
-
-🔹 <code>/weapon</code> — Выбрать орудие (интерактивно).
-🔹 <code>/charge</code> — Задать заряд или включить автовыбор.
-🔹 <code>/presets</code> — Просмотр сохраненных точек (ориентиров).
-🔹 <code>/save [название] [grid] [Alt]</code> — Сохранить точку ориентира.
-
-🔹 <code>/calc [gun_grid] [target_grid]</code> — Быстрый разовый расчет без сохранения профиля.
-<i>Пример: <code>/calc 024036 028045</code></i>
-
-<i>Текущее орудие: <b>${weapons.find(w => w.id === state.activeWeaponId)?.name || "M252"}</b></i>
+<i>Орудие: <b>${weapons.find(w => w.id === state.activeWeaponId)?.name || "M252"}</b></i>
 <i>Заряд: <b>${state.activeChargeId === "auto" ? "Автовыбор" : "Заряд " + state.activeChargeId}</b></i>
-<i>Орудие развернуто на: <code>${formatFullGrid(state.activeGun)}</code></i>
+<i>Координаты: <code>${formatFullGrid(state.activeGun)}</code></i>
 ───────────────────
-Отправь <code>/help</code> для полной справки.`;
+Введи <code>/help</code> для полной сводки по координатам и командам.`;
 
   bot.sendMessage(msg.chat.id, helpText, { parse_mode: "HTML" });
 });
 
 // Command: /help
 bot.onText(/\/help/, (msg) => {
-  const helpText = `${HUD_HEADER}📖 <b>ПОЛНОЕ РУКОВОДСТВО FDC-БОТА:</b>
+  if (!checkAccess(msg)) return;
 
-<b>1️⃣ Управление орудием:</b>
-• <code>/setgun 024036 120</code> — Задает позицию орудия по 6-значному гриду и высоте 120 метров.
-• <code>/setgun 2450 3680 120</code> — Альтернативно вводит точные координаты в метрах (X=2450, Y=3680).
-• <code>/weapon</code> — Переключает орудия через инлайновые кнопки.
-• <code>/charge</code> — Меняет режим подбора заряда (Авто или принудительный).
+  const helpText = `${HUD_HEADER}📖 <b>СПРАВКА ТАКТИЧЕСКОГО РАЗДЕЛА:</b>
 
-<b>2️⃣ Ведение огня и расчеты:</b>
-• <code>/fire 028045 150</code> — Считает Азимут, Прицел и Время полета от твоей текущей пушки до указанной цели. Запоминает эту цель для возможной корректировки.
-• <code>/calc 024036 028045 100 150</code> — Моментальный расчет между любыми двумя координатами (Формат: <code>/calc [орудие] [цель] [высота_орудия] [высота_цели]</code>).
+<b>1️⃣ Координаты (форматы ввода):</b>
+• <b>6-значный грид:</b> <code>024036</code> (pad к метрам 2400м East, 3600м North)
+• <b>8-значный грид:</b> <code>02450368</code> (pad к метрам X=2450, Y=3680)
+• <b>Координаты в метрах:</b> <code>2450 3680</code> (раздели пробелом)
+• <b>Полноценный ввод:</b> <code>/fire 028045 150</code> (расчет по координатам и высоте цели 150м)
 
-<b>3️⃣ Корректировка огня:</b>
-• После выстрела введи <code>/correct 027044 140</code> (куда реально упал снаряд). Бот выдаст поправку (например, <i>"Дальность +40, Влево 12"</i>) и рассчитает новую, скорректированную цель для 100% попадания!
+<b>2️⃣ Функции стрельбы и поправок:</b>
+• <code>/fire [грид] [высота]</code> — Расчет Azimuth/Elevation/TOF с <b>визуализацией на векторной миникарте</b>.
+• <code>/correct [грид_вспышки] [высота]</code> — Расчет боковых и продольных отклонений и построение зеркальной миникарты корректировки.
+• <code>/mirror</code> — Огневое решение по скорректированной цели.
 
-<b>4️⃣ База ориентиров:</b>
-• <code>/save airbase 016073 120</code> — Сохранить координаты под именем 'airbase'.
-• <code>/presets</code> — Список твоих сохраненных точек.
-• <code>/fire airbase</code> — Стрельба по сохраненному ориентиру!`;
+<b>3️⃣ Команды Безопасности (только для Админа):</b>
+• <code>/allow [user_id]</code> — Авторизовать пользователя (дать доступ к боту).
+• <code>/block [user_id]</code> — Лишить пользователя доступа.
+• <code>/whitelist</code> — Показать всех авторизованных стрелков.`;
 
   bot.sendMessage(msg.chat.id, helpText, { parse_mode: "HTML" });
 });
 
+// Whitelist Command: /allow (Admin Only)
+bot.onText(/\/allow(?:\s+(.+))?/, (msg, match) => {
+  if (!checkAccess(msg)) return;
+
+  const userId = msg.from.id;
+  const adminId = getAdminId();
+  const args = match[1];
+
+  if (userId !== adminId) {
+    return bot.sendMessage(msg.chat.id, `${HUD_HEADER}❌ <b>Ошибка:</b> Данная команда доступна только Главному Администратору.`, { parse_mode: "HTML" });
+  }
+
+  if (!args) {
+    return bot.sendMessage(msg.chat.id, `${HUD_HEADER}⚠️ <b>Пример использования:</b>\n<code>/allow 123456789</code> (где цифры — ID другого игрока)`, { parse_mode: "HTML" });
+  }
+
+  const targetId = Number(args.trim());
+  if (!targetId || isNaN(targetId)) {
+    return bot.sendMessage(msg.chat.id, `${HUD_HEADER}❌ <b>Неверный ID пользователя!</b>`, { parse_mode: "HTML" });
+  }
+
+  const allowed = getAllowedUsers();
+  allowed.add(targetId);
+  updateEnvWhitelist(adminId, allowed);
+
+  bot.sendMessage(msg.chat.id, `${HUD_HEADER}✅ <b>ПОЛЬЗОВАТЕЛЬ АВТОРИЗОВАН!</b>\nСтрелок <code>${targetId}</code> успешно добавлен в базу и может пользоваться ботом.`, { parse_mode: "HTML" });
+});
+
+// Whitelist Command: /block (Admin Only)
+bot.onText(/\/block(?:\s+(.+))?/, (msg, match) => {
+  if (!checkAccess(msg)) return;
+
+  const userId = msg.from.id;
+  const adminId = getAdminId();
+  const args = match[1];
+
+  if (userId !== adminId) {
+    return bot.sendMessage(msg.chat.id, `${HUD_HEADER}❌ <b>Ошибка:</b> Данная команда доступна только Главному Администратору.`, { parse_mode: "HTML" });
+  }
+
+  if (!args) {
+    return bot.sendMessage(msg.chat.id, `${HUD_HEADER}⚠️ <b>Пример использования:</b>\n<code>/block 123456789</code>`, { parse_mode: "HTML" });
+  }
+
+  const targetId = Number(args.trim());
+  if (targetId === adminId) {
+    return bot.sendMessage(msg.chat.id, `${HUD_HEADER}❌ <b>Ты не можешь заблокировать себя!</b>`, { parse_mode: "HTML" });
+  }
+
+  const allowed = getAllowedUsers();
+  allowed.delete(targetId);
+  updateEnvWhitelist(adminId, allowed);
+
+  bot.sendMessage(msg.chat.id, `${HUD_HEADER}❌ <b>ДОСТУП АННУЛИРОВАН!</b>\nПользователь <code>${targetId}</code> удален из системы доступа.`, { parse_mode: "HTML" });
+});
+
+// Whitelist Command: /whitelist (Admin Only)
+bot.onText(/\/whitelist/, (msg) => {
+  if (!checkAccess(msg)) return;
+
+  const userId = msg.from.id;
+  const adminId = getAdminId();
+
+  if (userId !== adminId) {
+    return bot.sendMessage(msg.chat.id, `${HUD_HEADER}❌ <b>Ошибка:</b> Данная команда доступна только Главному Администратору.`, { parse_mode: "HTML" });
+  }
+
+  const allowed = getAllowedUsers();
+  let text = `${HUD_HEADER}🔒 <b>СПИСОК АВТОРИЗОВАННЫХ ПОЛЬЗОВАТЕЛЕЙ:</b>\n\n`;
+  allowed.forEach(id => {
+    text += `• <code>${id}</code> ${id === adminId ? "👑 [Администратор]" : "🔫 [Снайпер]"} \n`;
+  });
+
+  bot.sendMessage(msg.chat.id, text, { parse_mode: "HTML" });
+});
+
 // Command: /setgun
 bot.onText(/\/setgun(?:\s+(.+))?/, (msg, match) => {
+  if (!checkAccess(msg)) return;
+
   const chatId = msg.chat.id;
   const state = getUserState(msg.from.id);
   const argsStr = match[1];
 
   if (!argsStr) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}⚠️ <b>Неверный формат!</b>\nИспользуй: <code>/setgun [grid/X Y] [Alt]</code>\nПример: <code>/setgun 024036 120</code>`, { parse_mode: "HTML" });
+    return bot.sendMessage(chatId, `${HUD_HEADER}⚠️ <b>Использование:</b>\n<code>/setgun [grid/X Y] [Alt]</code>\nПример: <code>/setgun 024036 120</code>`, { parse_mode: "HTML" });
   }
 
   const parts = argsStr.trim().split(/\s+/);
   let coords = null;
   let alt = 0;
 
-  // Check if the last argument is altitude
   if (parts.length === 2 && parts[0].length >= 6) {
     coords = parseGridPair(parts[0]);
     alt = Number(parts[1]) || 0;
@@ -324,15 +559,17 @@ bot.onText(/\/setgun(?:\s+(.+))?/, (msg, match) => {
   }
 
   if (!coords) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Ошибка парсинга координат!</b>\nУбедись, что вводишь корректный грид (например <code>024036</code>) или метры.`, { parse_mode: "HTML" });
+    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Ошибка координат!</b> Введи корректный грид (e.g. <code>024036</code>).`, { parse_mode: "HTML" });
   }
 
   state.activeGun = { x: coords.x, y: coords.y, z: alt };
-  bot.sendMessage(chatId, `${HUD_HEADER}✅ <b>ПОЗИЦИЯ ОРУДИЯ ОБНОВЛЕНА!</b>\n📍 Координаты: <code>${formatFullGrid(state.activeGun)}</code>`, { parse_mode: "HTML" });
+  bot.sendMessage(chatId, `${HUD_HEADER}✅ <b>КООРДИНАТЫ ОРУДИЯ ОБНОВЛЕНЫ!</b>\n📍 Позиция: <code>${formatFullGrid(state.activeGun)}</code>`, { parse_mode: "HTML" });
 });
 
 // Command: /weapon
 bot.onText(/\/weapon/, (msg) => {
+  if (!checkAccess(msg)) return;
+
   const chatId = msg.chat.id;
   const keyboard = {
     inline_keyboard: weapons.map((w) => [
@@ -348,22 +585,23 @@ bot.onText(/\/weapon/, (msg) => {
 
 // Command: /charge
 bot.onText(/\/charge/, (msg) => {
+  if (!checkAccess(msg)) return;
+
   const chatId = msg.chat.id;
   const state = getUserState(msg.from.id);
   const wpn = weapons.find(w => w.id === state.activeWeaponId);
 
   if (!wpn) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Сначала выбери орудие через /weapon!</b>`, { parse_mode: "HTML" });
+    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Выбери орудие через /weapon!</b>`, { parse_mode: "HTML" });
   }
 
-  // Get charges for first ammunition
   const ammo = wpn.ammo[0];
   const buttons = [[{ text: "⚡ АВТОВЫБОР (Оптимальный)", callback_data: "chg_auto" }]];
   ammo.charges.forEach((c) => {
     buttons.push([{ text: `🔋 ${c.label}`, callback_data: `chg_${c.id}` }]);
   });
 
-  bot.sendMessage(chatId, `${HUD_HEADER}🔋 <b>ВЫБЕРИ СИЛУ ЗАРЯДА:</b>\nОрудие: <i>${wpn.name}</i>`, {
+  bot.sendMessage(chatId, `${HUD_HEADER}🔋 <b>ВЫБЕРИ СИЛУ ЗАРЯДА:</b>\nСистема: <i>${wpn.name}</i>`, {
     parse_mode: "HTML",
     reply_markup: { inline_keyboard: buttons }
   });
@@ -371,23 +609,24 @@ bot.onText(/\/charge/, (msg) => {
 
 // Command: /save
 bot.onText(/\/save(?:\s+(.+))?/, (msg, match) => {
+  if (!checkAccess(msg)) return;
+
   const chatId = msg.chat.id;
   const state = getUserState(msg.from.id);
   const argsStr = match[1];
 
   if (!argsStr) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}⚠️ <b>Использование:</b> <code>/save [название] [grid] [Alt]</code>\nПример: <code>/save btr_target 016073 80</code>`, { parse_mode: "HTML" });
+    return bot.sendMessage(chatId, `${HUD_HEADER}⚠️ <b>Использование:</b>\n<code>/save [название] [grid] [Alt]</code>\nПример: <code>/save target_alpha 016073 80</code>`, { parse_mode: "HTML" });
   }
 
   const parts = argsStr.trim().split(/\s+/);
   if (parts.length < 2) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}⚠️ <b>Недостаточно аргументов!</b> Нужно название ориентира и координаты.`, { parse_mode: "HTML" });
+    return bot.sendMessage(chatId, `${HUD_HEADER}⚠️ <b>Недостаточно данных!</b>`, { parse_mode: "HTML" });
   }
 
   const name = parts[0].toLowerCase();
   const coordStr = parts.slice(1).join(" ");
   
-  // Check if last part is altitude
   let alt = 0;
   let parsedStr = coordStr;
   if (parts.length >= 3 && !isNaN(parts[parts.length - 1])) {
@@ -397,33 +636,35 @@ bot.onText(/\/save(?:\s+(.+))?/, (msg, match) => {
 
   const coords = parseGridPair(parsedStr);
   if (!coords) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Ошибка координат!</b> Задай корректный грид.`, { parse_mode: "HTML" });
+    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Ошибка координат!</b>`, { parse_mode: "HTML" });
   }
 
   state.presets[name] = { x: coords.x, y: coords.y, z: alt };
-  bot.sendMessage(chatId, `${HUD_HEADER}💾 <b>ОРИЕНТИР СОХРАНЕН!</b>\n🔑 Название: <b>${name}</b>\n📍 Координаты: <code>${formatFullGrid(state.presets[name])}</code>`, { parse_mode: "HTML" });
+  bot.sendMessage(chatId, `${HUD_HEADER}💾 <b>ТАКТИЧЕСКИЙ ОРИЕНТИР СОХРАНЕН!</b>\n🔑 Название: <b>${name}</b>\n📍 Позиция: <code>${formatFullGrid(state.presets[name])}</code>`, { parse_mode: "HTML" });
 });
 
 // Command: /presets
 bot.onText(/\/presets/, (msg) => {
+  if (!checkAccess(msg)) return;
+
   const chatId = msg.chat.id;
   const state = getUserState(msg.from.id);
   const keys = Object.keys(state.presets);
 
   if (keys.length === 0) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}📭 <b>У тебя нет сохраненных ориентиров!</b> Используй <code>/save [name] [grid]</code>`, { parse_mode: "HTML" });
+    return bot.sendMessage(chatId, `${HUD_HEADER}📭 <b>Список ориентиров пуст!</b>`, { parse_mode: "HTML" });
   }
 
   let text = `${HUD_HEADER}🗺️ <b>БАЗА ТАКТИЧЕСКИХ ОРИЕНТИРОВ:</b>\n\n`;
   keys.forEach((k) => {
     const p = state.presets[k];
-    text += `🔸 <b>${k}</b>: <code>${formatGrid(p.x, 3)} ${formatGrid(p.y, 3)}</code> (Alt: ${p.z}m)\n<i>Расчет: <code>/fire ${k}</code></i>\n\n`;
+    text += `🔸 <b>${k}</b>: <code>${formatGrid(p.x, 3)} ${formatGrid(p.y, 3)}</code> (Alt: ${p.z}m)\n<i>Выстрел: <code>/fire ${k}</code></i>\n\n`;
   });
 
   bot.sendMessage(chatId, text, { parse_mode: "HTML" });
 });
 
-// Callback Query Handler (Inline keyboards)
+// Callback Query Handler
 bot.on("callback_query", (query) => {
   const data = query.data;
   const userId = query.from.id;
@@ -437,26 +678,28 @@ bot.on("callback_query", (query) => {
     const wpn = weapons.find(w => w.id === wpnId);
     if (wpn) {
       state.activeWeaponId = wpnId;
-      state.activeChargeId = "auto"; // reset charge to auto
-      bot.sendMessage(chatId, `${HUD_HEADER}🛰️ <b>ОРУЖЕЙНАЯ СИСТЕМА ИЗМЕНЕНА:</b>\n🔫 Выбрано: <b>${wpn.name}</b>\n⚡ Заряд сброшен в <b>Автовыбор</b>.`, { parse_mode: "HTML" });
+      state.activeChargeId = "auto";
+      bot.sendMessage(chatId, `${HUD_HEADER}🛰️ <b>СИСТЕМА ИЗМЕНЕНА:</b>\n🔫 Орудие: <b>${wpn.name}</b>\n⚡ Подбор заряда: <b>Автовыбор</b>.`, { parse_mode: "HTML" });
     }
   }
 
   if (data.startsWith("chg_")) {
     const chgId = data.substring(4);
     state.activeChargeId = chgId;
-    bot.sendMessage(chatId, `${HUD_HEADER}🔋 <b>СИЛА ЗАРЯДА ИЗМЕНЕНА:</b>\n⚡ Установлен: <b>${chgId === "auto" ? "АВТОВЫБОР (оптимальный)" : "Заряд " + chgId}</b>`, { parse_mode: "HTML" });
+    bot.sendMessage(chatId, `${HUD_HEADER}🔋 <b>ЗАРЯД ИЗМЕНЕН:</b>\n⚡ Значение: <b>${chgId === "auto" ? "АВТОВЫБОР" : "Заряд " + chgId}</b>`, { parse_mode: "HTML" });
   }
 });
 
 // Command: /fire
 bot.onText(/\/fire(?:\s+(.+))?/, (msg, match) => {
+  if (!checkAccess(msg)) return;
+
   const chatId = msg.chat.id;
   const state = getUserState(msg.from.id);
   const argsStr = match[1];
 
   if (!argsStr) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}⚠️ <b>Использование:</b> <code>/fire [grid/X Y/ориентир] [Alt]</code>\nПример: <code>/fire 028045 150</code> или <code>/fire everon_airport</code>`, { parse_mode: "HTML" });
+    return bot.sendMessage(chatId, `${HUD_HEADER}⚠️ <b>Использование:</b>\n<code>/fire [grid/ориентир] [Alt]</code>\nПример: <code>/fire 028045 150</code>`, { parse_mode: "HTML" });
   }
 
   const parts = argsStr.trim().split(/\s+/);
@@ -464,19 +707,17 @@ bot.onText(/\/fire(?:\s+(.+))?/, (msg, match) => {
   let alt = 0;
   let targetName = "";
 
-  // Check if first arg is a saved preset
   const presetName = parts[0].toLowerCase();
   if (state.presets[presetName]) {
     const p = state.presets[presetName];
     target = { x: p.x, y: p.y, z: p.z };
-    targetName = ` ориентир [${presetName}]`;
+    targetName = ` [${presetName}]`;
     alt = p.z;
     if (parts.length === 2) {
       alt = Number(parts[1]) || p.z;
       target.z = alt;
     }
   } else {
-    // Parse normal grid
     if (parts.length === 2 && parts[0].length >= 6) {
       target = parseGridPair(parts[0]);
       alt = Number(parts[1]) || 0;
@@ -486,29 +727,22 @@ bot.onText(/\/fire(?:\s+(.+))?/, (msg, match) => {
     } else {
       target = parseGridPair(parts.join(" "));
     }
-    if (target) {
-      target.z = alt;
-    }
+    if (target) target.z = alt;
   }
 
   if (!target) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Ошибка!</b>\nНе найден ориентир или координаты введены неверно.\nИспользуй грид (e.g. <code>028045</code>).`, { parse_mode: "HTML" });
+    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Неверные координаты цели!</b>`, { parse_mode: "HTML" });
   }
 
   const weapon = weapons.find(w => w.id === state.activeWeaponId);
-  if (!weapon) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Ошибка: Выбранное орудие не найдено в базе!</b>`, { parse_mode: "HTML" });
-  }
-
   const ammo = weapon.ammo[0];
   const range = dist2D(state.activeGun, target);
   
-  // Decide charge ID
   let chargeId = state.activeChargeId;
   if (chargeId === "auto") {
     const opt = pickOptimalCharge(ammo, range);
     if (!opt) {
-      return bot.sendMessage(chatId, `${HUD_HEADER}⚠️ <b>ЦЕЛЬ ВНЕ ДИСТАНЦИИ СТРЕЛЬБЫ!</b>\n🎯 Дистанция: <b>${range.toFixed(0)}м</b>\n🔫 Орудие: <i>${weapon.name}</i>\nНи один заряд не покрывает эту дальность.`, { parse_mode: "HTML" });
+      return bot.sendMessage(chatId, `${HUD_HEADER}⚠️ <b>ЦЕЛЬ ВНЕ ДИСТАНЦИИ СТРЕЛЬБЫ!</b>\n🎯 Дистанция: <b>${range.toFixed(0)}м</b>\nНи один заряд не достает.`, { parse_mode: "HTML" });
     }
     chargeId = opt;
   }
@@ -518,65 +752,64 @@ bot.onText(/\/fire(?:\s+(.+))?/, (msg, match) => {
     return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Ошибка расчета решения!</b>`, { parse_mode: "HTML" });
   }
 
-  // Save states
   state.lastTarget = { ...target };
   state.lastSolution = { ...sol };
 
-  // Format response message
-  let resText = `${HUD_HEADER}💥 <b>ОГНЕВОЙ РАСЧЕТ FDC ДЛЯ ЦЕЛИ${targetName.toUpperCase()}:</b>
+  // Generate visual minimap chart
+  const minimapUrl = generateTacticalChartUrl(state.activeGun, target);
 
-🔫 Система: <b>${weapon.name}</b>
+  let resText = `${HUD_HEADER}💥 <b>ОГНЕВОЕ РЕШЕНИЕ FDC ДЛЯ ЦЕЛИ${targetName.toUpperCase()}:</b>
+
+🔫 Орудие: <b>${weapon.name}</b>
 🔋 Заряд: <b>${sol.chargeLabel}</b>
 🎯 Дистанция: <b>${sol.rangeM.toFixed(0)} м</b>
-🧭 Траектория: <b>${sol.arc === "high" ? "Мортирная (крутая)" : "Настильная (пологая)"}</b>
+🧭 Траектория: <b>${sol.arc === "high" ? "Крутая" : "Пологая"}</b>
 ───────────────────
-🧭 <b>НАПРАВЛЕНИЕ (AZIMUTH):</b>
-👉 <b><code>${sol.bearingMil.toFixed(0)}</code> mils</b> (NATO)
-👉 <code>${sol.bearingDeg.toFixed(1)}°</code> градусов
-
-📐 <b>ПРИЦЕЛ (ELEVATION):</b>
-👉 <b><code>${sol.elevationMil.toFixed(0)}</code> mils</b> (NATO)
-
-⏱️ <b>ВРЕМЯ ПОЛЕТА (TOF):</b>
-👉 <b><code>${sol.tofSec.toFixed(1)}</code> сек</b>
+🧭 <b>Азимут:</b> <b><code>${sol.bearingMil.toFixed(0)}</code> mils</b> (NATO) / <code>${sol.bearingDeg.toFixed(1)}°</code>
+📐 <b>Прицел:</b> <b><code>${sol.elevationMil.toFixed(0)}</code> mils</b>
+⏱️ <b>Время полета (TOF):</b> <b><code>${sol.tofSec.toFixed(1)}</code> сек</b>
 ───────────────────
-📢 <b>РАДИОКОМАНДА СТРЕЛКУ:</b>
-<code>ЦЕЛЬ ${formatGrid(target.x, 3)}${formatGrid(target.y, 3)}, ЗАРЯД ${sol.chargeId}, НАПРАВЛЕНИЕ ${sol.bearingMil.toFixed(0)}, ПРИЦЕЛ ${sol.elevationMil.toFixed(0)}, ВРЕМЯ ПОЛЕТА ${sol.tofSec.toFixed(0)} СЕКУНД</code>
+📢 <b>Команда наводчику:</b>
+<code>ЦЕЛЬ ${formatGrid(target.x, 3)}${formatGrid(target.y, 3)}, ЗАРЯД ${sol.chargeId}, НАПРАВЛЕНИЕ ${sol.bearingMil.toFixed(0)}, ПРИЦЕЛ ${sol.elevationMil.toFixed(0)}, TOF ${sol.tofSec.toFixed(0)}</code>
 ───────────────────
 `;
 
   if (sol.warnings.length > 0) {
-    resText += `⚠️ <b>ПРЕДУПРЕЖДЕНИЯ FDC:</b>\n`;
-    sol.warnings.forEach(w => {
-      resText += `• <i>${w}</i>\n`;
-    });
+    sol.warnings.forEach(w => { resText += `⚠️ <i>${w}</i>\n`; });
   } else {
-    resText += `🟢 <i>Баллистические параметры в норме. Расчет 100% точен.</i>`;
+    resText += `🟢 <i>Решение 100% точно. Расчет завершен.</i>`;
   }
 
-  bot.sendMessage(chatId, resText, { parse_mode: "HTML" });
+  // Send as photo with caption
+  bot.sendPhoto(chatId, minimapUrl, { caption: resText, parse_mode: "HTML" })
+    .catch(() => {
+      // Fallback to text message if QuickChart API fails or timed out
+      bot.sendMessage(chatId, resText, { parse_mode: "HTML" });
+    });
 });
 
 // Command: /calc
 bot.onText(/\/calc(?:\s+(.+))?/, (msg, match) => {
+  if (!checkAccess(msg)) return;
+
   const chatId = msg.chat.id;
   const state = getUserState(msg.from.id);
   const argsStr = match[1];
 
   if (!argsStr) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}⚠️ <b>Пример быстрого расчета:</b>\n<code>/calc [grid_орудия] [grid_цели] [высота_орудия] [высота_цели]</code>\nПример: <code>/calc 024036 028045 120 150</code>`, { parse_mode: "HTML" });
+    return bot.sendMessage(chatId, `${HUD_HEADER}⚠️ <b>Использование:</b>\n<code>/calc [грид_орудия] [грид_цели] [высота_орудия] [высота_цели]</code>`, { parse_mode: "HTML" });
   }
 
   const parts = argsStr.trim().split(/\s+/);
   if (parts.length < 2) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Ошибка! Недостаточно аргументов.</b>`, { parse_mode: "HTML" });
+    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Недостаточно координат для расчета!</b>`, { parse_mode: "HTML" });
   }
 
   const gunPos = parseGridPair(parts[0]);
   const tarPos = parseGridPair(parts[1]);
 
   if (!gunPos || !tarPos) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Ошибка парсинга гридов!</b> Убедись, что вводишь координаты вроде <code>024036</code>.`, { parse_mode: "HTML" });
+    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Ошибка парсинга координат!</b>`, { parse_mode: "HTML" });
   }
 
   let gunAlt = 0;
@@ -593,13 +826,15 @@ bot.onText(/\/calc(?:\s+(.+))?/, (msg, match) => {
   
   const opt = pickOptimalCharge(ammo, range);
   if (!opt) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}⚠️ <b>ЦЕЛЬ ВНЕ ДИСТАНЦИИ СТРЕЛЬБЫ!</b>\nДистанция: ${range.toFixed(0)}м\nНи один заряд не покрывает дальность.`, { parse_mode: "HTML" });
+    return bot.sendMessage(chatId, `${HUD_HEADER}⚠️ <b>ЦЕЛЬ ВНЕ ДИСТАНЦИИ СТРЕЛЬБЫ!</b>\nДальность: ${range.toFixed(0)}м`, { parse_mode: "HTML" });
   }
 
   const sol = computeSolution(weapon, ammo, opt, gun, target);
   if (!sol) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Ошибка расчета решения!</b>`, { parse_mode: "HTML" });
+    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Ошибка решения!</b>`, { parse_mode: "HTML" });
   }
+
+  const minimapUrl = generateTacticalChartUrl(gun, target);
 
   let text = `${HUD_HEADER}⚡ <b>РАЗОВЫЙ БЫСТРЫЙ РАСЧЕТ FDC:</b>
 
@@ -614,21 +849,26 @@ bot.onText(/\/calc(?:\s+(.+))?/, (msg, match) => {
 ⏱️ Время полета: <b>${sol.tofSec.toFixed(1)} сек</b>
 `;
 
-  bot.sendMessage(chatId, text, { parse_mode: "HTML" });
+  bot.sendPhoto(chatId, minimapUrl, { caption: text, parse_mode: "HTML" })
+    .catch(() => {
+      bot.sendMessage(chatId, text, { parse_mode: "HTML" });
+    });
 });
 
 // Command: /correct
 bot.onText(/\/correct(?:\s+(.+))?/, (msg, match) => {
+  if (!checkAccess(msg)) return;
+
   const chatId = msg.chat.id;
   const state = getUserState(msg.from.id);
   const argsStr = match[1];
 
   if (!state.lastTarget || !state.lastSolution) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Сначала сделай выстрел с помощью /fire!</b>\nБот должен знать параметры последней цели, чтобы рассчитать поправку.`, { parse_mode: "HTML" });
+    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Сначала сделай выстрел с помощью /fire!</b>`, { parse_mode: "HTML" });
   }
 
   if (!argsStr) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}⚠️ <b>Использование:</b> <code>/correct [grid/X Y] [Alt]</code>\nПример: <code>/correct 027044 140</code> (введи грид, куда реально приземлился снаряд)`, { parse_mode: "HTML" });
+    return bot.sendMessage(chatId, `${HUD_HEADER}⚠️ <b>Использование:</b>\n<code>/correct [грид_вспышки] [Alt]</code>\nПример: <code>/correct 027044 140</code>`, { parse_mode: "HTML" });
   }
 
   const parts = argsStr.trim().split(/\s+/);
@@ -646,51 +886,57 @@ bot.onText(/\/correct(?:\s+(.+))?/, (msg, match) => {
   }
 
   if (!impact) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Ошибка! Не удалось распознать координаты точки попадания.</b>`, { parse_mode: "HTML" });
+    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Ошибка распознавания грида вспышки!</b>`, { parse_mode: "HTML" });
   }
   impact.z = alt;
 
   const delta = correctionDelta(state.activeGun, state.lastTarget, impact);
   const corrected = correctedTarget(state.lastTarget, impact);
 
-  // Remember corrected target as a pending mirror action
   state.pendingCorrected = corrected;
 
-  let text = `${HUD_HEADER}🎯 <b>КОРРЕКТИРОВКА ОГНЕВОЙ ПОЗИЦИИ (SPOTTER):</b>
+  // Generate correction plot (shows target AND actual impact point!)
+  const minimapUrl = generateTacticalChartUrl(state.activeGun, state.lastTarget, impact);
 
-📍 Прежняя цель: <code>${formatFullGrid(state.lastTarget)}</code>
-💥 Точка попадания: <code>${formatFullGrid(impact)}</code>
+  let text = `${HUD_HEADER}🎯 <b>КОРРЕКТИРОВКА ОГНЯ (SPOTTER ANALYSIS):</b>
+
+📍 Заданная цель: <code>${formatFullGrid(state.lastTarget)}</code>
+💥 Точка взрыва: <code>${formatFullGrid(impact)}</code>
 ───────────────────
 📏 <b>ОТКЛОНЕНИЯ ОТ ЦЕЛИ:</b>
-• <b>По дальности:</b> ${delta.alongM >= 0 ? `➕ <b>ПЕРЕЛЕТ</b> на <b>${delta.alongM.toFixed(0)}м</b> (надо убавить)` : `➖ <b>НЕДОЛЕТ</b> на <b>${Math.abs(delta.alongM).toFixed(0)}м</b> (надо добавить)`}
-• <b>Боковое (деривация):</b> ${delta.crossM >= 0 ? `👉 <b>ПРАВЕЕ</b> на <b>${delta.crossM.toFixed(0)}м</b> (надо довернуть влево)` : `👈 <b>ЛЕВЕЕ</b> на <b>${Math.abs(delta.crossM).toFixed(0)}м</b> (надо довернуть вправо)`}
+• <b>Дальность:</b> ${delta.alongM >= 0 ? `➕ <b>ПЕРЕЛЕТ</b> на <b>${delta.alongM.toFixed(0)}м</b>` : `➖ <b>НЕДОЛЕТ</b> на <b>${Math.abs(delta.alongM).toFixed(0)}м`}
+• <b>Линейное:</b> ${delta.crossM >= 0 ? `👉 <b>ПРАВЕЕ</b> на <b>${delta.crossM.toFixed(0)}м</b>` : `👈 <b>ЛЕВЕЕ</b> на <b>${Math.abs(delta.crossM).toFixed(0)}м`}
 ───────────────────
 📢 <b>КОМАНДА КОРРЕКЦИИ ДЛЯ СТРЕЛКА:</b>
 👉 <b>${delta.alongM >= 0 ? `УБАВИТЬ ${delta.alongM.toFixed(0)}м` : `ДОБАВИТЬ ${Math.abs(delta.alongM).toFixed(0)}м`}</b>
-👉 <b>${delta.crossM >= 0 ? `ДОВЕРНУТЬ ВЛЕВО на ${Math.abs(delta.crossM * 0.5).toFixed(0)}м (или пересчитать)` : `ДОВЕРНУТЬ ВПРАВО на ${Math.abs(delta.crossM * 0.5).toFixed(0)}м`}</b>
+👉 <b>${delta.crossM >= 0 ? `ДОВЕРНУТЬ ВЛЕВО на ${Math.abs(delta.crossM * 0.5).toFixed(0)}м` : `ДОВЕРНУТЬ ВПРАВО на ${Math.abs(delta.crossM * 0.5).toFixed(0)}м`}</b>
 ───────────────────
-🗺️ <b>СКОРРЕКТИРОВАННАЯ ЦЕЛЬ (ЗЕРКАЛЬНАЯ):</b>
-👉 Грид: <code>${formatGrid(corrected.x, 3)} ${formatGrid(corrected.y, 3)}</code> (Высота: ${corrected.z.toFixed(0)}м)
+🗺️ <b>СКОРРЕКТИРОВАННАЯ ЦЕЛЬ:</b>
+👉 Координаты: <code>${formatGrid(corrected.x, 3)} ${formatGrid(corrected.y, 3)}</code> (Высота: ${corrected.z.toFixed(0)}м)
 
-<i>Чтобы немедленно рассчитать огневое решение по скорректированной цели, введи:</i>
+<i>Чтобы немедленно произвести огневой расчет по скорректированной цели, введи:</i>
 👉 /mirror`;
 
-  bot.sendMessage(chatId, text, { parse_mode: "HTML" });
+  bot.sendPhoto(chatId, minimapUrl, { caption: text, parse_mode: "HTML" })
+    .catch(() => {
+      bot.sendMessage(chatId, text, { parse_mode: "HTML" });
+    });
 });
 
 // Command: /mirror
 bot.onText(/\/mirror/, (msg) => {
+  if (!checkAccess(msg)) return;
+
   const chatId = msg.chat.id;
   const state = getUserState(msg.from.id);
 
   if (!state.pendingCorrected) {
-    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Нет сохраненной скорректированной цели!</b>\nСначала введи поправку с помощью /correct.`, { parse_mode: "HTML" });
+    return bot.sendMessage(chatId, `${HUD_HEADER}❌ <b>Нет сохраненной корректировки цели!</b> Сначала введи поправку с помощью /correct.`, { parse_mode: "HTML" });
   }
 
   const corrected = state.pendingCorrected;
-  state.pendingCorrected = null; // Consume it
+  state.pendingCorrected = null;
 
-  // Setup as a target and calculate
   const weapon = weapons.find(w => w.id === state.activeWeaponId);
   const ammo = weapon.ammo[0];
   const range = dist2D(state.activeGun, corrected);
@@ -712,7 +958,9 @@ bot.onText(/\/mirror/, (msg) => {
   state.lastTarget = { ...corrected };
   state.lastSolution = { ...sol };
 
-  let text = `${HUD_HEADER}🎯 <b>ВЫСТРЕЛ ПО СКОРРЕКТИРОВАННОЙ ЦЕЛИ (ВТОРОЙ ВЫСТРЕЛ):</b>
+  const minimapUrl = generateTacticalChartUrl(state.activeGun, corrected);
+
+  let text = `${HUD_HEADER}🎯 <b>ВТОРОЙ ВЫСТРЕЛ (ПО СКОРРЕКТИРОВАННОЙ ЦЕЛИ):</b>
 
 📍 Цель: <code>${formatFullGrid(corrected)}</code>
 📏 Дистанция: <b>${sol.rangeM.toFixed(0)} м</b>
@@ -723,8 +971,11 @@ bot.onText(/\/mirror/, (msg) => {
 ⏱️ <b>TOF (ВРЕМЯ ПОЛЕТА):</b> <b><code>${sol.tofSec.toFixed(1)}</code> сек</b>
 ───────────────────
 📢 <b>РАДИОКОМАНДА СТРЕЛКУ:</b>
-<code>ЦЕЛЬ ${formatGrid(corrected.x, 3)}${formatGrid(corrected.y, 3)}, ЗАРЯД ${sol.chargeId}, НАПРАВЛЕНИЕ ${sol.bearingMil.toFixed(0)}, ПРИЦЕЛ ${sol.elevationMil.toFixed(0)}, ВРЕМЯ ПОЛЕТА ${sol.tofSec.toFixed(0)} СЕКУНД</code>
+<code>ЦЕЛЬ ${formatGrid(corrected.x, 3)}${formatGrid(corrected.y, 3)}, ЗАРЯД ${sol.chargeId}, НАПРАВЛЕНИЕ ${sol.bearingMil.toFixed(0)}, ПРИЦЕЛ ${sol.elevationMil.toFixed(0)}, TOF ${sol.tofSec.toFixed(0)}</code>
 `;
 
-  bot.sendMessage(chatId, text, { parse_mode: "HTML" });
+  bot.sendPhoto(chatId, minimapUrl, { caption: text, parse_mode: "HTML" })
+    .catch(() => {
+      bot.sendMessage(chatId, text, { parse_mode: "HTML" });
+    });
 });
