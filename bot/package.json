@@ -1,0 +1,15 @@
+{
+  "name": "arma-ref-artillery-bot",
+  "version": "1.0.0",
+  "description": "Telegram Admin Fire Direction Control Bot for Arma Reforger",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "node-telegram-bot-api": "^0.66.0"
+  },
+  "author": "Antigravity",
+  "license": "MIT"
+}
