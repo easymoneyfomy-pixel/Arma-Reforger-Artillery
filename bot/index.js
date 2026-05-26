@@ -14,8 +14,10 @@ if (!token) {
 
 const webAppUrl = "https://easymoneyfomy-pixel.github.io/Arma-Reforger-Artillery/";
 
+// Securely validate and retrieve Admin ID as a positive integer
 function getAdminId() {
-  return process.env.ADMIN_ID ? Number(process.env.ADMIN_ID) : null;
+  const val = Number(process.env.ADMIN_ID);
+  return (val && !isNaN(val) && val > 0) ? val : null;
 }
 
 function getAllowedUsers() {
@@ -69,7 +71,29 @@ function configureUserMenuButton(userId, isAllowed) {
 }
 
 // ============================================================================
-// 2. Bot Initialization
+// 2. Security & Anti-DDoS / Anti-Spam Protections
+// ============================================================================
+const pendingRequests = new Set();
+const userMessageTimestamps = new Map();
+
+// In-memory rate limiter: max 4 messages per 5 seconds
+function isRateLimited(userId) {
+  const now = Date.now();
+  if (!userMessageTimestamps.has(userId)) {
+    userMessageTimestamps.set(userId, []);
+  }
+  const timestamps = userMessageTimestamps.get(userId);
+  
+  // Clean up timestamps older than 5 seconds
+  const recent = timestamps.filter(ts => now - ts < 5000);
+  recent.push(now);
+  userMessageTimestamps.set(userId, recent);
+
+  return recent.length > 4;
+}
+
+// ============================================================================
+// 3. Bot Initialization
 // ============================================================================
 const bot = new TelegramBot(token, { polling: true });
 console.log("[SYS] Telegram License FDC bot is ACTIVE. Polling for inputs...");
@@ -86,12 +110,19 @@ bot.setChatMenuButton({
 });
 
 // ============================================================================
-// 3. Bot Core Handlers
+// 4. Bot Core Handlers
 // ============================================================================
 
 // Command: /start
 bot.onText(/\/start/, (msg) => {
   const userId = msg.from.id;
+  
+  // Apply Anti-Spam protection
+  if (isRateLimited(userId)) {
+    console.log(`[SEC] Rate limit triggered for user ${userId} on /start`);
+    return;
+  }
+
   const adminId = getAdminId();
 
   // 1. Auto-bootstrap the first user who starts the bot as Admin
@@ -127,10 +158,17 @@ bot.onText(/\/start/, (msg) => {
   }
 });
 
-// Helper: Notify Admin about access request
+// Helper: Notify Admin about access request (Anti-Spam protected)
 function notifyAdminAccessRequest(user, userId) {
   const adminId = getAdminId();
   if (!adminId || userId === adminId) return;
+
+  // Prevent multiple spam notifications to the admin
+  if (pendingRequests.has(userId)) {
+    console.log(`[SEC] Access request from user ${userId} ignored (already pending)`);
+    return;
+  }
+  pendingRequests.add(userId);
 
   const name = [user.first_name, user.last_name].filter(Boolean).join(" ") || "Без имени";
   const usernameText = user.username ? `@${user.username}` : "нет юзернейма";
@@ -149,14 +187,16 @@ function notifyAdminAccessRequest(user, userId) {
     }
   }).catch((err) => {
     console.error(`[ERR] Failed to notify admin about access request for user ${userId}:`, err.message);
+    pendingRequests.delete(userId); // Allow retry if sending failed
   });
 }
 
 // Command: /allow (Admin Only, supports /allow [ID] or /allow_[ID] for clickability)
 bot.onText(/\/allow(?:_|\s+)(.+)/, (msg, match) => {
   const userId = msg.from.id;
-  const adminId = getAdminId();
+  if (isRateLimited(userId)) return;
 
+  const adminId = getAdminId();
   if (userId !== adminId) return; // Ignore if not admin
 
   const args = match[1];
@@ -168,6 +208,7 @@ bot.onText(/\/allow(?:_|\s+)(.+)/, (msg, match) => {
   const allowed = getAllowedUsers();
   allowed.add(targetId);
   updateEnvWhitelist(adminId, allowed);
+  pendingRequests.delete(targetId); // Remove from pending requests
 
   // Set the user's WebApp menu button to active
   configureUserMenuButton(targetId, true);
@@ -182,8 +223,9 @@ bot.onText(/\/allow(?:_|\s+)(.+)/, (msg, match) => {
 // Command: /block (Admin Only, supports /block [ID] or /block_[ID] for clickability)
 bot.onText(/\/block(?:_|\s+)(.+)/, (msg, match) => {
   const userId = msg.from.id;
-  const adminId = getAdminId();
+  if (isRateLimited(userId)) return;
 
+  const adminId = getAdminId();
   if (userId !== adminId) return; // Ignore if not admin
 
   const args = match[1];
@@ -199,6 +241,7 @@ bot.onText(/\/block(?:_|\s+)(.+)/, (msg, match) => {
   const allowed = getAllowedUsers();
   allowed.delete(targetId);
   updateEnvWhitelist(adminId, allowed);
+  pendingRequests.delete(targetId); // Remove from pending requests
 
   // Disable the user's WebApp menu button
   configureUserMenuButton(targetId, false);
@@ -213,8 +256,9 @@ bot.onText(/\/block(?:_|\s+)(.+)/, (msg, match) => {
 // Command: /whitelist (Admin Only)
 bot.onText(/\/whitelist/, (msg) => {
   const userId = msg.from.id;
-  const adminId = getAdminId();
+  if (isRateLimited(userId)) return;
 
+  const adminId = getAdminId();
   if (userId !== adminId) return; // Ignore if not admin
 
   const allowed = getAllowedUsers();
@@ -233,8 +277,9 @@ bot.onText(/\/whitelist/, (msg) => {
 // Command: /broadcast (Admin Only)
 bot.onText(/\/broadcast(?:\s+(.+))?/, (msg, match) => {
   const userId = msg.from.id;
-  const adminId = getAdminId();
+  if (isRateLimited(userId)) return;
 
+  const adminId = getAdminId();
   if (userId !== adminId) return; // Ignore if not admin
 
   const textToBroadcast = match[1];
@@ -283,6 +328,7 @@ bot.on("callback_query", (query) => {
     allowed.add(targetId);
     updateEnvWhitelist(adminId, allowed);
     configureUserMenuButton(targetId, true);
+    pendingRequests.delete(targetId); // Remove from pending requests
 
     // Update message text to show it was allowed
     bot.editMessageText(
@@ -312,6 +358,7 @@ bot.on("callback_query", (query) => {
     allowed.delete(targetId);
     updateEnvWhitelist(adminId, allowed);
     configureUserMenuButton(targetId, false);
+    pendingRequests.delete(targetId); // Remove from pending requests
 
     // Update message text to show it was blocked
     bot.editMessageText(
@@ -331,12 +378,19 @@ bot.on("callback_query", (query) => {
   }
 });
 
-// Handle non-command text inputs to check access and guide users
+// Handle non-command text inputs to check access and guide users (Rate Limited)
 bot.on("message", (msg) => {
   const text = msg.text || "";
   if (text.startsWith("/")) return; // Handled by specific command commands
 
   const userId = msg.from.id;
+  
+  // Rate Limit check
+  if (isRateLimited(userId)) {
+    console.log(`[SEC] Rate limit triggered for user ${userId} on regular message`);
+    return;
+  }
+
   const adminId = getAdminId();
   if (!adminId) return; // System not set up yet
 
@@ -349,9 +403,5 @@ bot.on("message", (msg) => {
   } else {
     configureUserMenuButton(userId, false);
     bot.sendMessage(userId, `🔴 <b>ДОСТУП ОГРАНИЧЕН (SEC_GUARD_ALERT)</b>\n───────────────────\nДля использования тактического артиллерийского веб-калькулятора требуется авторизация.\n\n👤 Твой Telegram ID: <code>${userId}</code>\n\nОтправь этот ID администратору для получения доступа к вычислителю. Ваши данные отправлены админу на рассмотрение.`, { parse_mode: "HTML" });
-    
-    // Notify admin
-    notifyAdminAccessRequest(msg.from, userId);
   }
 });
-
