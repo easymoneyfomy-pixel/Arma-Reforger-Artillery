@@ -465,7 +465,7 @@ export default function App() {
         </section>
 
         <section className="col-span-12 lg:col-span-3 space-y-3">
-          <RightPanel solution={mergedSolution} onSave={saveMission} />
+          <RightPanel solution={mergedSolution} onSave={saveMission} soundEnabled={soundEnabled} />
           <CorrectionPanel
             gun={gunV}
             target={targetV}

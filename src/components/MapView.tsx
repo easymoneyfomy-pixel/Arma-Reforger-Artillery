@@ -92,6 +92,7 @@ export default function MapView({
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [customSize, setCustomSize] = useState("8192");
   const [dragging, setDragging] = useState<null | "gun" | "target">(null);
+  const [showCep, setShowCep] = useState(true);
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [panDrag, setPanDrag] = useState<null | { ox: number; oy: number; sx: number; sy: number }>(null);
@@ -428,6 +429,18 @@ export default function MapView({
           />
           Rings
         </label>
+        <label
+          className="btn cursor-pointer select-none flex items-center gap-1"
+          title="Show Circular Error Probable (CEP) dispersion circle around target."
+        >
+          <input
+            type="checkbox"
+            className="accent-accent"
+            checked={showCep}
+            onChange={(e) => setShowCep(e.target.checked)}
+          />
+          CEP
+        </label>
         {!map.builtin && (
           <details className="ml-auto">
             <summary
@@ -622,6 +635,36 @@ export default function MapView({
                       {rangeM.toFixed(0)} m
                     </text>
                   )}
+                </g>
+              );
+            })()}
+            {showCep && gun && target && (() => {
+              const b = worldToPx(map, target, size.w, size.h);
+              const dist = Math.hypot(target.x - gun.x, target.y - gun.y);
+              const cepM = dist * 0.003; // 3 mils dispersion
+              const cepPx = metersToPx(map, target, cepM, size.w, size.h);
+              return (
+                <g>
+                  <circle
+                    cx={b.x}
+                    cy={b.y}
+                    r={cepPx}
+                    fill="rgba(248, 113, 113, 0.03)"
+                    stroke="#f87171"
+                    strokeDasharray="2 2"
+                    strokeWidth={1}
+                    className="animate-pulse"
+                  />
+                  <text
+                    x={b.x + cepPx + 4}
+                    y={b.y + 3}
+                    fontSize={9}
+                    fontFamily="ui-monospace, monospace"
+                    fill="#f87171"
+                    className="select-none"
+                  >
+                    CEP ±{cepM.toFixed(1)}m
+                  </text>
                 </g>
               );
             })()}
