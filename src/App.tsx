@@ -11,7 +11,6 @@ import HistoryPanel from "./components/HistoryPanel";
 import CorrectionPanel from "./components/CorrectionPanel";
 import HelpModal from "./components/HelpModal";
 import LicenseModal from "./components/LicenseModal";
-import AdminPanel from "./components/AdminPanel";
 import { getSavedLicenseKey, saveLicenseKey, clearSavedLicenseKey, verifyLicenseKey } from "./utils/license";
 
 const WEAPONS = weaponsData as Weapon[];
@@ -459,16 +458,6 @@ export default function App() {
             <button className="btn !py-1 !px-2 !text-[10px]" onClick={openHelp} title="Show quick-start help (? key)">
               Help
             </button>
-            <button
-              className="btn !py-1 !px-2 !text-[10px] text-amber-400 border-amber-400/40 bg-amber-400/10"
-              onClick={() => {
-                sessionStorage.setItem("ar_fdc_admin_mode", "true");
-                setShowAdmin(true);
-              }}
-              title="Admin: Show license generator"
-            >
-              🔧 Admin
-            </button>
           </div>
         </div>
       </header>
@@ -548,7 +537,17 @@ export default function App() {
             onClear={clearMissions}
             onImport={importMissions}
           />
-          {showAdmin && <AdminPanel />}
+          {isPremium && showAdmin && (
+            <div className="panel p-3 space-y-2 border-amber-400/30">
+              <div className="flex items-center justify-between">
+                <span className="section-title">ADMIN: License Generator</span>
+              </div>
+              <div className="font-mono text-xs text-zinc-400 leading-relaxed">
+                Admin utilities hidden by design.<br />
+                Licenses managed via Telegram Bot: <a href="https://t.me/Arma_Artillery_Bot" className="text-accent">@Arma_Artillery_Bot</a>
+              </div>
+            </div>
+          )}
         </section>
       </main>
 
