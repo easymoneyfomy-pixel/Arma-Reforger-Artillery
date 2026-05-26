@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { Weapon, Ammo } from "../types";
 import CoordInput from "./CoordInput";
 import { InfoHint } from "./Tooltip";
@@ -17,9 +18,17 @@ type Props = {
   setGun: (g: { x: string; y: string; z: string }) => void;
   target: { x: string; y: string; z: string };
   setTarget: (t: { x: string; y: string; z: string }) => void;
+  presets: Record<string, { x: number; y: number; z: number }>;
+  onSelectPreset: (pos: { x: number; y: number; z: number }, type: "gun" | "target") => void;
+  onSavePreset: (name: string, pos: { x: number; y: number; z: number }) => void;
+  onDeletePreset: (name: string) => void;
+  targetV: { x: number; y: number; z: number } | null;
+  gunV: { x: number; y: number; z: number } | null;
 };
 
 export default function LeftPanel(p: Props) {
+  const [newPresetName, setNewPresetName] = useState("");
+  const [copiedExport, setCopiedExport] = useState(false);
   const weapon = p.weapons.find((w) => w.id === p.weaponId)!;
   const ammo = (weapon?.ammo.find((a) => a.id === p.ammoId) ?? weapon?.ammo[0]) as Ammo;
   const chargeBands = ammo?.charges.map((c) => ({
@@ -178,6 +187,115 @@ export default function LeftPanel(p: Props) {
         zValue={p.target.z}
         onChange={p.setTarget}
       />
+
+      {/* Saved Landmarks Panel */}
+      <div className="panel p-3 space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="section-title"><span className="text-zinc-600 mr-1">MEM:</span>Tactical Landmarks</span>
+          <span className="text-[10px] font-mono text-zinc-600">PRESETS</span>
+        </div>
+
+        {Object.keys(p.presets).length === 0 ? (
+          <div className="text-[10px] text-zinc-500 font-mono py-2 text-center">
+            No saved landmarks.
+          </div>
+        ) : (
+          <div className="space-y-1.5 max-h-[160px] overflow-y-auto pr-1 border border-line/30 bg-black/10 p-1.5 rounded-sm">
+            {Object.entries(p.presets).map(([name, pos]) => {
+              const kmX = (pos.x / 1000).toFixed(2);
+              const kmY = (pos.y / 1000).toFixed(2);
+              return (
+                <div key={name} className="flex items-center justify-between gap-1.5 p-1 border border-line/40 bg-panelAlt/30 text-[10px] font-mono hover:border-accent/40 rounded-sm">
+                  <div className="truncate flex-1" title={name}>
+                    <span className="text-accent font-bold">{name}</span>
+                    <span className="text-zinc-500 ml-1">({kmX}, {kmY}, {pos.z}m)</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      className="px-1 border border-emerald-500/40 text-emerald-400 bg-emerald-950/20 hover:bg-emerald-950/50 rounded-sm text-[9px]"
+                      onClick={() => p.onSelectPreset(pos, "gun")}
+                      title="Set as Gun Position"
+                    >
+                      G
+                    </button>
+                    <button
+                      className="px-1 border border-red-500/40 text-red-400 bg-red-950/20 hover:bg-red-950/50 rounded-sm text-[9px]"
+                      onClick={() => p.onSelectPreset(pos, "target")}
+                      title="Set as Target Position"
+                    >
+                      T
+                    </button>
+                    <button
+                      className="px-1 border border-zinc-700 text-zinc-400 hover:text-red-400 hover:border-red-500/40 rounded-sm text-[9px]"
+                      onClick={() => p.onDeletePreset(name)}
+                      title="Delete Preset"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Add Preset Form */}
+        <div className="pt-1 space-y-2">
+          <div className="flex gap-1.5">
+            <input
+              type="text"
+              placeholder="LANDMARK_NAME"
+              className="field flex-1 text-[10px] font-mono uppercase"
+              value={newPresetName}
+              onChange={(e) => setNewPresetName(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
+            />
+            <button
+              className="btn-primary !py-1 !px-2 !text-[9px] whitespace-nowrap"
+              disabled={!p.targetV || !newPresetName.trim()}
+              onClick={() => {
+                if (p.targetV && newPresetName.trim()) {
+                  p.onSavePreset(newPresetName.trim(), p.targetV);
+                  setNewPresetName("");
+                }
+              }}
+              title="Save current target coordinates as preset landmark."
+            >
+              SAVE TARGET
+            </button>
+          </div>
+          
+          <button
+            className={`w-full btn !py-1 !text-[9px] font-mono ${copiedExport ? "text-accent border-accent/40 bg-accentDim/10" : ""}`}
+            onClick={async () => {
+              const keys = Object.keys(p.presets);
+              if (keys.length === 0) return;
+              
+              function formatGridVal(m: number) {
+                const km = m / 1000;
+                const v = Math.floor(km * 100);
+                return v.toString().padStart(3, "0");
+              }
+
+              const commandText = keys.map(k => {
+                const pt = p.presets[k];
+                return `/save ${k} ${formatGridVal(pt.x)}${formatGridVal(pt.y)} ${Math.round(pt.z)}`;
+              }).join("\n");
+
+              try {
+                await navigator.clipboard.writeText(commandText);
+                setCopiedExport(true);
+                setTimeout(() => setCopiedExport(false), 2000);
+              } catch (e) {
+                // ignore
+              }
+            }}
+            disabled={Object.keys(p.presets).length === 0}
+            title="Export all presets as copy-pasteable Telegram bot save commands."
+          >
+            {copiedExport ? "COPIED BOT COMMANDS!" : "📤 EXPORT PRESETS FOR TELEGRAM BOT"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

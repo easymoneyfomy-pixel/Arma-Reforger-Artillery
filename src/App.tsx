@@ -100,6 +100,40 @@ export default function App() {
   const [missions, setMissions] = useState<Mission[]>(() => loadJSON<Mission[]>(STORAGE.MISSIONS, []));
   const [impactPoint, setImpactPoint] = useState<Vec3 | null>(null);
 
+  const [presets, setPresets] = useState<Record<string, Vec3>>(() => {
+    return loadJSON<Record<string, Vec3>>("ar_fdc_presets", {
+      everon_airport: { x: 1400, y: 11000, z: 120 },
+      arland_airbase: { x: 1200, y: 3200, z: 45 }
+    });
+  });
+
+  function savePreset(name: string, pos: Vec3) {
+    const key = name.toLowerCase().trim().replace(/[^a-z0-9_-]/g, "_");
+    if (!key) return;
+    const next = { ...presets, [key]: pos };
+    setPresets(next);
+    saveJSON("ar_fdc_presets", next);
+    playHudSound("success", soundEnabled);
+  }
+
+  function deletePreset(name: string) {
+    const next = { ...presets };
+    delete next[name];
+    setPresets(next);
+    saveJSON("ar_fdc_presets", next);
+    playHudSound("click", soundEnabled);
+  }
+
+  function selectPreset(pos: Vec3, type: "gun" | "target") {
+    const val = vecToStr(pos);
+    if (type === "gun") {
+      setGun(val);
+    } else {
+      setTarget(val);
+    }
+    playHudSound("beep", soundEnabled);
+  }
+
   const [placeMode, setPlaceMode] = useState<"gun" | "target">("gun");
   const [showRangeRings, setShowRangeRings] = useState(true);
   const [helpOpen, setHelpOpen] = useState(() => {
@@ -352,6 +386,19 @@ export default function App() {
                 </>
               )}
             </button>
+            <a
+              href="https://t.me/reforger_fdc_admin_bot"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn !py-1 !px-2 !text-[10px] text-accent border-accent/40 bg-accentDim/10 hover:bg-accentDim/20 flex items-center gap-1.5"
+              title="Open FDC Telegram Bot"
+            >
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-accent"></span>
+              </span>
+              <span>TELEGRAM BOT</span>
+            </a>
             <button
               className="btn !py-1 !px-2 !text-[10px]"
               onClick={resetPositions}
@@ -387,6 +434,12 @@ export default function App() {
             setGun={setGun}
             target={target}
             setTarget={setTarget}
+            presets={presets}
+            onSelectPreset={selectPreset}
+            onSavePreset={savePreset}
+            onDeletePreset={deletePreset}
+            targetV={targetV}
+            gunV={gunV}
           />
         </section>
 
