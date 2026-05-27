@@ -23,7 +23,7 @@ const maps: MapDef[] = [
   {
     id: "khreshchatyske",
     name: "Khreshchatyske (Mod)",
-    worldSizeM: 8192,
+    worldSizeM: 4096,
     image: "",
     builtin: false,
   },
