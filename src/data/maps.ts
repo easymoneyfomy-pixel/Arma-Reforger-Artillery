@@ -20,6 +20,13 @@ const maps: MapDef[] = [
     image: arlandImg,
     builtin: true,
   },
+  {
+    id: "khreshchatyske",
+    name: "Khreshchatyske (Mod)",
+    worldSizeM: 8192,
+    image: "",
+    builtin: false,
+  },
 ];
 
 export default maps;
