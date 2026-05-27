@@ -3,25 +3,26 @@ import type { ChargeTable, MapDef, Vec3 } from "../types";
 import { Tooltip, InfoHint } from "./Tooltip";
 
 type Props = {
-  map: MapDef;
-  maps: MapDef[];
-  setMapId: (id: string) => void;
-  onAddMap: (m: MapDef) => void;
-  onCalibrate: (cal: MapDef["calibration"]) => void;
-  gun: Vec3 | null;
-  target: Vec3 | null;
-  impact: Vec3 | null;
-  setGun: (v: Vec3) => void;
-  setTarget: (v: Vec3) => void;
-  placeMode: "gun" | "target";
-  setPlaceMode: (m: "gun" | "target") => void;
-  charges: ChargeTable[];
-  activeChargeId: string;
-  showRangeRings: boolean;
-  setShowRangeRings: (v: boolean) => void;
-  isPremium: boolean;
-  onOpenLicense: () => void;
-};
+   map: MapDef;
+   maps: MapDef[];
+   setMapId: (id: string) => void;
+   onAddMap: (m: MapDef) => void;
+   onDeleteMap: (id: string) => void;
+   onCalibrate: (cal: MapDef["calibration"]) => void;
+   gun: Vec3 | null;
+   target: Vec3 | null;
+   impact: Vec3 | null;
+   setGun: (v: Vec3) => void;
+   setTarget: (v: Vec3) => void;
+   placeMode: "gun" | "target";
+   setPlaceMode: (m: "gun" | "target") => void;
+   charges: ChargeTable[];
+   activeChargeId: string;
+   showRangeRings: boolean;
+   setShowRangeRings: (v: boolean) => void;
+   isPremium: boolean;
+   onOpenLicense: () => void;
+ };
 
 type CalibMode = null | "p1" | "p2";
 
@@ -67,25 +68,26 @@ function metersToPx(map: MapDef, anchor: { x: number; y: number }, meters: numbe
 }
 
 export default function MapView({
-  map,
-  maps,
-  setMapId,
-  onAddMap,
-  onCalibrate,
-  gun,
-  target,
-  impact,
-  setGun,
-  setTarget,
-  placeMode,
-  setPlaceMode,
-  charges,
-  activeChargeId,
-  showRangeRings,
-  setShowRangeRings,
-  isPremium,
-  onOpenLicense,
-}: Props) {
+   map,
+   maps,
+   setMapId,
+   onAddMap,
+   onDeleteMap,
+   onCalibrate,
+   gun,
+   target,
+   impact,
+   setGun,
+   setTarget,
+   placeMode,
+   setPlaceMode,
+   charges,
+   activeChargeId,
+   showRangeRings,
+   setShowRangeRings,
+   isPremium,
+   onOpenLicense,
+ }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 600, h: 600 });
@@ -385,15 +387,30 @@ export default function MapView({
                    placeholder="size m"
                  />
                </Tooltip>
-               <input
-                 ref={fileRef}
-                 type="file"
-                 accept="image/png,image/jpeg,image/webp,image/*"
-                 className="hidden"
-                 onChange={handleFile}
-               />
-             </>
-           ) : (
+<input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/*"
+                  className="hidden"
+                  onChange={handleFile}
+                />
+                {!map.builtin && (
+                  <button
+                    className="btn !py-1 !px-2 !text-[10px] text-red-400 border-red-500/40 hover:bg-red-500/10"
+                    onClick={() => {
+                      if (confirm(`Delete custom map "${map.name}"?`)) {
+                        onDeleteMap(map.id);
+                        const firstBuiltin = maps.find((m) => m.builtin);
+                        if (firstBuiltin) setMapId(firstBuiltin.id);
+                      }
+                    }}
+                    title="Delete this custom map"
+                  >
+                    ✕
+                  </button>
+                )}
+              </>
+            ) : (
              <button
                className="btn flex items-center gap-1 text-zinc-500 border-zinc-700/60"
                onClick={onOpenLicense}
@@ -623,9 +640,56 @@ export default function MapView({
                 backgroundSize: `${size.w / 10}px ${size.h / 10}px`,
               }}
             />
-          )}
-          <svg className="absolute inset-0" width={size.w} height={size.h}>
-            {[...Array(11)].map((_, i) => (
+)}
+           <svg className="absolute inset-0" width={size.w} height={size.h}>
+             {/* Arma-style 1km grid with numeric labels */}
+             {[...Array(map.worldSizeM / 1000 + 1)].map((_, i) => (
+               <g key={`grid-${i}`}>
+                 <line
+                   x1={(i * size.w) / (map.worldSizeM / 1000)}
+                   y1={0}
+                   x2={(i * size.w) / (map.worldSizeM / 1000)}
+                   y2={size.h}
+                   stroke="rgba(214,255,58,0.05)"
+                   strokeWidth={0.5}
+                 />
+                 <line
+                   x1={0}
+                   y1={(i * size.h) / (map.worldSizeM / 1000)}
+                   x2={size.w}
+                   y2={(i * size.h) / (map.worldSizeM / 1000)}
+                   stroke="rgba(214,255,58,0.05)"
+                   strokeWidth={0.5}
+                 />
+                 {/* X-axis labels (bottom) */}
+                 {i > 0 && (
+                   <text
+                     x={(i * size.w) / (map.worldSizeM / 1000)}
+                     y={size.h - 2}
+                     fontSize={8}
+                     fontFamily="ui-monospace, monospace"
+                     fill="rgba(214,255,58,0.3)"
+                     textAnchor="middle"
+                   >
+                     {i}
+                   </text>
+                 )}
+                 {/* Y-axis labels (left) */}
+                 {i > 0 && (
+                   <text
+                     x={2}
+                     y={(i * size.h) / (map.worldSizeM / 1000)}
+                     fontSize={8}
+                     fontFamily="ui-monospace, monospace"
+                     fill="rgba(214,255,58,0.3)"
+                     dominantBaseline="middle"
+                   >
+                     {i}
+                   </text>
+                 )}
+               </g>
+             ))}
+             {[...Array(11)].map((_, i) => (
               <g key={i}>
                 <line
                   x1={(i * size.w) / 10}

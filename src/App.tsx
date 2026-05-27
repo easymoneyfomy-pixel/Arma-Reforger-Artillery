@@ -309,11 +309,17 @@ export default function App() {
     saveJSON(STORAGE.MAPS, next.filter((mm) => !mm.builtin));
   }
 
-  function calibrate(cal: MapDef["calibration"]) {
-    const next = maps.map((m) => (m.id === mapId ? { ...m, calibration: cal } : m));
-    setMaps(next);
-    saveJSON(STORAGE.MAPS, next.filter((mm) => !mm.builtin));
-  }
+function calibrate(cal: MapDef["calibration"]) {
+     const next = maps.map((m) => (m.id === mapId ? { ...m, calibration: cal } : m));
+     setMaps(next);
+     saveJSON(STORAGE.MAPS, next.filter((mm) => !mm.builtin));
+   }
+
+   function deleteMap(id: string) {
+     const next = maps.filter((m) => m.id !== id);
+     setMaps(next);
+     saveJSON(STORAGE.MAPS, next.filter((mm) => !mm.builtin));
+   }
 
   function resetPositions() {
     setGun({ x: "", y: "", z: "0" });
@@ -491,12 +497,13 @@ export default function App() {
         </section>
 
         <section className="col-span-12 lg:col-span-6 flex flex-col gap-3 min-h-[500px]">
-          <MapView
-            map={map}
-            maps={maps}
-            setMapId={setMapId}
-            onAddMap={addMap}
-            onCalibrate={calibrate}
+<MapView
+             map={map}
+             maps={maps}
+             setMapId={setMapId}
+             onAddMap={addMap}
+             onDeleteMap={deleteMap}
+             onCalibrate={calibrate}
             gun={gunV}
             target={targetV}
             impact={impactPoint}
