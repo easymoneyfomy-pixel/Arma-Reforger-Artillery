@@ -60,10 +60,10 @@ export default function HelpModal({ open, onClose }: Props) {
               <p className="font-mono text-sm text-zinc-400 mb-2">
                 Choose your artillery system on the <strong className="text-zinc-200">left panel</strong>. 
               </p>
-              <ul className="font-mono text-xs text-zinc-400 space-y-1 pl-4 list-disc">
-                <li><strong className="text-accent">Vanilla:</strong> M252 81mm, 2B14 Podnos, M120 120mm - доступно всем</li>
-                <li><strong className="text-amber-400">Premium:</strong> M119A2 105mm, D-30 122mm, M777 155mm - только для авторизованных</li>
-              </ul>
+<ul className="font-mono text-xs text-zinc-400 space-y-1 pl-4 list-disc">
+                 <li><strong className="text-accent">Vanilla:</strong> M252 81mm, 2B14 Podnos, M120 120mm - доступно всем</li>
+                 <li><strong className="text-amber-400">Premium:</strong> M119A2 105mm, D-30 122mm, M777 155mm, M109A6 Paladin - только для авторизованных</li>
+               </ul>
             </div>
           </div>
 
@@ -186,13 +186,6 @@ export default function HelpModal({ open, onClose }: Props) {
             <a href="https://t.me/Arma_Artillery_Bot" className="btn-primary text-xs inline-flex items-center gap-2">
               🤖 Авторизоваться через @Arma_Artillery_Bot
             </a>
-          </div>
-        </div>
-
-        {/* Security Footer */}
-        <div className="flex items-center justify-between bg-accentDim/5 border border-accentDim/20 p-3 rounded-sm text-xs font-mono">
-          <div className="text-zinc-400">
-            <span className="text-accent font-semibold">[SEC] LOCAL STORAGE:</span> Все данные сохраняются в браузере. Никаких серверов.
           </div>
         </div>
 

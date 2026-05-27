@@ -552,9 +552,9 @@ export default function App() {
       </main>
 
       <footer className="border-t border-line py-3 text-center font-mono text-[10px] text-zinc-600 space-y-1">
-        <div>
-          FDC Artillery Calculator v1.0 · Tables: M252 81mm · 2B14 Podnos 82mm · M120 120mm · M119A2 105mm · D-30 122mm · M777 155mm
-        </div>
+<div>
+           FDC Artillery Calculator v1.0 · Tables: M252 81mm · 2B14 Podnos 82mm · M120 120mm · M119A2 105mm · D-30 122mm · M777 155mm · M109A6 Paladin
+         </div>
         <div className="text-zinc-700">
           Mils NATO (6400/circle) · All computations are 100% client-side · Zero server calls · © {new Date().getFullYear()} FDC Systems
         </div>
