@@ -641,54 +641,58 @@ export default function MapView({
               }}
             />
 )}
-           <svg className="absolute inset-0" width={size.w} height={size.h}>
+<svg className="absolute inset-0" width={size.w} height={size.h}>
              {/* Arma-style 1km grid with numeric labels */}
-             {[...Array(map.worldSizeM / 1000 + 1)].map((_, i) => (
-               <g key={`grid-${i}`}>
-                 <line
-                   x1={(i * size.w) / (map.worldSizeM / 1000)}
-                   y1={0}
-                   x2={(i * size.w) / (map.worldSizeM / 1000)}
-                   y2={size.h}
-                   stroke="rgba(214,255,58,0.05)"
-                   strokeWidth={0.5}
-                 />
-                 <line
-                   x1={0}
-                   y1={(i * size.h) / (map.worldSizeM / 1000)}
-                   x2={size.w}
-                   y2={(i * size.h) / (map.worldSizeM / 1000)}
-                   stroke="rgba(214,255,58,0.05)"
-                   strokeWidth={0.5}
-                 />
-                 {/* X-axis labels (bottom) */}
-                 {i > 0 && (
-                   <text
-                     x={(i * size.w) / (map.worldSizeM / 1000)}
-                     y={size.h - 2}
-                     fontSize={8}
-                     fontFamily="ui-monospace, monospace"
-                     fill="rgba(214,255,58,0.3)"
-                     textAnchor="middle"
-                   >
-                     {i}
-                   </text>
-                 )}
-                 {/* Y-axis labels (left) */}
-                 {i > 0 && (
-                   <text
-                     x={2}
-                     y={(i * size.h) / (map.worldSizeM / 1000)}
-                     fontSize={8}
-                     fontFamily="ui-monospace, monospace"
-                     fill="rgba(214,255,58,0.3)"
-                     dominantBaseline="middle"
-                   >
-                     {i}
-                   </text>
-                 )}
-               </g>
-             ))}
+             {(() => {
+               const gridSteps = Math.floor(map.worldSizeM / 1000) + 1;
+               if (gridSteps > 1000) return null; // Safety limit
+               return [...Array(gridSteps)].map((_, i) => (
+                 <g key={`grid-${i}`}>
+                   <line
+                     x1={(i * size.w) / (map.worldSizeM / 1000)}
+                     y1={0}
+                     x2={(i * size.w) / (map.worldSizeM / 1000)}
+                     y2={size.h}
+                     stroke="rgba(214,255,58,0.05)"
+                     strokeWidth={0.5}
+                   />
+                   <line
+                     x1={0}
+                     y1={(i * size.h) / (map.worldSizeM / 1000)}
+                     x2={size.w}
+                     y2={(i * size.h) / (map.worldSizeM / 1000)}
+                     stroke="rgba(214,255,58,0.05)"
+                     strokeWidth={0.5}
+                   />
+                   {/* X-axis labels (bottom) */}
+                   {i > 0 && (
+                     <text
+                       x={(i * size.w) / (map.worldSizeM / 1000)}
+                       y={size.h - 2}
+                       fontSize={8}
+                       fontFamily="ui-monospace, monospace"
+                       fill="rgba(214,255,58,0.3)"
+                       textAnchor="middle"
+                     >
+                       {i}
+                     </text>
+                   )}
+                   {/* Y-axis labels (left) */}
+                   {i > 0 && (
+                     <text
+                       x={2}
+                       y={(i * size.h) / (map.worldSizeM / 1000)}
+                       fontSize={8}
+                       fontFamily="ui-monospace, monospace"
+                       fill="rgba(214,255,58,0.3)"
+                       dominantBaseline="middle"
+                     >
+                       {i}
+                     </text>
+                   )}
+                 </g>
+               ));
+             })()}
              {[...Array(11)].map((_, i) => (
               <g key={i}>
                 <line
