@@ -94,7 +94,7 @@ export default function LicenseModal({
               <div><b>Get key:</b> @Arma_Artillery_Bot → /license</div>
               <div className="space-y-1.5">
                 <label className="uppercase text-zinc-400 block">License Key</label>
-                <input type="text" inputMode="text" autoComplete="one-time-code" placeholder="e.g. 12345678-abcdef0123" className="input w-full font-mono text-xs tracking-wider" value={inputKey} onChange={(e) => setInputKey(e.target.value)} disabled={loading} />
+                <input type="text" inputMode="text" autoComplete="one-time-code" placeholder="e.g. 12345678-abcdef0123" className="input w-full font-mono text-xs tracking-wider" value={inputKey} onChange={(e) => setInputKey(e.target.value)} disabled={loading} onFocus={(e) => { setTimeout(() => { e.target.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300); }} />
               </div>
             </div>
             {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-2 rounded-sm font-mono text-[11px] text-center">{error}</div>}
