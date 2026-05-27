@@ -84,34 +84,22 @@ export default function LicenseModal({
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2 font-mono text-xs text-zinc-400 leading-relaxed">
-              <p>You are currently running the <strong className="text-zinc-300">Free Vanilla Edition</strong>.<br />Built-in maps (Everon, Arland) and vanilla weapons work without restrictions.</p>
-              <div className="bg-black/25 border border-line/30 p-3 rounded-sm text-[11px] space-y-1">
-                <div className="text-zinc-300 font-semibold uppercase tracking-wider text-[10px] mb-1">🔒 Premium Features Locked:</div>
-                <div className="flex items-center gap-1.5 text-zinc-400"><span className="text-red-400">✕</span> Custom Map Uploads</div>
-                <div className="flex items-center gap-1.5 text-zinc-400"><span className="text-red-400">✕</span> Map Calibration</div>
-                <div className="flex items-center gap-1.5 text-zinc-400"><span className="text-red-400">✕</span> Community Modded Weapons</div>
-                <div className="flex items-center gap-1.5 text-zinc-400"><span className="text-red-400">✕</span> MET Wind Correction</div>
-                <div className="flex items-center gap-1.5 text-zinc-400"><span className="text-red-400">✕</span> CEP Dispersion Circle</div>
-                <div className="flex items-center gap-1.5 text-zinc-400"><span className="text-red-400">✕</span> Preset Landmarks</div>
-              </div>
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <p className="text-xs font-mono text-zinc-400"><strong className="text-zinc-300">Free Vanilla</strong>: Everon/Arland maps + M252/2B14/M120 unrestricted.</p>
+            <div className="text-[10px] font-mono text-zinc-400 space-y-1">
+              <div className="text-amber-400 font-semibold">🔒 Locked Features:</div>
+              <div>Custom Maps • Map Calibration • Modded Weapons • Wind Correction • CEP • Presets</div>
+            </div>
+            <div className="text-[10px] font-mono text-zinc-300 space-y-1">
+              <div><b>Get key:</b> @Arma_Artillery_Bot → /license</div>
               <div className="space-y-1.5">
-                <span className="text-zinc-300 font-semibold">How to obtain a key:</span>
-                <ol className="list-decimal pl-4 text-[11px] space-y-1">
-                  <li>Start Telegram Bot: <a href="https://t.me/Arma_Artillery_Bot" target="_blank" rel="noopener noreferrer" className="text-accent underline">@Arma_Artillery_Bot</a></li>
-                  <li>Request access from Administrator.</li>
-                  <li>Type /license or click the Web-HUD button.</li>
-                </ol>
+                <label className="uppercase text-zinc-400 block">License Key</label>
+                <input type="text" inputMode="text" autoComplete="one-time-code" placeholder="e.g. 12345678-abcdef0123" className="input w-full font-mono text-xs tracking-wider" value={inputKey} onChange={(e) => setInputKey(e.target.value)} disabled={loading} />
               </div>
             </div>
-            <div className="space-y-1.5">
-              <label className="font-mono text-[10px] uppercase text-zinc-400">Activation License Key</label>
-              <input type="text" inputMode="text" autoComplete="one-time-code" placeholder="e.g. 12345678-abcdef0123" className="input w-full font-mono text-xs tracking-wider" value={inputKey} onChange={(e) => setInputKey(e.target.value)} disabled={loading} />
-            </div>
-            {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-2.5 rounded-sm font-mono text-[11px] text-center">{error}</div>}
-            {success && <div className="bg-accentDim/10 border border-accent/30 text-accent p-2.5 rounded-sm font-mono text-[11px] text-center">✓ Premium features successfully unlocked!</div>}
-            <button type="submit" className="btn-primary w-full py-2.5 text-xs font-semibold uppercase tracking-widest disabled:opacity-50" disabled={loading || success}>{loading ? "Validating Key..." : "Activate Premium HUD"}</button>
+            {error && <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-2 rounded-sm font-mono text-[11px] text-center">{error}</div>}
+            {success && <div className="bg-accentDim/10 border border-accent/30 text-accent p-2 rounded-sm font-mono text-[11px] text-center">✓ Activated!</div>}
+            <button type="submit" className="btn-primary w-full py-2 text-xs font-semibold uppercase" disabled={loading || success}>{loading ? "Validating..." : "Activate Premium"}</button>
           </form>
         )}
       </div>
