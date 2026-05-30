@@ -948,6 +948,7 @@ type Props = {
             })()}
             {markers.map((m, i) => {
               const isCalib = m.which && m.which.startsWith("p");
+              const glowColor = m.color;
               return (
                 <g
                   key={i}
@@ -955,39 +956,66 @@ type Props = {
                   style={{ cursor: m.which ? "grab" : "default" }}
                   onMouseDown={(e) => m.which && startDrag(e, m.which)}
                 >
+                  <defs>
+                    <filter id={`glow-${i}`} x="-50%" y="-50%" width="200%" height="200%">
+                      <feGaussianBlur stdDeviation="2.5" result="blur" />
+                      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                  </defs>
+                  
                   {isCalib ? (
                     <g className="animate-in fade-in duration-500">
-                      {/* Crosshair lines */}
-                      <line x1={-12} y1={0} x2={12} y2={0} stroke={m.color} strokeWidth={1} />
-                      <line x1={0} y1={-12} x2={0} y2={12} stroke={m.color} strokeWidth={1} />
-                      <circle r={6} fill="none" stroke={m.color} strokeWidth={1} />
-                      <circle r={1.5} fill={m.color} />
+                      {/* High-contrast background for crosshair */}
+                      <circle r={10} fill="rgba(0,0,0,0.4)" />
+                      {/* Crosshair lines with white-black-white contrast */}
+                      <line x1={-15} y1={0} x2={15} y2={0} stroke="black" strokeWidth={3} strokeLinecap="round" />
+                      <line x1={-15} y1={0} x2={15} y2={0} stroke={m.color} strokeWidth={1.5} strokeLinecap="round" />
+                      <line x1={0} y1={-15} x2={0} y2={15} stroke="black" strokeWidth={3} strokeLinecap="round" />
+                      <line x1={0} y1={-15} x2={0} y2={15} stroke={m.color} strokeWidth={1.5} strokeLinecap="round" />
+                      
+                      <circle r={7} fill="none" stroke="black" strokeWidth={2} />
+                      <circle r={7} fill="none" stroke={m.color} strokeWidth={1} />
+                      
+                      {/* Precise center dot */}
+                      <circle r={1.5} fill="white" stroke="black" strokeWidth={0.5} />
                     </g>
                   ) : (
-                    <>
-                      {/* Outer radar pulse ring */}
+                    <g filter={`url(#glow-${i})`}>
+                      {/* Tactical Pointer Shape */}
+                      <path 
+                        d="M0,-14 L10,6 L0,2 L-10,6 Z" 
+                        fill={m.color} 
+                        stroke="black" 
+                        strokeWidth={1.5} 
+                        strokeLinejoin="round" 
+                      />
+                      {/* Outer pulse for G/T */}
                       {m.which && (
-                        <circle r={18} fill="none" stroke={m.color} strokeOpacity={0.12} strokeWidth={0.5}>
-                          <animate attributeName="r" values="12;22" dur="2s" repeatCount="indefinite" />
-                          <animate attributeName="stroke-opacity" values="0.2;0" dur="2s" repeatCount="indefinite" />
+                        <circle r={18} fill="none" stroke={m.color} strokeOpacity={0.4} strokeWidth={1.5}>
+                          <animate attributeName="r" values="10;24" dur="2s" repeatCount="indefinite" />
+                          <animate attributeName="stroke-opacity" values="0.6;0" dur="2s" repeatCount="indefinite" />
                         </circle>
                       )}
-                      {/* Inner glow ring */}
-                      {m.which && (
-                        <circle r={11} fill="none" stroke={m.color} strokeOpacity={0.35} strokeWidth={1} />
-                      )}
-                      {/* Core marker dot */}
-                      <circle r={7} fill={m.color} stroke="#000" strokeWidth={1} />
-                    </>
+                      {/* Center core */}
+                      <circle r={3} fill="white" stroke="black" strokeWidth={1} />
+                    </g>
                   )}
-                  {/* Marker label */}
+                  
+                  {/* Marker label with heavy drop shadow/outline for readability */}
                   <text
-                    x={isCalib ? 8 : 12}
-                    y={isCalib ? -8 : 4}
-                    fontSize={isCalib ? 10 : 11}
+                    x={isCalib ? 12 : 14}
+                    y={isCalib ? -12 : 8}
+                    fontSize={isCalib ? 12 : 14}
                     fontFamily="ui-monospace, monospace"
+                    fontWeight="900"
                     fill={m.color}
-                    style={{ textShadow: `0 0 6px ${m.color}`, fontWeight: isCalib ? "bold" : "normal" }}
+                    paintOrder="stroke"
+                    stroke="black"
+                    strokeWidth={3}
+                    style={{ 
+                      textShadow: `0 0 8px black, 0 0 3px black`,
+                      letterSpacing: "0.05em"
+                    }}
                   >
                     {m.label}
                   </text>
