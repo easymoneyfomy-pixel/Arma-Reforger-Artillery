@@ -121,8 +121,41 @@ type Props = {
   }, []);
 
   useEffect(() => {
-    setCalibDraft(null);
-  }, [map.id]);
+    function onKeyDown(e: KeyboardEvent) {
+      if (!dragging || dragging === "gun" || dragging === "target") return;
+      if (e.target instanceof HTMLInputElement) return;
+
+      const step = e.shiftKey ? 10 : 1;
+      let dx = 0, dy = 0;
+      if (e.key === "ArrowLeft") dx = -step;
+      else if (e.key === "ArrowRight") dx = step;
+      else if (e.key === "ArrowUp") dy = -step;
+      else if (e.key === "ArrowDown") dy = step;
+
+      if (dx !== 0 || dy !== 0) {
+        e.preventDefault();
+        const pointId = dragging as "p1" | "p2" | "p3";
+        if (calibDraft) {
+          const p = calibDraft[pointId]!;
+          // Move by pixels (stored as 0-1000 range)
+          const pxPerUnit = 1000 / size.w;
+          const next = {
+            ...calibDraft,
+            [pointId]: { 
+              ...p, 
+              px: { 
+                x: Math.max(0, Math.min(1000, p.px.x + dx * pxPerUnit)), 
+                y: Math.max(0, Math.min(1000, p.px.y + dy * pxPerUnit)) 
+              } 
+            },
+          };
+          setCalibDraft(next);
+        }
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [dragging, calibDraft, size]);
 
   function startCalibration() {
     setCalibStep(1);
@@ -697,42 +730,85 @@ type Props = {
               const px = worldToPx(pxToWorld({ x: (p.px.x / 1000) * size.w, y: (p.px.y / 1000) * size.h }));
               return (
                 <div 
-                  className="absolute pointer-events-auto bg-black/95 border border-accent/60 p-3 rounded shadow-2xl w-60 flex flex-col gap-2 z-50 animate-in fade-in zoom-in duration-200"
+                  className="absolute pointer-events-auto bg-black/95 border border-accent/60 p-3 rounded shadow-2xl w-64 flex flex-col gap-3 z-50 animate-in fade-in zoom-in duration-200"
                   style={{ 
-                    left: Math.min(size.w - 250, Math.max(10, px.x + 20)), 
-                    top: Math.min(size.h - 160, Math.max(80, px.y - 60)) 
+                    left: Math.min(size.w - 270, Math.max(10, px.x + 20)), 
+                    top: Math.min(size.h - 220, Math.max(80, px.y - 60)) 
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') setCalibStep(v => v + 1);
                   }}
                 >
-                  <div className="text-[10px] text-zinc-500 font-mono uppercase tracking-tighter">{t('map.calibWorldPos')}</div>
-                  <div className="grid grid-cols-2 gap-1">
+                  <div className="flex justify-between items-center">
+                    <div className="text-[10px] text-accent font-bold uppercase tracking-wider">Point P{calibStep} Settings</div>
+                    <div className="text-[9px] text-zinc-500 font-mono">Use Arrows to fine-tune px</div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="text-[9px] text-zinc-500 uppercase font-mono">World Coordinates (m)</div>
+                    <div className="grid grid-cols-2 gap-1">
+                      <div className="relative">
+                        <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[8px] text-zinc-600 font-bold">X</span>
+                        <input
+                          ref={calibXRef}
+                          className="field !py-1 !pl-5 !pr-1 !text-xs w-full"
+                          placeholder="0000"
+                          value={calibWorldInput.x}
+                          onChange={(e) => {
+                            const nextX = e.target.value.replace(/[^0-9.-]/g, '');
+                            setCalibWorldInput(v => ({ ...v, x: nextX }));
+                            const next = { ...calibDraft, [`p${calibStep}`]: { ...p, world: { ...p.world, x: Number(nextX) || 0 } } };
+                            setCalibDraft(next);
+                          }}
+                        />
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-1.5 top-1/2 -translate-y-1/2 text-[8px] text-zinc-600 font-bold">Y</span>
+                        <input
+                          ref={calibYRef}
+                          className="field !py-1 !pl-5 !pr-1 !text-xs w-full"
+                          placeholder="0000"
+                          value={calibWorldInput.y}
+                          onChange={(e) => {
+                            const nextY = e.target.value.replace(/[^0-9.-]/g, '');
+                            setCalibWorldInput(v => ({ ...v, y: nextY }));
+                            const next = { ...calibDraft, [`p${calibStep}`]: { ...p, world: { ...p.world, y: Number(nextY) || 0 } } };
+                            setCalibDraft(next);
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="text-[9px] text-zinc-500 uppercase font-mono">Quick Grid (6 or 8 digits)</div>
                     <input
-                      ref={calibXRef}
-                      className="field !py-1 !px-2 !text-xs"
-                      placeholder="World X"
-                      value={calibWorldInput.x}
+                      className="field !py-1 !px-2 !text-xs w-full border-accent/20 focus:border-accent"
+                      placeholder="e.g. 054 123"
                       onChange={(e) => {
-                        const nextX = e.target.value;
-                        setCalibWorldInput(v => ({ ...v, x: nextX }));
-                        const next = { ...calibDraft, [`p${calibStep}`]: { ...p, world: { ...p.world, x: Number(nextX) || 0 } } };
-                        setCalibDraft(next);
-                      }}
-                    />
-                    <input
-                      ref={calibYRef}
-                      className="field !py-1 !px-2 !text-xs"
-                      placeholder="World Y"
-                      value={calibWorldInput.y}
-                      onChange={(e) => {
-                        const nextY = e.target.value;
-                        setCalibWorldInput(v => ({ ...v, y: nextY }));
-                        const next = { ...calibDraft, [`p${calibStep}`]: { ...p, world: { ...p.world, y: Number(nextY) || 0 } } };
-                        setCalibDraft(next);
+                        const val = e.target.value.replace(/[^0-9 ]/g, '').trim();
+                        const parts = val.split(/\s+/);
+                        if (parts.length === 2) {
+                          let x = parts[0], y = parts[1];
+                          if (x.length === 3 && y.length === 3) { // 6-digit (100m)
+                            const wx = parseInt(x) * 100;
+                            const wy = parseInt(y) * 100;
+                            setCalibWorldInput({ x: wx.toString(), y: wy.toString() });
+                            setCalibDraft({ ...calibDraft, [`p${calibStep}`]: { ...p, world: { x: wx, y: wy } } });
+                          } else if (x.length === 4 && y.length === 4) { // 8-digit (10m)
+                            const wx = parseInt(x) * 10;
+                            const wy = parseInt(y) * 10;
+                            setCalibWorldInput({ x: wx.toString(), y: wy.toString() });
+                            setCalibDraft({ ...calibDraft, [`p${calibStep}`]: { ...p, world: { x: wx, y: wy } } });
+                          }
+                        }
                       }}
                     />
                   </div>
-                  <div className="flex gap-1">
+
+                  <div className="flex gap-1 pt-1">
                     <button 
-                      className="btn !py-1 !text-[9px] flex-1"
+                      className="btn !py-1 !text-[9px] flex-1 bg-emerald-950/20 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20"
                       onClick={() => {
                         if (gun) {
                           setCalibWorldInput({ x: gun.x.toFixed(0), y: gun.y.toFixed(0) });
@@ -745,7 +821,7 @@ type Props = {
                       Use Gun
                     </button>
                     <button 
-                      className="btn !py-1 !text-[9px] flex-1"
+                      className="btn !py-1 !text-[9px] flex-1 bg-red-950/20 border-red-500/30 text-red-400 hover:bg-red-500/20"
                       onClick={() => {
                         if (target) {
                           setCalibWorldInput({ x: target.x.toFixed(0), y: target.y.toFixed(0) });
