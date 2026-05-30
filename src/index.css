@@ -79,6 +79,22 @@ body::before {
     transition-all duration-200 outline-none
     focus:border-accent focus:shadow-[0_0_10px_rgba(214,255,58,0.12)] focus:ring-0;
 }
+
+/* Custom Select styling to ensure arrows and text are aligned */
+select.field {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d6ff3a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 1rem;
+  padding-right: 2rem;
+  line-height: 1.2;
+}
+
+select.field:disabled {
+  @apply opacity-50 cursor-not-allowed grayscale;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2352525b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+}
 .btn {
   @apply font-mono text-xs uppercase tracking-wider px-3 py-1.5 border border-line bg-panelAlt/80 backdrop-blur-sm
     text-zinc-300 hover:border-accent hover:text-accent hover:shadow-[0_0_8px_rgba(214,255,58,0.08)]

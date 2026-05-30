@@ -29,18 +29,26 @@ export default function SyncPanel({ batteryId, onJoin, onLeave, isConnected, ser
 
   return (
     <div className="panel p-3 space-y-2">
-      <div className="flex items-center justify-between">
-        <span className="section-title flex items-center">
-          <span className="text-zinc-600 mr-1">NET:</span>{t('sync.title')}
-          <button className="ml-1 text-zinc-600 hover:text-zinc-400" onClick={changeUrl} title="Change Sync Server URL">
-            ⚙️
-          </button>
-          <InfoHint
-            width={280}
-            text={t('sync.help')}
-          />
-        </span>
-        <div className={`flex items-center gap-1.5 px-1.5 py-0.5 border ${isConnected ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400' : 'border-line bg-panelAlt/50 text-zinc-500'} text-[8px] font-mono tracking-widest rounded-sm`}>
+      <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center gap-1.5 overflow-hidden">
+          <span className="text-zinc-600 font-mono text-[10px] flex-shrink-0">NET:</span>
+          <span className="section-title truncate">{t('sync.title')}</span>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <button 
+              className="text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors" 
+              onClick={changeUrl} 
+              title="Change Sync Server URL"
+            >
+              ⚙️
+            </button>
+            <InfoHint
+              width={280}
+              text={t('sync.help')}
+            />
+          </div>
+        </div>
+        <div className={`flex-shrink-0 flex items-center gap-1 px-1.5 py-0.5 border ${isConnected ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400' : 'border-line bg-panelAlt/50 text-zinc-500'} text-[8px] font-mono tracking-widest rounded-sm`}>
+          <span className={`w-1 h-1 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-zinc-600'}`} />
           {isConnected ? t('sync.connected') : t('sync.disconnected')}
         </div>
       </div>

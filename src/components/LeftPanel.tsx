@@ -127,39 +127,41 @@ export default function LeftPanel(p: Props) {
             </select>
           </div>
           <div>
-            <div className="label mb-1 flex items-center">
-              {t('leftPanel.charge')}
-              <InfoHint
-                text={
-                  <>
-                    Powder increments. <b>Lower</b> charge = steeper arc, more accurate, shorter range.
-                    <b> Higher</b> charge = flatter, longer range, longer time of flight.
-                    <br />
-                    <b>Auto</b> picks a charge that hits the target with a useful arc.
-                  </>
-                }
-              />
-              <label className="float-right normal-case tracking-normal text-[10px] text-zinc-400 flex items-center gap-1 ml-auto">
+            <div className="label mb-1 flex items-center justify-between">
+              <div className="flex items-center">
+                {t('leftPanel.charge')}
+                <InfoHint
+                  text={
+                    <>
+                      Powder increments. <b>Lower</b> charge = steeper arc, more accurate, shorter range.
+                      <b> Higher</b> charge = flatter, longer range, longer time of flight.
+                      <br />
+                      <b>Auto</b> picks a charge that hits the target with a useful arc.
+                    </>
+                  }
+                />
+              </div>
+              <label className="normal-case tracking-normal text-[9px] text-zinc-500 flex items-center gap-1 cursor-pointer hover:text-zinc-300 transition-colors">
                 <input
                   type="checkbox"
-                  className="accent-accent"
+                  className="w-3 h-3 rounded-sm bg-black border-line checked:bg-accent focus:ring-0"
                   checked={p.autoCharge}
                   onChange={(e) => p.setAutoCharge(e.target.checked)}
                   title="When on, the optimal charge is auto-selected for the current target range."
                 />
-                {t('leftPanel.autoCharge')}
+                {t('leftPanel.autoCharge').toUpperCase()}
               </label>
             </div>
             <select
-              className="field"
+              className="field !py-1"
               title="Powder charge. Lower = steeper arc, shorter range. Higher = flatter, longer range."
               value={p.chargeId}
               disabled={p.autoCharge}
               onChange={(e) => p.setChargeId(e.target.value)}
             >
               {ammo?.charges.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label} · {c.rows[0].range_m}-{c.rows[c.rows.length - 1].range_m}m
+                <option key={c.id} value={c.id} className="bg-zinc-900 text-zinc-100">
+                  C{c.id} · {c.rows[0].range_m}-{c.rows[c.rows.length - 1].range_m}m
                 </option>
               ))}
             </select>
