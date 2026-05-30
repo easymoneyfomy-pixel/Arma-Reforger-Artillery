@@ -287,8 +287,8 @@ export default function MapView({
     for (let i = 0; i <= stepsX; i++) {
       const x = i * majorStep;
       if (x > worldSize) continue;
-      const pStart = worldToPx({ x: 0, y });
-      const pEnd = worldToPx({ x: worldSize, y });
+      const pStart = worldToPx({ x, y: 0 });
+      const pEnd = worldToPx({ x, y: worldSize });
 
       lines.push(<line key={`major-x-${i}`} x1={pStart.x} y1={pStart.y} x2={pEnd.x} y2={pEnd.y} stroke="rgba(214,255,58,0.3)" strokeWidth={1.5} />);
       
@@ -326,8 +326,8 @@ export default function MapView({
         if (i % 10 === 0) continue; // Skip major lines
         const x = i * minorStep;
         if (x > worldSize) continue;
-        const pStart = worldToPx({ x: 0, y });
-        const pEnd = worldToPx({ x: worldSize, y });
+        const pStart = worldToPx({ x, y: 0 });
+        const pEnd = worldToPx({ x, y: worldSize });
 
         lines.push(<line key={`minor-x-${i}`} x1={pStart.x} y1={pStart.y} x2={pEnd.x} y2={pEnd.y} stroke="rgba(214,255,58,0.15)" strokeWidth={0.5} />);
         
@@ -616,7 +616,7 @@ export default function MapView({
 
       <div
         ref={containerRef}
-        className="relative flex-1 min-h-[300px] border border-line bg-black/60 overflow-hidden select-none"
+        className="relative flex-1 min-h-[300px] border border-line bg-black/60 select-none"
         onClick={handleClick}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMove}
