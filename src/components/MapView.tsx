@@ -1,9 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { ChargeTable, MapDef, Vec3 } from "../types";
 import { Tooltip, InfoHint } from "./Tooltip";
 import { useMapProjection } from "../hooks/useMapProjection";
-import { useHeightmap } from "../hooks/useHeightmap";
 
 type Props = {
    map: MapDef;
@@ -54,7 +53,6 @@ export default function MapView({
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 600, h: 600 });
   const { worldToPx, pxToWorld, metersToPx } = useMapProjection(map, size);
-  const { getAltitudeAt } = useHeightmap(map);
 
   const [calibMode, setCalibMode] = useState<CalibMode>(null);
   const [calibDraft, setCalibDraft] = useState<MapDef["calibration"] | null>(null);
@@ -81,14 +79,14 @@ export default function MapView({
     };
   }
 
-  function zoomAt(factor: number, anchor: { x: number; y: number }) {
-    const next = Math.max(1, Math.min(8, scale * factor));
+  const zoomAt = useMemo(() => (factor: number, anchor: { x: number; y: number }) => {
+    const next = Math.max(1, Math.min(12, scale * factor));
     if (next === scale) return;
     const lx = (anchor.x - pan.x) / scale;
     const ly = (anchor.y - pan.y) / scale;
     setScale(next);
     setPan(clampPan({ x: anchor.x - lx * next, y: anchor.y - ly * next }, next, size.w, size.h));
-  }
+  }, [scale, pan, size]);
 
   function resetView() {
     setScale(1);
@@ -134,8 +132,7 @@ export default function MapView({
       setCalibMode(null);
       return;
     }
-    const alt = getAltitudeAt(world.x, world.y) ?? 0;
-    const v = { x: world.x, y: world.y, z: alt };
+    const v = { x: world.x, y: world.y, z: placeMode === "gun" ? gun?.z ?? 0 : target?.z ?? 0 };
     if (placeMode === "gun") setGun(v);
     else setTarget(v);
   }
@@ -155,8 +152,7 @@ export default function MapView({
       return;
     }
     if (dragging) {
-      const alt = getAltitudeAt(world.x, world.y) ?? (dragging === "gun" ? gun?.z ?? 0 : target?.z ?? 0);
-      const v = { x: world.x, y: world.y, z: alt };
+      const v = { x: world.x, y: world.y, z: dragging === "gun" ? gun?.z ?? 0 : target?.z ?? 0 };
       if (dragging === "gun") setGun(v);
       else setTarget(v);
     }
@@ -195,12 +191,12 @@ export default function MapView({
       const rect = el.getBoundingClientRect();
       const cx = e.clientX - rect.left;
       const cy = e.clientY - rect.top;
-      const factor = e.deltaY < 0 ? 1.2 : 1 / 1.2;
+      const factor = e.deltaY < 0 ? 1.25 : 1 / 1.25;
       zoomAt(factor, { x: cx, y: cy });
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
-  }, [scale, pan.x, pan.y, size.w, size.h, zoomAt]);
+  }, [zoomAt]);
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     setUploadError(null);
@@ -273,6 +269,77 @@ export default function MapView({
       }
     }
   }
+
+  // --- Arma Reforger Grid Logic ---
+  const gridContent = useMemo(() => {
+    const lines = [];
+    const labels = [];
+    
+    // Grid settings
+    const majorStep = 1000; // 1km squares
+    const minorStep = 100;  // 100m squares
+    
+    const worldSize = map.worldSizeM;
+    const stepsX = Math.ceil(worldSize / majorStep);
+    const stepsY = Math.ceil(worldSize / majorStep);
+
+    // Major Grid (1km)
+    for (let i = 0; i <= stepsX; i++) {
+      const x = i * majorStep;
+      if (x > worldSize) continue;
+      const pStart = worldToPx({ x, y: 0 });
+      const pEnd = worldToPx({ x, y: worldSize });
+      lines.push(<line key={`major-x-${i}`} x1={pStart.x} y1={pStart.y} x2={pEnd.x} y2={pEnd.y} stroke="rgba(214,255,58,0.3)" strokeWidth={1} />);
+      
+      // Labels for X (Easting)
+      const labelStr = Math.floor(x / 10).toString().padStart(3, "0");
+      labels.push(
+        <text key={`label-x-${i}`} x={pStart.x + 2} y={size.h - 5} fontSize={10} fill="rgba(214,255,58,0.6)" fontFamily="ui-monospace, monospace">
+          {labelStr}
+        </text>
+      );
+    }
+    
+    for (let j = 0; j <= stepsY; j++) {
+      const y = j * majorStep;
+      if (y > worldSize) continue;
+      const pStart = worldToPx({ x: 0, y });
+      const pEnd = worldToPx({ x: worldSize, y });
+      lines.push(<line key={`major-y-${j}`} x1={pStart.x} y1={pStart.y} x2={pEnd.x} y2={pEnd.y} stroke="rgba(214,255,58,0.3)" strokeWidth={1} />);
+      
+      // Labels for Y (Northing)
+      const labelStr = Math.floor(y / 10).toString().padStart(3, "0");
+      labels.push(
+        <text key={`label-y-${j}`} x={5} y={pStart.y - 2} fontSize={10} fill="rgba(214,255,58,0.6)" fontFamily="ui-monospace, monospace">
+          {labelStr}
+        </text>
+      );
+    }
+
+    // Minor Grid (100m) - Only show if zoomed in enough
+    if (scale > 3) {
+      const minorStepsX = Math.ceil(worldSize / minorStep);
+      const minorStepsY = Math.ceil(worldSize / minorStep);
+      for (let i = 0; i <= minorStepsX; i++) {
+        if (i % 10 === 0) continue; // Skip major lines
+        const x = i * minorStep;
+        if (x > worldSize) continue;
+        const pStart = worldToPx({ x, y: 0 });
+        const pEnd = worldToPx({ x, y: worldSize });
+        lines.push(<line key={`minor-x-${i}`} x1={pStart.x} y1={pStart.y} x2={pEnd.x} y2={pEnd.y} stroke="rgba(214,255,58,0.1)" strokeWidth={0.5} />);
+      }
+      for (let j = 0; j <= minorStepsY; j++) {
+        if (j % 10 === 0) continue; // Skip major lines
+        const y = j * minorStep;
+        if (y > worldSize) continue;
+        const pStart = worldToPx({ x: 0, y });
+        const pEnd = worldToPx({ x: worldSize, y });
+        lines.push(<line key={`minor-y-${j}`} x1={pStart.x} y1={pStart.y} x2={pEnd.x} y2={pEnd.y} stroke="rgba(214,255,58,0.1)" strokeWidth={0.5} />);
+      }
+    }
+
+    return { lines, labels };
+  }, [map, worldToPx, size, scale]);
 
   return (
     <div className="panel p-3 space-y-2 flex flex-col h-full">
@@ -607,57 +674,10 @@ export default function MapView({
             />
           )}
           <svg className="absolute inset-0" width={size.w} height={size.h}>
-             {/* Arma-style 1km grid with numeric labels */}
-             {(() => {
-               const gridSteps = Math.floor(map.worldSizeM / 1000) + 1;
-               if (gridSteps > 1000) return null; // Safety limit
-               return [...Array(gridSteps)].map((_, i) => (
-                 <g key={`grid-${i}`}>
-                   <line
-                     x1={(i * size.w) / (map.worldSizeM / 1000)}
-                     y1={0}
-                     x2={(i * size.w) / (map.worldSizeM / 1000)}
-                     y2={size.h}
-                     stroke="rgba(214,255,58,0.05)"
-                     strokeWidth={0.5}
-                   />
-                   <line
-                     x1={0}
-                     y1={(i * size.h) / (map.worldSizeM / 1000)}
-                     x2={size.w}
-                     y2={(i * size.h) / (map.worldSizeM / 1000)}
-                     stroke="rgba(214,255,58,0.05)"
-                     strokeWidth={0.5}
-                   />
-                   {/* X-axis labels (bottom) */}
-                   {i > 0 && (
-                     <text
-                       x={(i * size.w) / (map.worldSizeM / 1000)}
-                       y={size.h - 2}
-                       fontSize={8}
-                       fontFamily="ui-monospace, monospace"
-                       fill="rgba(214,255,58,0.3)"
-                       textAnchor="middle"
-                     >
-                       {i}
-                     </text>
-                   )}
-                   {/* Y-axis labels (left) */}
-                   {i > 0 && (
-                     <text
-                       x={2}
-                       y={(i * size.h) / (map.worldSizeM / 1000)}
-                       fontSize={8}
-                       fontFamily="ui-monospace, monospace"
-                       fill="rgba(214,255,58,0.3)"
-                       dominantBaseline="middle"
-                     >
-                       {i}
-                     </text>
-                   )}
-                 </g>
-               ));
-             })()}
+            {/* Arma-style Grid System */}
+            {gridContent.lines}
+            {gridContent.labels}
+
             {gun && rings.map((r, i) => {
               const c = worldToPx(gun);
               return (
