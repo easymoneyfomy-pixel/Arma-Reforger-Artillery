@@ -54,7 +54,7 @@ export default function MapView({
   const [size, setSize] = useState({ w: 600, h: 600 });
   const { worldToPx, pxToWorld, metersToPx } = useMapProjection(map, size);
 
-  const [calibMode, setCalibMode] = useState<CalibMode>(null);
+  const [calibStep, setCalibStep] = useState<number>(0); // 0: inactive, 1: p1, 2: p2, 3: p3, 4: review
   const [calibDraft, setCalibDraft] = useState<MapDef["calibration"] | null>(null);
   const [calibWorldInput, setCalibWorldInput] = useState({ x: "0", y: "0" });
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
@@ -68,9 +68,9 @@ export default function MapView({
   const fileRef = useRef<HTMLInputElement>(null);
 
   const magnifierPos = useMemo(() => {
-    if (calibMode || (dragging && dragging.startsWith("p"))) return cursor;
+    if (calibStep >= 1 || (dragging && dragging.startsWith("p"))) return cursor;
     return null;
-  }, [calibMode, dragging, cursor]);
+  }, [calibStep, dragging, cursor]);
 
   function clampPan(p: { x: number; y: number }, s: number, w: number, h: number) {
     const margin = 0.25;
@@ -125,23 +125,31 @@ export default function MapView({
     setCalibMode(null);
   }, [map.id]);
 
+  function startCalibration() {
+    setCalibStep(1);
+    setCalibDraft(map.calibration ?? {
+      p1: { px: { x: 250, y: 750 }, world: { x: 0, y: 0 } },
+      p2: { px: { x: 750, y: 250 }, world: { x: map.worldSizeM, y: map.worldSizeM } },
+    });
+  }
+
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {
     if (dragging || panDrag) return;
     const lp = eventLocalPx(e);
     const world = pxToWorld({ x: lp.x, y: lp.y });
-    if (calibMode) {
-      const wx = Number(calibWorldInput.x) || 0;
-      const wy = Number(calibWorldInput.y) || 0;
+    
+    if (calibStep >= 1 && calibStep <= 3) {
+      const pointId = `p${calibStep}` as "p1" | "p2" | "p3";
       const lpx = { x: (lp.x / size.w) * 1000, y: (lp.y / size.h) * 1000 };
-      const cur = calibDraft ?? map.calibration ?? {
-        p1: { px: { x: 0, y: 1000 }, world: { x: 0, y: 0 } },
-        p2: { px: { x: 1000, y: 0 }, world: { x: map.worldSizeM, y: map.worldSizeM } },
+      const next = {
+        ...calibDraft!,
+        [pointId]: { ...(calibDraft![pointId] || { world: { x: 0, y: 0 } }), px: lpx }
       };
-      const next = { ...cur, [calibMode]: { px: lpx, world: { x: wx, y: wy } } } as MapDef["calibration"];
       setCalibDraft(next);
-      setCalibMode(null);
+      // Stay on the same step but now they can edit the world coordinates in the overlay
       return;
     }
+    
     const v = { x: world.x, y: world.y, z: placeMode === "gun" ? gun?.z ?? 0 : target?.z ?? 0 };
     if (placeMode === "gun") setGun(v);
     else setTarget(v);
@@ -586,104 +594,19 @@ export default function MapView({
            </button>
          )}
          {isPremium && !map.builtin && (
-          <details className="ml-auto">
-            <summary
-              className="btn cursor-pointer list-none"
-              title="Calibrate a custom map by clicking two known points."
-            >
-              {t('map.calibrate')}
-            </summary>
-            <div className="absolute right-0 z-10 mt-1 panel p-3 w-72 space-y-2">
-              <div className="text-[10px] font-mono text-zinc-400 leading-snug">
-                <b>Advanced Calibration (Affine)</b><br />
-                1) Enter world X/Y (meters) for a point.<br />
-                2) Click <b>Mark P1</b>, then click its pixel.<br />
-                3) Repeat for <b>P2</b> and <b>P3</b> (distant points).<br />
-                4) Points are <b>draggable</b> for pixel-perfect tuning.<br />
-                5) Using 3 points solves rotation and stretch.
-              </div>
-              <div className="flex flex-col gap-1">
-                <div className="grid grid-cols-2 gap-1">
-                  <input
-                    className="field"
-                    placeholder="world X (m)"
-                    title="Known world X coordinate, in meters."
-                    value={calibWorldInput.x}
-                    onChange={(e) => setCalibWorldInput({ ...calibWorldInput, x: e.target.value })}
-                  />
-                  <input
-                    className="field"
-                    placeholder="world Y (m)"
-                    title="Known world Y coordinate, in meters."
-                    value={calibWorldInput.y}
-                    onChange={(e) => setCalibWorldInput({ ...calibWorldInput, y: e.target.value })}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-1">
-                  <button
-                    className="btn !py-1 !text-[9px]"
-                    onClick={() => gun && setCalibWorldInput({ x: gun.x.toFixed(0), y: gun.y.toFixed(0) })}
-                    disabled={!gun}
-                  >
-                    Use Gun Pos
-                  </button>
-                  <button
-                    className="btn !py-1 !text-[9px]"
-                    onClick={() => target && setCalibWorldInput({ x: target.x.toFixed(0), y: target.y.toFixed(0) })}
-                    disabled={!target}
-                  >
-                    Use Target Pos
-                  </button>
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-1">
-                <button
-                  className={calibMode === "p1" ? "btn-primary !px-1" : "btn !px-1"}
-                  onClick={() => setCalibMode("p1")}
-                >
-                  Mark P1
-                </button>
-                <button
-                  className={calibMode === "p2" ? "btn-primary !px-1" : "btn !px-1"}
-                  onClick={() => setCalibMode("p2")}
-                >
-                  Mark P2
-                </button>
-                <button
-                  className={calibMode === "p3" ? "btn-primary !px-1" : "btn !px-1"}
-                  onClick={() => setCalibMode("p3")}
-                >
-                  Mark P3
-                </button>
-              </div>
-              {calibDraft && (
-                <div className="font-mono text-[9px] text-zinc-400 leading-tight space-y-1 bg-black/30 p-1.5 rounded-sm border border-line/20">
-                  <div className={calibDraft.p1 ? "text-emerald-400" : ""}>P1: {calibDraft.p1.world.x},{calibDraft.p1.world.y}</div>
-                  <div className={calibDraft.p2 ? "text-emerald-400" : ""}>P2: {calibDraft.p2.world.x},{calibDraft.p2.world.y}</div>
-                  <div className={calibDraft.p3 ? "text-emerald-400" : ""}>P3: {calibDraft.p3 ? `${calibDraft.p3.world.x},${calibDraft.p3.world.y}` : "not set"}</div>
-                </div>
-              )}
-              <button
-                className="btn-primary w-full"
-                disabled={!calibDraft}
-                onClick={() => {
-                  if (calibDraft) {
-                    onCalibrate(calibDraft);
-                    setCalibDraft(null);
-                  }
-                }}
-                title="Save calibration. Saved into local storage with the map."
-              >
-                Save Calibration
-              </button>
-            </div>
-          </details>
-        )}
+           <button
+             className={calibStep > 0 ? "btn-primary" : "btn"}
+             onClick={startCalibration}
+             title="Calibrate a custom map by clicking three known points."
+           >
+             {t('map.calibrate')}
+           </button>
+         )}
       </div>
 
       <div
         ref={containerRef}
-        className="relative flex-1 min-h-[300px] border border-line bg-black/60 select-none overflow-hidden"
+        className="relative flex-1 min-h-[400px] border border-line bg-black/60 select-none overflow-hidden"
         onClick={handleClick}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMove}
@@ -691,7 +614,7 @@ export default function MapView({
         onMouseUp={stopDrag}
         onContextMenu={(e) => panDrag && e.preventDefault()}
         style={{
-          cursor: calibMode
+          cursor: calibStep > 0
             ? "crosshair"
             : panDrag
               ? "grabbing"
@@ -700,6 +623,122 @@ export default function MapView({
                 : "pointer",
         }}
       >
+        {/* Wizard Overlay */}
+        {calibStep > 0 && (
+          <div className="absolute inset-0 z-40 flex flex-col pointer-events-none">
+            {/* Top Instruction Bar */}
+            <div className="bg-black/80 backdrop-blur-md border-b border-accent/40 p-4 pointer-events-auto flex items-center justify-between shadow-xl">
+              <div className="flex flex-col gap-1">
+                <div className="text-accent font-bold tracking-widest text-xs uppercase flex items-center gap-2">
+                  <span className="bg-accent text-black px-1.5 py-0.5 rounded-sm">Wizard</span>
+                  Step {calibStep} of 3
+                </div>
+                <div className="text-zinc-200 text-sm font-medium">
+                  {calibStep === 1 && "Click the first known point on the map (P1)"}
+                  {calibStep === 2 && "Click the second known point on the map (P2)"}
+                  {calibStep === 3 && "Click the third known point on the map (P3)"}
+                  {calibStep === 4 && "Review calibration. Drag P1, P2, P3 to fine-tune pixels if needed."}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  className="btn border-zinc-700 hover:bg-zinc-800 text-zinc-400"
+                  onClick={() => setCalibStep(0)}
+                >
+                  Cancel
+                </button>
+                {calibStep < 4 ? (
+                  <button
+                    className="btn-primary"
+                    disabled={!calibDraft || !calibDraft[`p${calibStep}` as keyof typeof calibDraft]}
+                    onClick={() => setCalibStep(calibStep + 1)}
+                  >
+                    Next Step
+                  </button>
+                ) : (
+                  <button
+                    className="btn-primary animate-pulse"
+                    onClick={() => {
+                      if (calibDraft) onCalibrate(calibDraft);
+                      setCalibStep(0);
+                    }}
+                  >
+                    Finish & Save
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Contextual Coordinate Input Popup */}
+            {calibStep <= 3 && calibDraft?.[`p${calibStep}` as keyof typeof calibDraft] && (() => {
+              const p = calibDraft[`p${calibStep}` as keyof typeof calibDraft]!;
+              const px = worldToPx(pxToWorld({ x: (p.px.x / 1000) * size.w, y: (p.px.y / 1000) * size.h }));
+              return (
+                <div 
+                  className="absolute pointer-events-auto bg-black/90 border border-accent/60 p-3 rounded shadow-2xl w-56 flex flex-col gap-2 z-50"
+                  style={{ 
+                    left: Math.min(size.w - 230, Math.max(10, px.x + 20)), 
+                    top: Math.min(size.h - 150, Math.max(80, px.y - 60)) 
+                  }}
+                >
+                  <div className="text-[10px] text-zinc-500 font-mono uppercase tracking-tighter">Enter World Coordinates (m)</div>
+                  <div className="grid grid-cols-2 gap-1">
+                    <input
+                      className="field !py-1 !px-2 !text-xs"
+                      placeholder="World X"
+                      value={calibWorldInput.x}
+                      onChange={(e) => {
+                        const nextX = e.target.value;
+                        setCalibWorldInput(v => ({ ...v, x: nextX }));
+                        const next = { ...calibDraft, [`p${calibStep}`]: { ...p, world: { ...p.world, x: Number(nextX) || 0 } } };
+                        setCalibDraft(next);
+                      }}
+                    />
+                    <input
+                      className="field !py-1 !px-2 !text-xs"
+                      placeholder="World Y"
+                      value={calibWorldInput.y}
+                      onChange={(e) => {
+                        const nextY = e.target.value;
+                        setCalibWorldInput(v => ({ ...v, y: nextY }));
+                        const next = { ...calibDraft, [`p${calibStep}`]: { ...p, world: { ...p.world, y: Number(nextY) || 0 } } };
+                        setCalibDraft(next);
+                      }}
+                    />
+                  </div>
+                  <div className="flex gap-1">
+                    <button 
+                      className="btn !py-0.5 !text-[9px] flex-1"
+                      onClick={() => {
+                        if (gun) {
+                          setCalibWorldInput({ x: gun.x.toFixed(0), y: gun.y.toFixed(0) });
+                          const next = { ...calibDraft, [`p${calibStep}`]: { ...p, world: { x: gun.x, y: gun.y } } };
+                          setCalibDraft(next);
+                        }
+                      }}
+                      disabled={!gun}
+                    >
+                      Use Gun
+                    </button>
+                    <button 
+                      className="btn !py-0.5 !text-[9px] flex-1"
+                      onClick={() => {
+                        if (target) {
+                          setCalibWorldInput({ x: target.x.toFixed(0), y: target.y.toFixed(0) });
+                          const next = { ...calibDraft, [`p${calibStep}`]: { ...p, world: { x: target.x, y: target.y } } };
+                          setCalibDraft(next);
+                        }
+                      }}
+                      disabled={!target}
+                    >
+                      Use Target
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
         {!isPremium && !map.builtin && (
            <div className="absolute inset-0 bg-[#06070adc]/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center space-y-4 font-mono select-none">
              <span className="text-amber-400 text-3xl">🔒</span>
