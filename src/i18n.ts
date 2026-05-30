@@ -136,7 +136,9 @@ i18n
             disconnected: "DISCONNECTED",
             status: "Status",
             idPlaceholder: "ROOM ID",
-            help: "Sync markers with your battery in real-time."
+            help: "Sync markers with your battery in real-time.",
+            locked: "NETWORK SYNC LOCKED",
+            lockedDesc: "Real-time uplink for battery synchronization requires premium authorization."
           },
           correction: {
             title: "Impact Correction",
@@ -146,7 +148,9 @@ i18n
             impactZ: "[Z] Impact Z",
             rangeDelta: "Range delta",
             lateralDelta: "Lateral delta",
-            apply: "Apply Correction"
+            apply: "Apply Correction",
+            locked: "CORRECTION MODULE LOCKED",
+            lockedDesc: "Advanced impact correction and mirror-aim algorithms require premium authorization."
           }
         }
       },
@@ -232,7 +236,7 @@ i18n
             impact: "ПОПАДАНИЕ!",
             startTimer: "ЗАПУСТИТЬ ТАЙМЕР",
             pause: "ПАУЗА",
-            resume: "ПРОДОЛЖИТЬ",
+            resume: "ПРЕДУПРЕЖДЕНИЕ",
             reset: "СБРОС",
             wind: "Поправка на ветер",
             windLocked: "МЕТЕОСТАНЦИЯ ЗАБЛОКИРОВАНА",
@@ -274,7 +278,9 @@ i18n
             disconnected: "ОТКЛЮЧЕНО",
             status: "Статус",
             idPlaceholder: "ID КОМНАТЫ",
-            help: "Синхронизация меток с вашей батареей в реальном времени."
+            help: "Синхронизация меток с вашей батареей в реальном времени.",
+            locked: "СИНХРОНИЗАЦИЯ ЗАБЛОКИРОВАНА",
+            lockedDesc: "Передача данных для синхронизации батареи требует премиум-авторизации."
           },
           correction: {
             title: "Корректировка удара",
@@ -284,7 +290,9 @@ i18n
             impactZ: "[Z] Попадание Z",
             rangeDelta: "Отклонение по дальности",
             lateralDelta: "Боковое отклонение",
-            apply: "Применить корректировку"
+            apply: "Применить корректировку",
+            locked: "МОДУЛЬ КОРРЕКТИРОВКИ ЗАБЛОКИРОВАН",
+            lockedDesc: "Продвинутые алгоритмы корректировки огня требуют премиум-авторизации."
           }
         }
       }

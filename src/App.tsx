@@ -643,6 +643,8 @@ function calibrate(cal: MapDef["calibration"]) {
               setTarget(vecToStr(corr));
               setImpactPoint(null);
             }}
+            isPremium={isPremium}
+            onOpenLicense={() => setLicenseModalOpen(true)}
           />
           <SyncPanel
             batteryId={batteryId}
@@ -654,6 +656,8 @@ function calibrate(cal: MapDef["calibration"]) {
               setSyncServerUrl(url);
               saveJSON("ar_fdc_sync_url", url);
             }}
+            isPremium={isPremium}
+            onOpenLicense={() => setLicenseModalOpen(true)}
           />
           <HistoryPanel
             missions={missions}
