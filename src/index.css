@@ -90,16 +90,21 @@ body::after {
 }
 .field {
   font-family: 'JetBrains Mono', monospace;
-  @apply w-full bg-black/60 border border-white/10 px-3 py-2 text-sm text-zinc-100 rounded-none
+  @apply w-full bg-black/80 border border-white/10 px-3 py-2 text-sm text-zinc-100 rounded-none
     transition-all duration-300 outline-none
-    focus:border-accent/60 focus:bg-accent/5 focus:shadow-[0_0_15px_rgba(214,255,58,0.08)];
+    focus:border-accent/60 focus:bg-accent/10 focus:shadow-[0_0_20px_rgba(214,255,58,0.12)];
+}
+
+/* Ensure select dropdown options are readable */
+select.field option {
+  @apply bg-[#0b0c0f] text-zinc-100;
 }
 
 .btn {
   font-family: 'JetBrains Mono', monospace;
   @apply text-[10px] uppercase tracking-widest px-4 py-2 border border-white/10 bg-white/5
-    text-zinc-400 hover:border-accent/60 hover:text-accent hover:bg-accent/5
-    transition-all duration-300 cursor-pointer rounded-none select-none;
+    text-zinc-300 hover:border-accent/60 hover:text-accent hover:bg-accent/10
+    transition-all duration-300 cursor-pointer rounded-none select-none disabled:opacity-30 disabled:cursor-not-allowed;
 }
 .btn-primary {
   font-family: 'JetBrains Mono', monospace;

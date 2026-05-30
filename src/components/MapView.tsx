@@ -34,7 +34,7 @@ type Props = {
    onDeleteMap,
    onCalibrate,
    gun,
-   target,
+   target: firingTarget, // Rename firingTarget to avoid shadowing
    impact,
    setGun,
    setTarget,
@@ -169,8 +169,8 @@ type Props = {
     if (dragging || panDrag) return;
     
     // Prevent map clicks if we clicked on the coordinate popup or the top wizard bar
-    const target = e.target as HTMLElement;
-    if (target.closest('.calib-popup') || target.closest('.calib-bar')) return;
+    const clickedEl = e.target as HTMLElement;
+    if (clickedEl.closest('.calib-popup') || clickedEl.closest('.calib-bar')) return;
 
     const lp = eventLocalPx(e);
     const world = pxToWorld({ x: lp.x, y: lp.y });
@@ -198,7 +198,7 @@ type Props = {
       return;
     }
     
-    const v = { x: world.x, y: world.y, z: placeMode === "gun" ? gun?.z ?? 0 : target?.z ?? 0 };
+    const v = { x: world.x, y: world.y, z: placeMode === "gun" ? gun?.z ?? 0 : firingTarget?.z ?? 0 };
     if (placeMode === "gun") setGun(v);
     else setTarget(v);
   }
@@ -219,7 +219,7 @@ type Props = {
     }
     if (dragging) {
       if (dragging === "gun" || dragging === "target") {
-        const v = { x: world.x, y: world.y, z: dragging === "gun" ? gun?.z ?? 0 : target?.z ?? 0 };
+        const v = { x: world.x, y: world.y, z: dragging === "gun" ? gun?.z ?? 0 : firingTarget?.z ?? 0 };
         if (dragging === "gun") setGun(v);
         else setTarget(v);
       } else if (calibDraft) {
@@ -308,15 +308,15 @@ type Props = {
   }
 
   function swap() {
-    if (gun && target) {
-      setGun(target);
+    if (gun && firingTarget) {
+      setGun(firingTarget);
       setTarget(gun);
     }
   }
 
   const markers: Array<{ pos: { x: number; y: number }; color: string; label: string; which?: "gun" | "target" | "p1" | "p2" | "p3" }> = [];
   if (gun) markers.push({ pos: worldToPx(gun), color: "#34d399", label: "G", which: "gun" });
-  if (target) markers.push({ pos: worldToPx(target), color: "#f87171", label: "T", which: "target" });
+  if (firingTarget) markers.push({ pos: worldToPx(firingTarget), color: "#f87171", label: "T", which: "target" });
   if (impact) markers.push({ pos: worldToPx(impact), color: "#fbbf24", label: "I" });
 
   // Add calibration markers if drafting
@@ -343,8 +343,8 @@ type Props = {
     }
   }
 
-  const showLine = gun && target;
-  const rangeM = gun && target ? Math.hypot(target.x - gun.x, target.y - gun.y) : null;
+  const showLine = gun && firingTarget;
+  const rangeM = gun && firingTarget ? Math.hypot(firingTarget.x - gun.x, firingTarget.y - gun.y) : null;
 
   const rings: Array<{ r: number; color: string; label: string; dash?: string }> = [];
   if (gun && showRangeRings && charges.length) {
@@ -465,7 +465,7 @@ type Props = {
   }, [map, worldToPx, size, scale]);
 
   return (
-    <div className="panel p-3 space-y-2 flex flex-col h-full">
+    <div className="panel p-3 space-y-2 flex flex-col h-full overflow-hidden">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <span className="section-title flex items-center">
           <span className="text-zinc-600 mr-1">TAC:</span>{t('map.title')}
@@ -601,7 +601,7 @@ type Props = {
          <button
            className="btn"
            onClick={swap}
-           disabled={!gun || !target}
+           disabled={!gun || !firingTarget}
            title="Swap Gun and Target positions. (S)"
          >
            {t('map.swap')}
@@ -654,7 +654,7 @@ type Props = {
 
       <div
         ref={containerRef}
-        className="relative flex-1 min-h-[400px] border border-line bg-black/60 select-none overflow-hidden"
+        className="relative flex-1 min-h-[400px] border border-line bg-black/60 select-none overflow-hidden flex items-center justify-center"
         onClick={handleClick}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMove}
@@ -824,13 +824,13 @@ type Props = {
                     <button 
                       className="btn !py-1 !text-[9px] flex-1 bg-red-950/20 border-red-500/30 text-red-400 hover:bg-red-500/20"
                       onClick={() => {
-                        if (target) {
-                          setCalibWorldInput({ x: target.x.toFixed(0), y: target.y.toFixed(0) });
-                          const next = { ...calibDraft, [`p${calibStep}`]: { ...p, world: { x: target.x, y: target.y } } };
+                        if (firingTarget) {
+                          setCalibWorldInput({ x: firingTarget.x.toFixed(0), y: firingTarget.y.toFixed(0) });
+                          const next = { ...calibDraft, [`p${calibStep}`]: { ...p, world: { x: firingTarget.x, y: firingTarget.y } } };
                           setCalibDraft(next);
                         }
                       }}
-                      disabled={!target}
+                      disabled={!firingTarget}
                     >
                       Use Target
                     </button>
@@ -880,8 +880,6 @@ type Props = {
           style={{
             width: size.w,
             height: size.h,
-            left: 0,
-            top: 0,
             transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})`,
             transformOrigin: "0 0",
           }}
@@ -935,9 +933,9 @@ type Props = {
                 </g>
               );
             })}
-            {showLine && gun && target && (() => {
+            {showLine && gun && firingTarget && (() => {
               const a = worldToPx(gun);
-              const b = worldToPx(target);
+              const b = worldToPx(firingTarget);
               const mx = (a.x + b.x) / 2;
               const my = (a.y + b.y) / 2;
               return (
@@ -965,11 +963,11 @@ type Props = {
                 </g>
               );
             })()}
-            {isPremium && showCep && gun && target && (() => {
-              const b = worldToPx(target);
-              const dist = Math.hypot(target.x - gun.x, target.y - gun.y);
+            {isPremium && showCep && gun && firingTarget && (() => {
+              const b = worldToPx(firingTarget);
+              const dist = Math.hypot(firingTarget.x - gun.x, firingTarget.y - gun.y);
               const cepM = dist * 0.003; // 3 mils dispersion
-              const cepPx = metersToPx(target, cepM);
+              const cepPx = metersToPx(firingTarget, cepM);
               return (
                 <g>
                   <circle
