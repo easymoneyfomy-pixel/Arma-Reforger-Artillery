@@ -26,7 +26,7 @@ type Props = {
    onOpenLicense: () => void;
  };
 
-type CalibMode = null | "p1" | "p2";
+type CalibMode = null | "p1" | "p2" | "p3";
 
 export default function MapView({
    map,
@@ -60,12 +60,17 @@ export default function MapView({
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [customSize, setCustomSize] = useState("8192");
-  const [dragging, setDragging] = useState<null | "gun" | "target">(null);
+  const [dragging, setDragging] = useState<null | "gun" | "target" | "p1" | "p2" | "p3">(null);
   const [showCep, setShowCep] = useState(false);
   const [scale, setScale] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [panDrag, setPanDrag] = useState<null | { ox: number; oy: number; sx: number; sy: number }>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const magnifierPos = useMemo(() => {
+    if (calibMode || (dragging && dragging.startsWith("p"))) return cursor;
+    return null;
+  }, [calibMode, dragging, cursor]);
 
   function clampPan(p: { x: number; y: number }, s: number, w: number, h: number) {
     const margin = 0.25;
@@ -157,9 +162,19 @@ export default function MapView({
       return;
     }
     if (dragging) {
-      const v = { x: world.x, y: world.y, z: dragging === "gun" ? gun?.z ?? 0 : target?.z ?? 0 };
-      if (dragging === "gun") setGun(v);
-      else setTarget(v);
+      if (dragging === "gun" || dragging === "target") {
+        const v = { x: world.x, y: world.y, z: dragging === "gun" ? gun?.z ?? 0 : target?.z ?? 0 };
+        if (dragging === "gun") setGun(v);
+        else setTarget(v);
+      } else if (calibDraft) {
+        const pointId = dragging as "p1" | "p2" | "p3";
+        const lpx = { x: (lp.x / size.w) * 1000, y: (lp.y / size.h) * 1000 };
+        const next = {
+          ...calibDraft,
+          [pointId]: { ...calibDraft[pointId]!, px: lpx },
+        };
+        setCalibDraft(next);
+      }
     }
   }
 
@@ -254,12 +269,22 @@ export default function MapView({
       pos: { x: (calibDraft.p1.px.x / 1000) * size.w, y: (calibDraft.p1.px.y / 1000) * size.h },
       color: "#60a5fa",
       label: "P1",
+      which: "p1",
     });
     markers.push({
       pos: { x: (calibDraft.p2.px.x / 1000) * size.w, y: (calibDraft.p2.px.y / 1000) * size.h },
       color: "#60a5fa",
       label: "P2",
+      which: "p2",
     });
+    if (calibDraft.p3) {
+      markers.push({
+        pos: { x: (calibDraft.p3.px.x / 1000) * size.w, y: (calibDraft.p3.px.y / 1000) * size.h },
+        color: "#60a5fa",
+        label: "P3",
+        which: "p3",
+      });
+    }
   }
 
   const showLine = gun && target;
@@ -570,12 +595,12 @@ export default function MapView({
             </summary>
             <div className="absolute right-0 z-10 mt-1 panel p-3 w-72 space-y-2">
               <div className="text-[10px] font-mono text-zinc-400 leading-snug">
-                <b>How to calibrate</b><br />
-                1) Type the world coordinate (X, Y in meters) of a known map point —
-                e.g. a town center you read from the game map.<br />
-                2) Click <b>Mark P1</b>, then click that exact pixel on the map.<br />
-                3) Repeat for a second, distant point as <b>P2</b>.<br />
-                4) Press <b>Save Calibration</b>.
+                <b>Advanced Calibration (Affine)</b><br />
+                1) Enter world X/Y (meters) for a point.<br />
+                2) Click <b>Mark P1</b>, then click its pixel.<br />
+                3) Repeat for <b>P2</b> and <b>P3</b> (distant points).<br />
+                4) Points are <b>draggable</b> for pixel-perfect tuning.<br />
+                5) Using 3 points solves rotation and stretch.
               </div>
               <div className="flex flex-col gap-1">
                 <div className="grid grid-cols-2 gap-1">
@@ -599,7 +624,6 @@ export default function MapView({
                     className="btn !py-1 !text-[9px]"
                     onClick={() => gun && setCalibWorldInput({ x: gun.x.toFixed(0), y: gun.y.toFixed(0) })}
                     disabled={!gun}
-                    title="Copy current Gun world coordinates to inputs."
                   >
                     Use Gun Pos
                   </button>
@@ -607,35 +631,36 @@ export default function MapView({
                     className="btn !py-1 !text-[9px]"
                     onClick={() => target && setCalibWorldInput({ x: target.x.toFixed(0), y: target.y.toFixed(0) })}
                     disabled={!target}
-                    title="Copy current Target world coordinates to inputs."
                   >
                     Use Target Pos
                   </button>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-1">
+              <div className="grid grid-cols-3 gap-1">
                 <button
-                  className={calibMode === "p1" ? "btn-primary" : "btn"}
+                  className={calibMode === "p1" ? "btn-primary !px-1" : "btn !px-1"}
                   onClick={() => setCalibMode("p1")}
-                  title="Next map click stores this pixel as point 1."
                 >
                   Mark P1
                 </button>
                 <button
-                  className={calibMode === "p2" ? "btn-primary" : "btn"}
+                  className={calibMode === "p2" ? "btn-primary !px-1" : "btn !px-1"}
                   onClick={() => setCalibMode("p2")}
-                  title="Next map click stores this pixel as point 2."
                 >
                   Mark P2
                 </button>
+                <button
+                  className={calibMode === "p3" ? "btn-primary !px-1" : "btn !px-1"}
+                  onClick={() => setCalibMode("p3")}
+                >
+                  Mark P3
+                </button>
               </div>
               {calibDraft && (
-                <div className="font-mono text-[10px] text-zinc-400 leading-snug">
-                  P1: ({calibDraft.p1.world.x.toFixed(0)}, {calibDraft.p1.world.y.toFixed(0)}) px(
-                  {calibDraft.p1.px.x.toFixed(0)},{calibDraft.p1.px.y.toFixed(0)})
-                  <br />
-                  P2: ({calibDraft.p2.world.x.toFixed(0)}, {calibDraft.p2.world.y.toFixed(0)}) px(
-                  {calibDraft.p2.px.x.toFixed(0)},{calibDraft.p2.px.y.toFixed(0)})
+                <div className="font-mono text-[9px] text-zinc-400 leading-tight space-y-1 bg-black/30 p-1.5 rounded-sm border border-line/20">
+                  <div className={calibDraft.p1 ? "text-emerald-400" : ""}>P1: {calibDraft.p1.world.x},{calibDraft.p1.world.y}</div>
+                  <div className={calibDraft.p2 ? "text-emerald-400" : ""}>P2: {calibDraft.p2.world.x},{calibDraft.p2.world.y}</div>
+                  <div className={calibDraft.p3 ? "text-emerald-400" : ""}>P3: {calibDraft.p3 ? `${calibDraft.p3.world.x},${calibDraft.p3.world.y}` : "not set"}</div>
                 </div>
               )}
               <button
@@ -945,6 +970,46 @@ export default function MapView({
             >
               <div>X {cursor.x.toFixed(0)} · Y {cursor.y.toFixed(0)}</div>
               <div className="text-zinc-400">{t('map.grid')} {gx} {gy}</div>
+            </div>
+          );
+        })()}
+
+        {/* Magnifier Overlay */}
+        {magnifierPos && map.image && (() => {
+          const cp = worldToPx(magnifierPos);
+          // Calculate source position in original image coordinates
+          const magSize = 140;
+          const zoom = 4;
+          const sourceX = (cp.x / size.w) * 100;
+          const sourceY = (cp.y / size.h) * 100;
+
+          return (
+            <div
+              className="absolute pointer-events-none border-2 border-accent shadow-2xl rounded-sm overflow-hidden z-50 bg-black"
+              style={{
+                width: magSize,
+                height: magSize,
+                left: Math.min(size.w - magSize - 10, Math.max(10, cp.cx - magSize / 2)),
+                top: cp.cy - magSize - 20 < 10 ? cp.cy + 20 : cp.cy - magSize - 20,
+              }}
+            >
+              <div
+                className="w-full h-full"
+                style={{
+                  backgroundImage: `url(${map.image})`,
+                  backgroundPosition: `${sourceX}% ${sourceY}%`,
+                  backgroundSize: `${100 * zoom}%`,
+                  imageRendering: "pixelated",
+                }}
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-full h-[1px] bg-accent/40" />
+                <div className="absolute w-[1px] h-full bg-accent/40" />
+                <div className="w-2 h-2 border border-accent rounded-full shadow-[0_0_8px_rgba(214,255,58,0.8)]" />
+              </div>
+              <div className="absolute bottom-1 right-1 bg-black/80 px-1 py-0.5 text-[8px] font-mono text-accent">
+                MAG {zoom}x
+              </div>
             </div>
           );
         })()}

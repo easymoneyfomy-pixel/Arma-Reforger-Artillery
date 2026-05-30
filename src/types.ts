@@ -39,9 +39,11 @@ export type MapDef = {
   heightmap?: string;
   maxAltitude?: number;
   calibration?: {
-    p1: { px: { x: number; y: number }; world: { x: number; y: number } };
-    p2: { px: { x: number; y: number }; world: { x: number; y: number } };
+  p1: { px: { x: number; y: number }; world: { x: number; y: number } };
+  p2: { px: { x: number; y: number }; world: { x: number; y: number } };
+  p3?: { px: { x: number; y: number }; world: { x: number; y: number } };
   };
+
 };
 
 export type FiringSolution = {
