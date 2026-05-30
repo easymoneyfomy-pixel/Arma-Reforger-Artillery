@@ -104,60 +104,60 @@ export default function LeftPanel(p: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5 flex flex-col">
-              <div className="flex items-center min-h-[14px]">
-                <span className="label leading-none">{t('leftPanel.ammo')}</span>
-                <InfoHint text="Projectile/fuze combination." />
-              </div>
-              <select
-                className="field !py-2 mt-auto"
-                value={p.ammoId}
-                onChange={(e) => {
-                  p.setAmmoId(e.target.value);
-                  const a = weapon.ammo.find((a) => a.id === e.target.value);
-                  if (a) p.setChargeId(a.charges[0].id);
-                }}
-              >
-                {weapon?.ammo.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.name}
-                  </option>
-                ))}
-              </select>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+            {/* Headers Row */}
+            <div className="flex items-center h-[38px]">
+              <span className="label leading-tight">{t('leftPanel.ammo')}</span>
+              <InfoHint text="Projectile/fuze combination." />
             </div>
 
-            <div className="space-y-1.5 flex flex-col">
-              <div className="flex items-center justify-between min-h-[14px]">
-                <div className="flex items-center">
-                  <span className="label leading-none">{t('leftPanel.charge')}</span>
-                  <InfoHint text="Powder increments." />
-                </div>
-                <label className="flex items-center gap-1.5 cursor-pointer group">
-                  <div 
-                    className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center transition-all ${p.autoCharge ? "bg-accent border-accent shadow-[0_0_8px_rgba(214,255,58,0.3)]" : "bg-black/50 border-line group-hover:border-zinc-500"}`}
-                    onClick={() => p.setAutoCharge(!p.autoCharge)}
-                  >
-                    {p.autoCharge && <div className="w-1.5 h-1.5 bg-black rounded-full"></div>}
-                  </div>
-                  <span className={`text-[9px] font-mono uppercase tracking-widest leading-none ${p.autoCharge ? "text-accent" : "text-zinc-500"}`}>
-                    {t('leftPanel.autoCharge')}
-                  </span>
-                </label>
+            <div className="flex items-center justify-between h-[38px] relative">
+              <div className="flex items-center">
+                <span className="label leading-tight">{t('leftPanel.charge')}</span>
+                <InfoHint text="Powder increments." />
               </div>
-              <select
-                className="field !py-2 mt-auto"
-                value={p.chargeId}
-                disabled={p.autoCharge}
-                onChange={(e) => p.setChargeId(e.target.value)}
-              >
-                {ammo?.charges.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    C{c.id} · {c.rows[0].range_m}–{c.rows[c.rows.length - 1].range_m}m
-                  </option>
-                ))}
-              </select>
+              <label className="flex items-center gap-1.5 cursor-pointer group absolute top-1/2 -translate-y-1/2 right-0">
+                <div 
+                  className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center transition-all ${p.autoCharge ? "bg-accent border-accent shadow-[0_0_8px_rgba(214,255,58,0.3)]" : "bg-black/50 border-line group-hover:border-zinc-500"}`}
+                  onClick={() => p.setAutoCharge(!p.autoCharge)}
+                >
+                  {p.autoCharge && <div className="w-1.5 h-1.5 bg-black rounded-full"></div>}
+                </div>
+                <span className={`text-[9px] font-mono uppercase tracking-widest leading-none ${p.autoCharge ? "text-accent" : "text-zinc-500"}`}>
+                  {t('leftPanel.autoCharge')}
+                </span>
+              </label>
             </div>
+
+            {/* Selects Row */}
+            <select
+              className="field !py-2"
+              value={p.ammoId}
+              onChange={(e) => {
+                p.setAmmoId(e.target.value);
+                const a = weapon.ammo.find((a) => a.id === e.target.value);
+                if (a) p.setChargeId(a.charges[0].id);
+              }}
+            >
+              {weapon?.ammo.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              className="field !py-2"
+              value={p.chargeId}
+              disabled={p.autoCharge}
+              onChange={(e) => p.setChargeId(e.target.value)}
+            >
+              {ammo?.charges.map((c) => (
+                <option key={c.id} value={c.id}>
+                  C{c.id} · {c.rows[0].range_m}–{c.rows[c.rows.length - 1].range_m}m
+                </option>
+              ))}
+            </select>
           </div>
 
           {chargeBands && (

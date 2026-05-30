@@ -107,7 +107,7 @@ export default function CoordInput({
           <span className="flex items-center gap-1">
             {t('leftPanel.gridString')}
             <InfoHint
-              side="bottom"
+              side="top"
               width={280}
               text={
                 <>

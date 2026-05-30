@@ -37,7 +37,7 @@ export default function CorrectionPanel({ gun, target, solution, onApplyCorrecti
   }
 
   return (
-    <div className="panel p-3 space-y-3 relative overflow-hidden">
+    <div className="panel p-3 space-y-3 relative">
       <div className="flex items-center justify-between border-b border-line/40 pb-1.5">
         <span className="section-title flex items-center gap-1.5">
           <span className="text-zinc-600">COR:</span>
