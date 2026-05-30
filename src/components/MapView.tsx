@@ -26,9 +26,7 @@ type Props = {
    onOpenLicense: () => void;
  };
 
-type CalibMode = null | "p1" | "p2" | "p3";
-
-export default function MapView({
+ export default function MapView({
    map,
    maps,
    setMapId,
@@ -122,7 +120,6 @@ export default function MapView({
 
   useEffect(() => {
     setCalibDraft(null);
-    setCalibMode(null);
   }, [map.id]);
 
   function startCalibration() {
@@ -266,7 +263,7 @@ export default function MapView({
     }
   }
 
-  const markers: Array<{ pos: { x: number; y: number }; color: string; label: string; which?: "gun" | "target" }> = [];
+  const markers: Array<{ pos: { x: number; y: number }; color: string; label: string; which?: "gun" | "target" | "p1" | "p2" | "p3" }> = [];
   if (gun) markers.push({ pos: worldToPx(gun), color: "#34d399", label: "G", which: "gun" });
   if (target) markers.push({ pos: worldToPx(target), color: "#f87171", label: "T", which: "target" });
   if (impact) markers.push({ pos: worldToPx(impact), color: "#fbbf24", label: "I" });
@@ -1016,7 +1013,10 @@ export default function MapView({
         {/* Magnifier Overlay */}
         {magnifierPos && map.image && (() => {
           const cp = worldToPx(magnifierPos);
-          // Calculate source position in original image coordinates
+          // Screen pixels in the container
+          const scx = cp.x * scale + pan.x;
+          const scy = cp.y * scale + pan.y;
+          
           const magSize = 140;
           const zoom = 4;
           const sourceX = (cp.x / size.w) * 100;
@@ -1028,8 +1028,8 @@ export default function MapView({
               style={{
                 width: magSize,
                 height: magSize,
-                left: Math.min(size.w - magSize - 10, Math.max(10, cp.cx - magSize / 2)),
-                top: cp.cy - magSize - 20 < 10 ? cp.cy + 20 : cp.cy - magSize - 20,
+                left: Math.min(size.w - magSize - 10, Math.max(10, scx - magSize / 2)),
+                top: scy - magSize - 20 < 10 ? scy + 20 : scy - magSize - 20,
               }}
             >
               <div
