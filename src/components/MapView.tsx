@@ -287,8 +287,9 @@ export default function MapView({
     for (let i = 0; i <= stepsX; i++) {
       const x = i * majorStep;
       if (x > worldSize) continue;
-      const pStart = worldToPx({ x, y: 0 });
-      const pEnd = worldToPx({ x, y: worldSize });
+      const pStart = worldToPx({ x: 0, y });
+      const pEnd = worldToPx({ x: worldSize, y });
+
       lines.push(<line key={`major-x-${i}`} x1={pStart.x} y1={pStart.y} x2={pEnd.x} y2={pEnd.y} stroke="rgba(214,255,58,0.3)" strokeWidth={1.5} />);
       
       // Labels for X (Easting) - Kilometer index (e.g. 01, 02)
@@ -305,6 +306,7 @@ export default function MapView({
       if (y > worldSize) continue;
       const pStart = worldToPx({ x: 0, y });
       const pEnd = worldToPx({ x: worldSize, y });
+
       lines.push(<line key={`major-y-${j}`} x1={pStart.x} y1={pStart.y} x2={pEnd.x} y2={pEnd.y} stroke="rgba(214,255,58,0.3)" strokeWidth={1.5} />);
       
       // Labels for Y (Northing) - Kilometer index
@@ -324,8 +326,9 @@ export default function MapView({
         if (i % 10 === 0) continue; // Skip major lines
         const x = i * minorStep;
         if (x > worldSize) continue;
-        const pStart = worldToPx({ x, y: 0 });
-        const pEnd = worldToPx({ x, y: worldSize });
+        const pStart = worldToPx({ x: 0, y });
+        const pEnd = worldToPx({ x: worldSize, y });
+
         lines.push(<line key={`minor-x-${i}`} x1={pStart.x} y1={pStart.y} x2={pEnd.x} y2={pEnd.y} stroke="rgba(214,255,58,0.15)" strokeWidth={0.5} />);
         
         // Hectometer labels (e.g. 015) when zoomed in deep
@@ -343,7 +346,8 @@ export default function MapView({
         const y = j * minorStep;
         if (y > worldSize) continue;
         const pStart = worldToPx({ x: 0, y });
-        const pEnd = worldToPx({ x, y: worldSize });
+        const pEnd = worldToPx({ x: worldSize, y });
+
         lines.push(<line key={`minor-y-${j}`} x1={pStart.x} y1={pStart.y} x2={pEnd.x} y2={pEnd.y} stroke="rgba(214,255,58,0.15)" strokeWidth={0.5} />);
 
         if (scale > 6) {
