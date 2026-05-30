@@ -47,138 +47,141 @@ export default function LeftPanel(p: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="panel p-3 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="section-title"><span className="text-zinc-600 mr-1">SYS:</span>Fire Mission · Input</span>
-          <span className="text-[10px] font-mono text-zinc-600">FDC-01</span>
+      <div className="panel p-3 space-y-4">
+        <div className="flex items-center justify-between border-b border-line/40 pb-1.5">
+          <span className="section-title flex items-center gap-1.5">
+            <span className="text-zinc-600">SYS:</span>
+            FIRE MISSION · INPUT
+          </span>
+          <span className="text-[9px] font-mono text-zinc-600 tracking-widest uppercase">FDC-01</span>
         </div>
-        <div>
-          <div className="label mb-1 flex items-center">
-            {t('leftPanel.weapon')}
-            <InfoHint
-              text={
-                <>
-                  Choose the artillery piece. <b>Vanilla</b> weapons exist in stock Arma
-                  Reforger; <b>[mod]</b> weapons require a mod (e.g. WCS Artillery).
-                  Each weapon has its own ballistics tables.
-                </>
-              }
-            />
-          </div>
-          <select
-            className="field"
-            title="Select the artillery piece. Vanilla weapons exist in stock Arma Reforger; [mod] weapons require a community mod."
-            value={p.weaponId}
-            onChange={(e) => {
-              const w = p.weapons.find((w) => w.id === e.target.value);
-              if (w) {
-                if (w.isMod && !p.isPremium) {
-                  p.onOpenLicense();
-                  return;
-                }
-                p.setWeaponId(e.target.value);
-                p.setAmmoId(w.ammo[0].id);
-                p.setChargeId(w.ammo[0].charges[0].id);
-              }
-            }}
-          >
-            {p.weapons.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.faction ? `[${w.faction}] ` : ""}
-                {w.name}
-                {w.isMod ? `  ${p.isPremium ? "[mod]" : "🔒 [mod]"}` : ""}
-              </option>
-            ))}
-          </select>
-          <div className="text-[10px] font-mono text-zinc-500 mt-1">
-            {weapon.category.toUpperCase()}
-            {weapon.faction ? ` · ${weapon.faction}` : ""}
-            {weapon.isMod ? " · MOD" : " · VANILLA"}
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2.5">
-          <div className="space-y-1">
-            <div className="label flex items-center">
-              {t('leftPanel.ammo')}
+
+        <div className="space-y-3.5">
+          <div>
+            <div className="label mb-1.5 flex items-center">
+              {t('leftPanel.weapon')}
               <InfoHint
                 text={
                   <>
-                    Projectile / fuze combination. Currently HE only. Different rounds
-                    have different ballistics; pick the one loaded on the gun.
+                    Choose the artillery piece. <b>Vanilla</b> weapons exist in stock Arma
+                    Reforger; <b>[mod]</b> weapons require a mod.
                   </>
                 }
               />
             </div>
             <select
-              className="field !py-2"
-              title="Projectile/fuze loaded on the gun."
-              value={p.ammoId}
+              className="field"
+              value={p.weaponId}
               onChange={(e) => {
-                p.setAmmoId(e.target.value);
-                const a = weapon.ammo.find((a) => a.id === e.target.value);
-                if (a) p.setChargeId(a.charges[0].id);
+                const w = p.weapons.find((w) => w.id === e.target.value);
+                if (w) {
+                  if (w.isMod && !p.isPremium) {
+                    p.onOpenLicense();
+                    return;
+                  }
+                  p.setWeaponId(e.target.value);
+                  p.setAmmoId(w.ammo[0].id);
+                  p.setChargeId(w.ammo[0].charges[0].id);
+                }
               }}
             >
-              {weapon?.ammo.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
+              {p.weapons.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.faction ? `[${w.faction}] ` : ""}
+                  {w.name}
+                  {w.isMod ? `  ${p.isPremium ? "[mod]" : "🔒 [mod]"}` : ""}
                 </option>
               ))}
             </select>
+            <div className="text-[9px] font-mono text-zinc-600 mt-1.5 flex items-center gap-2 uppercase tracking-wider">
+              <span className="px-1 bg-zinc-800 rounded-sm text-zinc-400">{weapon.category}</span>
+              <span>·</span>
+              <span className="text-zinc-500">{weapon.faction || "NEUTRAL"}</span>
+              <span>·</span>
+              <span className={weapon.isMod ? "text-amber-500/70" : "text-zinc-500"}>
+                {weapon.isMod ? "MODDED UNIT" : "VANILLA UNIT"}
+              </span>
+            </div>
           </div>
-          <div className="space-y-1">
-            <div className="label flex items-center justify-between">
-              <div className="flex items-center">
-                {t('leftPanel.charge')}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <div className="label flex items-center">
+                {t('leftPanel.ammo')}
                 <InfoHint
-                  text={
-                    <>
-                      Powder increments. <b>Lower</b> charge = steeper arc, more accurate, shorter range.
-                      <b> Higher</b> charge = flatter, longer range, longer time of flight.
-                      <br />
-                      <b>Auto</b> picks a charge that hits the target with a useful arc.
-                    </>
-                  }
+                  text="Projectile/fuze combination. Pick the one loaded on the gun."
                 />
               </div>
-              <label className="normal-case tracking-normal text-[9px] text-zinc-500 flex items-center gap-1.5 cursor-pointer hover:text-zinc-300 transition-colors">
-                <input
-                  type="checkbox"
-                  className="w-3.5 h-3.5 rounded-sm bg-black border-line checked:bg-accent focus:ring-0"
-                  checked={p.autoCharge}
-                  onChange={(e) => p.setAutoCharge(e.target.checked)}
-                />
-                <span className="font-mono uppercase">{t('leftPanel.autoCharge')}</span>
-              </label>
+              <select
+                className="field !py-2"
+                value={p.ammoId}
+                onChange={(e) => {
+                  p.setAmmoId(e.target.value);
+                  const a = weapon.ammo.find((a) => a.id === e.target.value);
+                  if (a) p.setChargeId(a.charges[0].id);
+                }}
+              >
+                {weapon?.ammo.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                  </option>
+                ))}
+              </select>
             </div>
-            <select
-              className="field !py-2"
-              title="Powder charge. Lower = steeper arc, shorter range. Higher = flatter, longer range."
-              value={p.chargeId}
-              disabled={p.autoCharge}
-              onChange={(e) => p.setChargeId(e.target.value)}
-            >
-              {ammo?.charges.map((c) => (
-                <option key={c.id} value={c.id}>
-                  C{c.id} · {c.rows[0].range_m}-{c.rows[c.rows.length - 1].range_m}m
-                </option>
-              ))}
-            </select>
+            <div className="space-y-1.5">
+              <div className="label flex items-center justify-between">
+                <div className="flex items-center">
+                  {t('leftPanel.charge')}
+                  <InfoHint
+                    text={
+                      <>
+                        Powder increments. <b>Lower</b> = steeper arc.
+                        <b> Higher</b> = flatter arc.
+                      </>
+                    }
+                  />
+                </div>
+                <label className="flex items-center gap-1.5 cursor-pointer group">
+                  <div 
+                    className={`w-3.5 h-3.5 border rounded-sm flex items-center justify-center transition-all ${p.autoCharge ? "bg-accent border-accent shadow-[0_0_8px_rgba(214,255,58,0.3)]" : "bg-black/50 border-line group-hover:border-zinc-500"}`}
+                    onClick={() => p.setAutoCharge(!p.autoCharge)}
+                  >
+                    {p.autoCharge && <div className="w-1.5 h-1.5 bg-black rounded-full"></div>}
+                  </div>
+                  <span className={`text-[9px] font-mono uppercase tracking-widest ${p.autoCharge ? "text-accent" : "text-zinc-500"}`}>
+                    {t('leftPanel.autoCharge')}
+                  </span>
+                </label>
+              </div>
+              <select
+                className="field !py-2"
+                value={p.chargeId}
+                disabled={p.autoCharge}
+                onChange={(e) => p.setChargeId(e.target.value)}
+              >
+                {ammo?.charges.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    C{c.id} · {c.rows[0].range_m}–{c.rows[c.rows.length - 1].range_m}m
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
+
+          {chargeBands && (
+            <div className="panel-alt p-2 bg-black/30 border-line/20">
+              <div className="label !text-[8px] mb-1 text-zinc-600">OPERATIONAL RANGE BANDS</div>
+              <div className="font-mono text-[9px] text-zinc-500 leading-snug flex flex-wrap gap-x-3 gap-y-1">
+                {chargeBands.map((b) => (
+                  <span key={b.id} className={b.id === p.chargeId ? "text-accent/90" : ""}>
+                    <span className="opacity-50 font-bold mr-0.5">C{b.id}</span>
+                    {b.min}–{b.max}<span className="text-[8px] opacity-40 ml-0.5">M</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-        {chargeBands && (
-          <div className="font-mono text-[10px] text-zinc-500 leading-snug">
-            Available ranges:{" "}
-            {chargeBands.map((b, i) => (
-              <span key={b.id}>
-                {i > 0 && " · "}
-                <span className={b.id === p.chargeId ? "text-accent" : ""}>
-                  C{b.id} {b.min}–{b.max}m
-                </span>
-              </span>
-            ))}
-          </div>
-        )}
       </div>
 
       <CoordInput
