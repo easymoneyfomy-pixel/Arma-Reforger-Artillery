@@ -24,6 +24,38 @@ i18n
             reset: "Reset",
             help: "Help"
           },
+          help: {
+            title: "SYS: QUICK START GUIDE & MANUAL",
+            subtitle: "Fire Direction Control · Arma Reforger Artillery Calculator",
+            close: "Close [ESC]",
+            acknowledge: "Acknowledge [ENTER]",
+            quickStart: "QUICK START",
+            step1: "1. DEPLOY GUN",
+            step1Desc: "Select your weapon system and enter gun coordinates (X/Y/Z) or grid. Or click 'Place Gun' and click the map.",
+            step2: "2. DESIGNATE TARGET",
+            step2Desc: "Enter target coordinates or grid. Use 'Place Target' on map for fast designation.",
+            step3: "3. EXECUTE MISSION",
+            step3Desc: "Read Azimuth and Elevation from the right panel. Set Charge to 'AUTO' or pick manually.",
+            features: "SYSTEM CAPABILITIES",
+            standard: "STANDARD FEATURES (FREE)",
+            premium: "PREMIUM FEATURES (LICENSED)",
+            standardList: [
+              "Ballistics for 81mm, 82mm, 120mm mortars",
+              "Tactical map with coordinate readout",
+              "Automatic charge selection",
+              "Firing solution interpolation (Range/Azimuth/Elevation)",
+              "Time of Flight countdown timer",
+              "Mission history (local storage)"
+            ],
+            premiumList: [
+              "Advanced ballistics: M119A2, D-30, M777, M109A6",
+              "Wind correction & drift vector solvers",
+              "Tactical landmarks & presets memory",
+              "Real-time Battery Sync (Multiplayer)",
+              "Impact correction & aim adjustment tools",
+              "Map calibration for custom mod maps"
+            ]
+          },
           leftPanel: {
             weapon: "WEAPON SYSTEM",
             ammo: "AMMO TYPE",
@@ -114,85 +146,54 @@ i18n
             impactZ: "[Z] Impact Z",
             rangeDelta: "Range delta",
             lateralDelta: "Lateral delta",
-            help: {
-              title: "SYS: QUICK START GUIDE & MANUAL",
-              subtitle: "Fire Direction Control · Arma Reforger Artillery Calculator",
-              close: "Close [ESC]",
-              acknowledge: "Acknowledge [ENTER]",
-              quickStart: "QUICK START",
-              step1: "1. DEPLOY GUN",
-              step1Desc: "Select your weapon system and enter gun coordinates (X/Y/Z) or grid. Or click 'Place Gun' and click the map.",
-              step2: "2. DESIGNATE TARGET",
-              step2Desc: "Enter target coordinates or grid. Use 'Place Target' on map for fast designation.",
-              step3: "3. EXECUTE MISSION",
-              step3Desc: "Read Azimuth and Elevation from the right panel. Set Charge to 'AUTO' or pick manually.",
-              features: "SYSTEM CAPABILITIES",
-              standard: "STANDARD FEATURES (FREE)",
-              premium: "PREMIUM FEATURES (LICENSED)",
-              standardList: [
-                "Ballistics for 81mm, 82mm, 120mm mortars",
-                "Tactical map with coordinate readout",
-                "Automatic charge selection",
-                "Firing solution interpolation (Range/Azimuth/Elevation)",
-                "Time of Flight countdown timer",
-                "Mission history (local storage)"
-              ],
-              premiumList: [
-                "Advanced ballistics: M119A2, D-30, M777, M109A6",
-                "Wind correction & drift vector solvers",
-                "Tactical landmarks & presets memory",
-                "Real-time Battery Sync (Multiplayer)",
-                "Impact correction & aim adjustment tools",
-                "Map calibration for custom mod maps"
-              ]
-            }
-            }
-            },
-            ru: {
-            translation: {
-            header: {
-              title: "Arma Reforger · Арт. вычислитель",
-              subtitle: "Тактический телеметрический HUD",
-              soundOn: "ЗВУК [ВКЛ]",
-              soundOff: "ЗВУК [ВЫКЛ]",
-              premium: "ПРЕМИУМ",
-              freeVersion: "БЕСПЛАТНАЯ ВЕРСИЯ",
-              reset: "Сброс",
-              help: "Помощь"
-            },
-            help: {
-              title: "SYS: РУКОВОДСТВО ПО ЭКСПЛУАТАЦИИ",
-              subtitle: "Управление огнем · Артиллерийский вычислитель Arma Reforger",
-              close: "Закрыть [ESC]",
-              acknowledge: "Принять [ENTER]",
-              quickStart: "БЫСТРЫЙ СТАРТ",
-              step1: "1. ПОЗИЦИЯ ОРУДИЯ",
-              step1Desc: "Выберите орудие и введите координаты (X/Y/Z) или сетку. Или нажмите 'Орудие' и кликните по карте.",
-              step2: "2. УКАЗАНИЕ ЦЕЛИ",
-              step2Desc: "Введите координаты цели. Используйте режим 'Цель' на карте для быстрого наведения.",
-              step3: "3. ОГНЕВАЯ ЗАДАЧА",
-              step3Desc: "Считайте Азимут и Прицел на правой панели. Поставьте Заряд на 'АВТО' или выберите вручную.",
-              features: "ВОЗМОЖНОСТИ СИСТЕМЫ",
-              standard: "БАЗОВЫЕ ФУНКЦИИ (БЕСПЛАТНО)",
-              premium: "ПРЕМИУМ ФУНКЦИИ (ЛИЦЕНЗИЯ)",
-              standardList: [
-                "Баллистика для минометов 81мм, 82мм, 120мм",
-                "Тактическая карта с чтением координат",
-                "Автоматический выбор заряда",
-                "Интерполяция решения (Дальность/Азимут/Прицел)",
-                "Таймер обратного отсчета до попадания",
-                "История миссий (локальное хранилище)"
-              ],
-              premiumList: [
-                "Продвинутая баллистика: M119A2, D-30, M777, M109A6",
-                "Расчет поправок на ветер и дрейф",
-                "Тактические ориентиры и память пресетов",
-                "Синхронизация батареи (Мультиплеер)",
-                "Корректировка огня и инструменты доводки",
-                "Калибровка для кастомных карт из модов"
-              ]
-            },
-
+            apply: "Apply Correction"
+          }
+        }
+      },
+      ru: {
+        translation: {
+          header: {
+            title: "Arma Reforger · Арт. вычислитель",
+            subtitle: "Тактический телеметрический HUD",
+            soundOn: "ЗВУК [ВКЛ]",
+            soundOff: "ЗВУК [ВЫКЛ]",
+            premium: "ПРЕМИУМ",
+            freeVersion: "БЕСПЛАТНАЯ ВЕРСИЯ",
+            reset: "Сброс",
+            help: "Помощь"
+          },
+          help: {
+            title: "SYS: РУКОВОДСТВО ПО ЭКСПЛУАТАЦИИ",
+            subtitle: "Управление огнем · Артиллерийский вычислитель Arma Reforger",
+            close: "Закрыть [ESC]",
+            acknowledge: "Принять [ENTER]",
+            quickStart: "БЫСТРЫЙ СТАРТ",
+            step1: "1. ПОЗИЦИЯ ОРУДИЯ",
+            step1Desc: "Выберите орудие и введите координаты (X/Y/Z) или сетку. Или нажмите 'Орудие' и кликните по карте.",
+            step2: "2. УКАЗАНИЕ ЦЕЛИ",
+            step2Desc: "Введите координаты цели. Используйте режим 'Цель' на карте для быстрого наведения.",
+            step3: "3. ОГНЕВАЯ ЗАДАЧА",
+            step3Desc: "Считайте Азимут и Прицел на правой панели. Поставьте Заряд на 'АВТО' или выберите вручную.",
+            features: "ВОЗМОЖНОСТИ СИСТЕМЫ",
+            standard: "БАЗОВЫЕ ФУНКЦИИ (БЕСПЛАТНО)",
+            premium: "ПРЕМИУМ ФУНКЦИИ (ЛИЦЕНЗИЯ)",
+            standardList: [
+              "Баллистика для минометов 81мм, 82мм, 120мм",
+              "Тактическая карта с чтением координат",
+              "Автоматический выбор заряда",
+              "Интерполяция решения (Дальность/Азимут/Прицел)",
+              "Таймер обратного отсчета до попадания",
+              "История миссий (локальное хранилище)"
+            ],
+            premiumList: [
+              "Продвинутая баллистика: M119A2, D-30, M777, M109A6",
+              "Расчет поправок на ветер и дрейф",
+              "Тактические ориентиры и память пресетов",
+              "Синхронизация батареи (Мультиплеер)",
+              "Корректировка огня и инструменты доводки",
+              "Калибровка для кастомных карт из модов"
+            ]
+          },
           leftPanel: {
             weapon: "СИСТЕМА ОРУДИЯ",
             ammo: "ТИП БОЕПРИПАСА",
@@ -256,7 +257,7 @@ i18n
             north: "С",
             grid: "сетка",
             placeHelp: "Нажмите на карту чтобы поставить {{mode}} (размер мира {{size}} м). Перетащите G/T для уточнения.",
-            lof: "линия огня"
+            lof: "line of fire"
           },
           history: {
             title: "История миссий",
