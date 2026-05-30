@@ -1057,14 +1057,36 @@ type Props = {
                     </g>
                   ) : (
                     <g filter={`url(#glow-${i})`}>
-                      {/* Tactical Pointer Shape */}
-                      <path 
-                        d="M0,-14 L10,6 L0,2 L-10,6 Z" 
-                        fill={m.color} 
-                        stroke="black" 
-                        strokeWidth={1.5} 
-                        strokeLinejoin="round" 
-                      />
+                      {m.label === "G" ? (
+                        /* Tactical Gun Icon: Artillery Unit Circle */
+                        <g>
+                          <circle r={11} fill="black" opacity={0.3} />
+                          <circle r={9} fill={m.color} stroke="black" strokeWidth={2} />
+                          <circle r={2.5} fill="white" stroke="black" strokeWidth={1} />
+                          <path d="M-12,0 L12,0 M0,-12 L0,12" stroke="black" strokeWidth={0.5} opacity={0.4} />
+                        </g>
+                      ) : (
+                        /* Tactical Target Icon: HUD Brackets */
+                        <g>
+                          <circle r={11} fill="black" opacity={0.3} />
+                          {/* Outer Black Brackets for contrast */}
+                          <g stroke="black" strokeWidth={3} fill="none" strokeLinecap="round">
+                            <path d="M-10,-10 L-10,-4 M-10,-10 L-4,-10" />
+                            <path d="M10,-10 L10,-4 M10,-10 L4,-10" />
+                            <path d="M-10,10 L-10,4 M-10,10 L-4,10" />
+                            <path d="M10,10 L10,4 M10,10 L4,10" />
+                          </g>
+                          {/* Colored Inner Brackets */}
+                          <g stroke={m.color} strokeWidth={1.5} fill="none" strokeLinecap="round">
+                            <path d="M-10,-10 L-10,-4 M-10,-10 L-4,-10" />
+                            <path d="M10,-10 L10,-4 M10,-10 L4,-10" />
+                            <path d="M-10,10 L-10,4 M-10,10 L-4,10" />
+                            <path d="M10,10 L10,4 M10,10 L4,10" />
+                          </g>
+                          <circle r={1.5} fill="white" stroke="black" strokeWidth={0.5} />
+                        </g>
+                      )}
+                      
                       {/* Outer pulse for G/T */}
                       {m.which && (
                         <circle r={18} fill="none" stroke={m.color} strokeOpacity={0.4} strokeWidth={1.5}>
@@ -1072,8 +1094,6 @@ type Props = {
                           <animate attributeName="stroke-opacity" values="0.6;0" dur="2s" repeatCount="indefinite" />
                         </circle>
                       )}
-                      {/* Center core */}
-                      <circle r={3} fill="white" stroke="black" strokeWidth={1} />
                     </g>
                   )}
                   
