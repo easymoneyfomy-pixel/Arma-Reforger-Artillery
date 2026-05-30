@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { ChargeTable, MapDef, Vec3 } from "../types";
 import { Tooltip, InfoHint } from "./Tooltip";
+import { useMapProjection } from "../hooks/useMapProjection";
+import { useHeightmap } from "../hooks/useHeightmap";
 
 type Props = {
    map: MapDef;
@@ -26,47 +29,6 @@ type Props = {
 
 type CalibMode = null | "p1" | "p2";
 
-function worldToPx(map: MapDef, world: { x: number; y: number }, dispW: number, dispH: number) {
-  const cal = map.calibration;
-  if (cal) {
-    const dx = cal.p2.world.x - cal.p1.world.x || 1;
-    const dy = cal.p2.world.y - cal.p1.world.y || 1;
-    const fx = (world.x - cal.p1.world.x) / dx;
-    const fy = (world.y - cal.p1.world.y) / dy;
-    const px = cal.p1.px.x + fx * (cal.p2.px.x - cal.p1.px.x);
-    const py = cal.p1.px.y + fy * (cal.p2.px.y - cal.p1.px.y);
-    return { x: (px / 1000) * dispW, y: (py / 1000) * dispH };
-  }
-  const fx = world.x / map.worldSizeM;
-  const fy = world.y / map.worldSizeM;
-  return { x: fx * dispW, y: (1 - fy) * dispH };
-}
-
-function pxToWorld(map: MapDef, px: { x: number; y: number }, dispW: number, dispH: number) {
-  const cal = map.calibration;
-  if (cal) {
-    const lpx = (px.x / dispW) * 1000;
-    const lpy = (px.y / dispH) * 1000;
-    const dxp = cal.p2.px.x - cal.p1.px.x || 1;
-    const dyp = cal.p2.px.y - cal.p1.px.y || 1;
-    const fx = (lpx - cal.p1.px.x) / dxp;
-    const fy = (lpy - cal.p1.px.y) / dyp;
-    return {
-      x: cal.p1.world.x + fx * (cal.p2.world.x - cal.p1.world.x),
-      y: cal.p1.world.y + fy * (cal.p2.world.y - cal.p1.world.y),
-    };
-  }
-  const fx = px.x / dispW;
-  const fy = px.y / dispH;
-  return { x: fx * map.worldSizeM, y: (1 - fy) * map.worldSizeM };
-}
-
-function metersToPx(map: MapDef, anchor: { x: number; y: number }, meters: number, dispW: number, dispH: number) {
-  const a = worldToPx(map, anchor, dispW, dispH);
-  const b = worldToPx(map, { x: anchor.x + meters, y: anchor.y }, dispW, dispH);
-  return Math.hypot(b.x - a.x, b.y - a.y);
-}
-
 export default function MapView({
    map,
    maps,
@@ -88,9 +50,12 @@ export default function MapView({
    isPremium,
    onOpenLicense,
  }: Props) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 600, h: 600 });
+  const { worldToPx, pxToWorld, metersToPx } = useMapProjection(map, size);
+  const { getAltitudeAt } = useHeightmap(map);
+
   const [calibMode, setCalibMode] = useState<CalibMode>(null);
   const [calibDraft, setCalibDraft] = useState<MapDef["calibration"] | null>(null);
   const [calibWorldInput, setCalibWorldInput] = useState({ x: "0", y: "0" });
@@ -154,12 +119,12 @@ export default function MapView({
 
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {
     if (dragging || panDrag) return;
-    const { x: px, y: py } = eventLocalPx(e);
-    const world = pxToWorld(map, { x: px, y: py }, size.w, size.h);
+    const lp = eventLocalPx(e);
+    const world = pxToWorld({ x: lp.x, y: lp.y });
     if (calibMode) {
       const wx = Number(calibWorldInput.x) || 0;
       const wy = Number(calibWorldInput.y) || 0;
-      const lpx = { x: (px / size.w) * 1000, y: (py / size.h) * 1000 };
+      const lpx = { x: (lp.x / size.w) * 1000, y: (lp.y / size.h) * 1000 };
       const cur = calibDraft ?? {
         p1: { px: { x: 0, y: 1000 }, world: { x: 0, y: 0 } },
         p2: { px: { x: 1000, y: 0 }, world: { x: map.worldSizeM, y: map.worldSizeM } },
@@ -169,14 +134,15 @@ export default function MapView({
       setCalibMode(null);
       return;
     }
-    const v = { x: world.x, y: world.y, z: 0 };
+    const alt = getAltitudeAt(world.x, world.y) ?? 0;
+    const v = { x: world.x, y: world.y, z: alt };
     if (placeMode === "gun") setGun(v);
     else setTarget(v);
   }
 
   function handleMove(e: React.MouseEvent<HTMLDivElement>) {
     const lp = eventLocalPx(e);
-    const world = pxToWorld(map, { x: lp.x, y: lp.y }, size.w, size.h);
+    const world = pxToWorld({ x: lp.x, y: lp.y });
     setCursor(world);
     if (panDrag) {
       const np = clampPan(
@@ -189,7 +155,8 @@ export default function MapView({
       return;
     }
     if (dragging) {
-      const v = { x: world.x, y: world.y, z: dragging === "gun" ? gun?.z ?? 0 : target?.z ?? 0 };
+      const alt = getAltitudeAt(world.x, world.y) ?? (dragging === "gun" ? gun?.z ?? 0 : target?.z ?? 0);
+      const v = { x: world.x, y: world.y, z: alt };
       if (dragging === "gun") setGun(v);
       else setTarget(v);
     }
@@ -213,7 +180,6 @@ export default function MapView({
   }
 
   function handleMouseDown(e: React.MouseEvent<HTMLDivElement>) {
-    // middle-button OR shift+left = pan
     if (e.button === 1 || (e.button === 0 && e.shiftKey)) {
       e.preventDefault();
       const lp = eventLocalPx(e);
@@ -234,7 +200,7 @@ export default function MapView({
     };
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
-  }, [scale, pan.x, pan.y, size.w, size.h]);
+  }, [scale, pan.x, pan.y, size.w, size.h, zoomAt]);
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     setUploadError(null);
@@ -277,9 +243,9 @@ export default function MapView({
   }
 
   const markers: Array<{ pos: { x: number; y: number }; color: string; label: string; which?: "gun" | "target" }> = [];
-  if (gun) markers.push({ pos: worldToPx(map, gun, size.w, size.h), color: "#34d399", label: "G", which: "gun" });
-  if (target) markers.push({ pos: worldToPx(map, target, size.w, size.h), color: "#f87171", label: "T", which: "target" });
-  if (impact) markers.push({ pos: worldToPx(map, impact, size.w, size.h), color: "#fbbf24", label: "I" });
+  if (gun) markers.push({ pos: worldToPx(gun), color: "#34d399", label: "G", which: "gun" });
+  if (target) markers.push({ pos: worldToPx(target), color: "#f87171", label: "T", which: "target" });
+  if (impact) markers.push({ pos: worldToPx(impact), color: "#fbbf24", label: "I" });
 
   const showLine = gun && target;
   const rangeM = gun && target ? Math.hypot(target.x - gun.x, target.y - gun.y) : null;
@@ -292,14 +258,14 @@ export default function MapView({
       const isActive = c.id === activeChargeId;
       const color = isActive ? "#d6ff3a" : "rgba(214,255,58,0.25)";
       rings.push({
-        r: metersToPx(map, gun, max, size.w, size.h),
+        r: metersToPx(gun, max),
         color,
         label: `C${c.id} ${max}m`,
         dash: isActive ? undefined : "3 3",
       });
       if (min > 0) {
         rings.push({
-          r: metersToPx(map, gun, min, size.w, size.h),
+          r: metersToPx(gun, min),
           color,
           label: "",
           dash: "1 3",
@@ -312,7 +278,7 @@ export default function MapView({
     <div className="panel p-3 space-y-2 flex flex-col h-full">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <span className="section-title flex items-center">
-          <span className="text-zinc-600 mr-1">TAC:</span>Tactical Map
+          <span className="text-zinc-600 mr-1">TAC:</span>{t('map.title')}
           <InfoHint
             side="bottom"
             width={320}
@@ -327,7 +293,7 @@ export default function MapView({
             }
           />
         </span>
-<div className="flex items-center gap-1">
+        <div className="flex items-center gap-1">
            <select
              className="field !py-1 !text-xs"
              title="Switch map. Built-in maps don't need calibration; uploaded maps may."
@@ -363,7 +329,7 @@ export default function MapView({
                    onClick={() => fileRef.current?.click()}
                    title="Upload a PNG/JPG/WebP map screenshot. Set world size first to match the game world."
                  >
-                   Upload
+                   {t('map.upload')}
                  </button>
                </Tooltip>
                <Tooltip
@@ -387,7 +353,7 @@ export default function MapView({
                    placeholder="size m"
                  />
                </Tooltip>
-<input
+               <input
                   ref={fileRef}
                   type="file"
                   accept="image/png,image/jpeg,image/webp,image/*"
@@ -416,7 +382,7 @@ export default function MapView({
                onClick={onOpenLicense}
                title="Upload custom maps (Premium)"
              >
-               🔒 Upload
+               🔒 {t('map.upload')}
              </button>
            )}
          </div>
@@ -433,14 +399,14 @@ export default function MapView({
            onClick={() => setPlaceMode("gun")}
            title="Next click on the map places the GUN position. (G)"
          >
-           Place Gun
+           {t('map.placeGun')}
          </button>
          <button
            className={placeMode === "target" ? "btn-primary" : "btn"}
            onClick={() => setPlaceMode("target")}
            title="Next click on the map places the TARGET position. (T)"
          >
-           Place Target
+           {t('map.placeTarget')}
          </button>
          <button
            className="btn"
@@ -448,7 +414,7 @@ export default function MapView({
            disabled={!gun || !target}
            title="Swap Gun and Target positions. (S)"
          >
-           Swap
+           {t('map.swap')}
          </button>
          <label
            className="btn cursor-pointer select-none flex items-center gap-1"
@@ -460,7 +426,7 @@ export default function MapView({
              checked={showRangeRings}
              onChange={(e) => setShowRangeRings(e.target.checked)}
            />
-           Rings
+           {t('map.rings')}
          </label>
          {isPremium ? (
            <label
@@ -473,7 +439,7 @@ export default function MapView({
                checked={showCep}
                onChange={(e) => setShowCep(e.target.checked)}
              />
-             CEP
+             {t('map.cep')}
            </label>
          ) : (
            <button
@@ -482,7 +448,7 @@ export default function MapView({
              onClick={onOpenLicense}
              title="Show Circular Error Probable (CEP) dispersion circle (Premium)"
            >
-             🔒 CEP
+             🔒 {t('map.cep')}
            </button>
          )}
          {isPremium && !map.builtin && (
@@ -491,7 +457,7 @@ export default function MapView({
               className="btn cursor-pointer list-none"
               title="Calibrate a custom map by clicking two known points."
             >
-              Calibrate
+              {t('map.calibrate')}
             </summary>
             <div className="absolute right-0 z-10 mt-1 panel p-3 w-72 space-y-2">
               <div className="text-[10px] font-mono text-zinc-400 leading-snug">
@@ -577,7 +543,7 @@ export default function MapView({
                 : "pointer",
         }}
       >
-{!isPremium && !map.builtin && (
+        {!isPremium && !map.builtin && (
            <div className="absolute inset-0 bg-[#06070adc]/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center space-y-4 font-mono select-none">
              <span className="text-amber-400 text-3xl">🔒</span>
              <div className="text-zinc-200 font-semibold tracking-[0.2em] text-sm uppercase">
@@ -613,7 +579,6 @@ export default function MapView({
            </div>
          )}
         <div
-          ref={innerRef}
           className="absolute"
           style={{
             width: size.w,
@@ -640,8 +605,8 @@ export default function MapView({
                 backgroundSize: `${size.w / 10}px ${size.h / 10}px`,
               }}
             />
-)}
-<svg className="absolute inset-0" width={size.w} height={size.h}>
+          )}
+          <svg className="absolute inset-0" width={size.w} height={size.h}>
              {/* Arma-style 1km grid with numeric labels */}
              {(() => {
                const gridSteps = Math.floor(map.worldSizeM / 1000) + 1;
@@ -693,26 +658,8 @@ export default function MapView({
                  </g>
                ));
              })()}
-             {[...Array(11)].map((_, i) => (
-              <g key={i}>
-                <line
-                  x1={(i * size.w) / 10}
-                  y1={0}
-                  x2={(i * size.w) / 10}
-                  y2={size.h}
-                  stroke="rgba(214,255,58,0.06)"
-                />
-                <line
-                  x1={0}
-                  y1={(i * size.h) / 10}
-                  x2={size.w}
-                  y2={(i * size.h) / 10}
-                  stroke="rgba(214,255,58,0.06)"
-                />
-              </g>
-            ))}
             {gun && rings.map((r, i) => {
-              const c = worldToPx(map, gun, size.w, size.h);
+              const c = worldToPx(gun);
               return (
                 <g key={`ring-${i}`}>
                   <circle
@@ -739,8 +686,8 @@ export default function MapView({
               );
             })}
             {showLine && gun && target && (() => {
-              const a = worldToPx(map, gun, size.w, size.h);
-              const b = worldToPx(map, target, size.w, size.h);
+              const a = worldToPx(gun);
+              const b = worldToPx(target);
               const mx = (a.x + b.x) / 2;
               const my = (a.y + b.y) / 2;
               return (
@@ -769,10 +716,10 @@ export default function MapView({
               );
             })()}
             {isPremium && showCep && gun && target && (() => {
-              const b = worldToPx(map, target, size.w, size.h);
+              const b = worldToPx(target);
               const dist = Math.hypot(target.x - gun.x, target.y - gun.y);
               const cepM = dist * 0.003; // 3 mils dispersion
-              const cepPx = metersToPx(map, target, cepM, size.w, size.h);
+              const cepPx = metersToPx(target, cepM);
               return (
                 <g>
                   <circle
@@ -800,7 +747,7 @@ export default function MapView({
             })()}
             {/* === Satellite crosshair tracking guidelines === */}
             {cursor && (() => {
-              const cp = worldToPx(map, cursor, size.w, size.h);
+              const cp = worldToPx(cursor);
               return (
                 <g>
                   {/* Horizontal tracking line */}
@@ -866,7 +813,7 @@ export default function MapView({
             <circle cx="17" cy="17" r="15" fill="rgba(0,0,0,0.55)" stroke="rgba(214,255,58,0.4)" />
             <polygon points="17,4 21,18 17,15 13,18" fill="#d6ff3a" />
             <text x="17" y="29" fontSize="9" fontFamily="ui-monospace, monospace" fill="#d6ff3a" textAnchor="middle">
-              N
+              {t('map.north')}
             </text>
           </svg>
         </div>
@@ -912,19 +859,18 @@ export default function MapView({
               title="Cursor world coordinates (meters) and Arma-style 6-digit grid (10 m precision)"
             >
               <div>X {cursor.x.toFixed(0)} · Y {cursor.y.toFixed(0)}</div>
-              <div className="text-zinc-400">grid {gx} {gy}</div>
+              <div className="text-zinc-400">{t('map.grid')} {gx} {gy}</div>
             </div>
           );
         })()}
       </div>
       <div className="font-mono text-[10px] text-zinc-500 flex items-center gap-2 flex-wrap">
         <span>
-          Click map to place {placeMode === "gun" ? "GUN" : "TARGET"} (world size{" "}
-          {map.worldSizeM} m). Drag G/T to refine.
+          {t('map.placeHelp', { mode: placeMode === "gun" ? "GUN" : "TARGET", size: map.worldSizeM })}
         </span>
         {rangeM !== null && (
           <span className="text-zinc-400">
-            · line of fire: <span className="text-accent">{rangeM.toFixed(0)} m</span>
+            · {t('map.lof')}: <span className="text-accent">{rangeM.toFixed(0)} m</span>
           </span>
         )}
       </div>

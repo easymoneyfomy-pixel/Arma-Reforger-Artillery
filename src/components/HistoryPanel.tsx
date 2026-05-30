@@ -1,141 +1,82 @@
-import { useRef } from "react";
+import { useTranslation } from "react-i18next";
 import type { Mission } from "../types";
-import { InfoHint } from "./Tooltip";
 
 type Props = {
   missions: Mission[];
-  onLoad: (m: Mission) => void;
+  onSelect: (m: Mission) => void;
   onDelete: (id: string) => void;
   onClear: () => void;
-  onImport: (next: Mission[]) => void;
+  onImport: () => void;
 };
 
-export default function HistoryPanel({ missions, onLoad, onDelete, onClear, onImport }: Props) {
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  function exportJson() {
-    const blob = new Blob([JSON.stringify(missions, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `fdc_missions_${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function importJson(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    e.target.value = "";
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const text = reader.result as string;
-        const data = JSON.parse(text);
-        if (!Array.isArray(data)) throw new Error("not an array");
-        const cleaned = data.filter(
-          (m) => m && typeof m === "object" && m.id && m.gun && m.target && m.solution,
-        ) as Mission[];
-        if (!cleaned.length) {
-          alert("No valid missions found in file.");
-          return;
-        }
-        onImport(cleaned);
-      } catch (err) {
-        alert("Invalid mission JSON.");
-      }
-    };
-    reader.readAsText(f);
-  }
-
+export default function HistoryPanel({ missions, onSelect, onDelete, onClear, onImport }: Props) {
+  const { t } = useTranslation();
   return (
     <div className="panel p-3 space-y-2">
       <div className="flex items-center justify-between">
         <span className="section-title flex items-center">
-          <span className="text-zinc-600 mr-1">MEM:</span>Combat Memory
-          <InfoHint
-            width={280}
-            text={
-              <>
-                Saved fire missions stored locally in your browser. <b>Load</b>{" "}
-                restores weapon, ammo, charge and coordinates. <b>Export</b> downloads
-                them as JSON so you can back up or share between machines.
-              </>
-            }
-          />
+          <span className="text-zinc-600 mr-1">MEM:</span>{t('history.title')}
         </span>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
           <button
-            className="btn !py-1 !px-2 !text-[10px]"
-            onClick={exportJson}
-            disabled={!missions.length}
-            title="Download all saved missions as a JSON file."
+            className="text-[10px] text-zinc-500 hover:text-zinc-300 font-mono"
+            onClick={onImport}
+            title="Import missions from JSON clipboard."
           >
-            Export
+            {t('history.import').toUpperCase()}
           </button>
           <button
-            className="btn !py-1 !px-2 !text-[10px]"
-            onClick={() => fileRef.current?.click()}
-            title="Import missions from a previously-exported JSON file (appends to existing)."
+            className="text-[10px] text-zinc-500 hover:text-red-400 font-mono"
+            onClick={() => {
+              if (confirm("Clear all mission history? This cannot be undone.")) onClear();
+            }}
+            title="Clear all saved missions."
           >
-            Import
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept="application/json,.json"
-            className="hidden"
-            onChange={importJson}
-          />
-          <button
-            className="btn !py-1 !px-2 !text-[10px]"
-            onClick={onClear}
-            disabled={!missions.length}
-            title="Delete all saved fire missions."
-          >
-            Clear
+            {t('history.clear').toUpperCase()}
           </button>
         </div>
       </div>
-      <div className="space-y-1 max-h-80 overflow-y-auto pr-1">
-        {missions.length === 0 && (
-          <div className="font-mono text-xs text-zinc-600 py-3 text-center">
-            No missions saved.
+
+      <div className="space-y-1 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+        {missions.length === 0 ? (
+          <div className="font-mono text-xs text-zinc-600 py-4 text-center border border-dashed border-line/30">
+            {t('history.empty')}
           </div>
+        ) : (
+          missions
+            .slice()
+            .sort((a, b) => b.ts - a.ts)
+            .map((m) => (
+              <div
+                key={m.id}
+                className="group flex flex-col border border-line bg-black/20 hover:border-accentDim/60 p-2 cursor-pointer transition-all"
+                onClick={() => onSelect(m)}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[10px] text-accent font-bold tracking-wider">
+                    {m.label}
+                  </span>
+                  <button
+                    className="opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-red-400 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(m.id);
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="flex items-baseline justify-between mt-1">
+                  <div className="font-mono text-[11px] text-zinc-400">
+                    AZ {m.solution.bearingMil.toFixed(0)} · EL {m.solution.elevationMil.toFixed(0)}
+                  </div>
+                  <div className="font-mono text-[9px] text-zinc-600">
+                    {m.solution.chargeLabel.replace("Charge ", "C")} · {m.solution.tofSec.toFixed(1)}s
+                  </div>
+                </div>
+              </div>
+            ))
         )}
-        {missions.map((m) => (
-          <div
-            key={m.id}
-            className="grid grid-cols-[1fr_auto_auto] items-center gap-2 border border-line bg-black/30 px-2 py-1.5 hover:border-accentDim transition-colors"
-            title={`${m.label} · saved ${new Date(m.ts).toLocaleString()}`}
-          >
-            <div className="font-mono text-[11px] leading-tight">
-              <div className="text-zinc-200">
-                {new Date(m.ts).toLocaleTimeString([], { hour12: false })} ·{" "}
-                <span className="text-accent">{m.solution.rangeM.toFixed(0)}m</span> ·{" "}
-                {m.solution.bearingMil.toFixed(0)}mil
-              </div>
-              <div className="text-zinc-500">
-                {m.weaponId} / {m.solution.chargeLabel} · T:{" "}
-                {m.target.x.toFixed(0)},{m.target.y.toFixed(0)}
-              </div>
-            </div>
-            <button
-              className="btn !py-0.5 !px-2 !text-[10px]"
-              onClick={() => onLoad(m)}
-              title="Restore weapon, ammo, charge and coordinates from this mission."
-            >
-              Load
-            </button>
-            <button
-              className="btn !py-0.5 !px-1.5 !text-[10px] hover:border-danger hover:text-danger hover:shadow-[0_0_8px_rgba(224,70,70,0.15)]"
-              onClick={() => onDelete(m.id)}
-              title="Delete this saved mission."
-            >
-              ✕
-            </button>
-          </div>
-        ))}
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Weapon, Ammo } from "../types";
 import CoordInput from "./CoordInput";
 import { InfoHint } from "./Tooltip";
@@ -29,6 +30,7 @@ type Props = {
 };
 
 export default function LeftPanel(p: Props) {
+  const { t } = useTranslation();
   const [newPresetName, setNewPresetName] = useState("");
   const [copiedExport, setCopiedExport] = useState(false);
   const [importMode, setImportMode] = useState(false);
@@ -52,7 +54,7 @@ export default function LeftPanel(p: Props) {
         </div>
         <div>
           <div className="label mb-1 flex items-center">
-            Weapon
+            {t('leftPanel.weapon')}
             <InfoHint
               text={
                 <>
@@ -97,7 +99,7 @@ export default function LeftPanel(p: Props) {
         <div className="grid grid-cols-2 gap-2">
           <div>
             <div className="label mb-1 flex items-center">
-              Ammunition
+              {t('leftPanel.ammo')}
               <InfoHint
                 text={
                   <>
@@ -126,7 +128,7 @@ export default function LeftPanel(p: Props) {
           </div>
           <div>
             <div className="label mb-1 flex items-center">
-              Charge
+              {t('leftPanel.charge')}
               <InfoHint
                 text={
                   <>
@@ -145,7 +147,7 @@ export default function LeftPanel(p: Props) {
                   onChange={(e) => p.setAutoCharge(e.target.checked)}
                   title="When on, the optimal charge is auto-selected for the current target range."
                 />
-                auto
+                {t('leftPanel.autoCharge')}
               </label>
             </div>
             <select
@@ -179,7 +181,7 @@ export default function LeftPanel(p: Props) {
       </div>
 
       <CoordInput
-        label="Gun Position"
+        label={t('leftPanel.gunPos')}
         accent="gun"
         worldSizeM={p.worldSizeM}
         xValue={p.gun.x}
@@ -188,7 +190,7 @@ export default function LeftPanel(p: Props) {
         onChange={p.setGun}
       />
       <CoordInput
-        label="Target Position"
+        label={t('leftPanel.targetPos')}
         accent="target"
         worldSizeM={p.worldSizeM}
         xValue={p.target.x}
@@ -201,7 +203,7 @@ export default function LeftPanel(p: Props) {
       <div className="panel p-3 space-y-3 relative overflow-hidden">
         <div className="flex items-center justify-between">
           <span className="section-title"><span className="text-zinc-600 mr-1">MEM:</span>Tactical Landmarks</span>
-          <span className="text-[10px] font-mono text-zinc-600">PRESETS</span>
+          <span className="text-[10px] font-mono text-zinc-600">{t('leftPanel.presets')}</span>
         </div>
 
         {!p.isPremium ? (
@@ -215,7 +217,7 @@ export default function LeftPanel(p: Props) {
               className="btn border-accentDim/40 hover:bg-accentDim/10 text-accent text-[9px] px-4 py-1.5 uppercase tracking-wider"
               onClick={p.onOpenLicense}
             >
-              Unlock Premium
+              {t('rightPanel.unlockPremium')}
             </button>
           </div>
         ) : (
@@ -285,7 +287,7 @@ export default function LeftPanel(p: Props) {
                   }}
                   title="Save current target coordinates as preset landmark."
                 >
-                  SAVE TARGET
+                  {t('leftPanel.savePreset').toUpperCase()}
                 </button>
               </div>
               

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { FiringSolution, Vec3 } from "../types";
 import { correctedTarget, correctionDelta } from "../lib/ballistics";
 import { InfoHint } from "./Tooltip";
@@ -11,6 +12,7 @@ type Props = {
 };
 
 export default function CorrectionPanel({ gun, target, solution, onApplyCorrection }: Props) {
+  const { t } = useTranslation();
   const [ix, setIx] = useState("");
   const [iy, setIy] = useState("");
   const [iz, setIz] = useState("");
@@ -36,7 +38,7 @@ export default function CorrectionPanel({ gun, target, solution, onApplyCorrecti
     <div className="panel p-3 space-y-2">
       <div className="flex items-center justify-between">
         <span className="section-title flex items-center">
-          <span className="text-zinc-600 mr-1">COR:</span>Impact Correction
+          <span className="text-zinc-600 mr-1">COR:</span>{t('correction.title')}
           <InfoHint
             width={300}
             text={
@@ -55,12 +57,12 @@ export default function CorrectionPanel({ gun, target, solution, onApplyCorrecti
           title="Clear impact fields."
           disabled={!ix && !iy && !iz}
         >
-          Clear
+          {t('correction.clear')}
         </button>
       </div>
       <div className="grid grid-cols-3 gap-2">
         <div>
-          <div className="label mb-1">[X] Impact X</div>
+          <div className="label mb-1">{t('correction.impactX')}</div>
           <input
             className="field"
             value={ix}
@@ -70,7 +72,7 @@ export default function CorrectionPanel({ gun, target, solution, onApplyCorrecti
           />
         </div>
         <div>
-          <div className="label mb-1">[Y] Impact Y</div>
+          <div className="label mb-1">{t('correction.impactY')}</div>
           <input
             className="field"
             value={iy}
@@ -80,7 +82,7 @@ export default function CorrectionPanel({ gun, target, solution, onApplyCorrecti
           />
         </div>
         <div>
-          <div className="label mb-1">[Z] Impact Z</div>
+          <div className="label mb-1">{t('correction.impactZ')}</div>
           <input
             className="field"
             value={iz}
@@ -97,7 +99,7 @@ export default function CorrectionPanel({ gun, target, solution, onApplyCorrecti
             className="panel-alt p-2"
             title="Along the line of fire from gun to target. Positive = past the target; negative = short of it."
           >
-            <div className="label">// Range delta</div>
+            <div className="label">// {t('correction.rangeDelta')}</div>
             <div className="font-mono text-lg text-accent mt-0.5">
               {delta.alongM >= 0 ? "+" : "−"}
               {Math.abs(delta.alongM).toFixed(0)} m
@@ -110,7 +112,7 @@ export default function CorrectionPanel({ gun, target, solution, onApplyCorrecti
             className="panel-alt p-2"
             title="Perpendicular to the line of fire. Positive = right of target; negative = left of target."
           >
-            <div className="label">// Lateral delta</div>
+            <div className="label">// {t('correction.lateralDelta')}</div>
             <div className="font-mono text-lg text-accent mt-0.5">
               {delta.crossM >= 0 ? "+" : "−"}
               {Math.abs(delta.crossM).toFixed(0)} m
@@ -132,7 +134,7 @@ export default function CorrectionPanel({ gun, target, solution, onApplyCorrecti
         disabled={!delta || !solution}
         title="Mirror the observed miss across the target — the new target becomes target + (target − impact)."
       >
-        Apply Correction (mirror to target)
+        {t('correction.apply')}
       </button>
     </div>
   );

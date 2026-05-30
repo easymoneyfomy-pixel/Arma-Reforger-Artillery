@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { parseGridPair } from "../lib/coords";
 import { InfoHint } from "./Tooltip";
 
@@ -26,6 +27,7 @@ export default function CoordInput({
   onChange,
   accent = "gun",
 }: Props) {
+  const { t } = useTranslation();
   function handleCombined(v: string) {
     const p = parseGridPair(v, worldSizeM);
     if (p) onChange({ x: String(Math.round(p.x)), y: String(Math.round(p.y)), z: zValue });
@@ -56,13 +58,13 @@ export default function CoordInput({
           onClick={clear}
           title="Clear this position"
         >
-          Clear
+          {t('leftPanel.clear')}
         </button>
       </div>
       <div className="grid grid-cols-3 gap-2">
         <div>
           <div className="label mb-1 flex items-center" title="Easting (X) in meters">
-            [X] Easting
+            {t('leftPanel.easting')}
             <InfoHint
               side="bottom"
               text={`Easting in meters from the western map edge. Max ${worldSizeM} m on this map.`}
@@ -74,12 +76,12 @@ export default function CoordInput({
             title={`Easting in meters (0–${worldSizeM}).`}
             value={xValue}
             onChange={(e) => onChange({ x: e.target.value, y: yValue, z: zValue })}
-            placeholder="meters"
+            placeholder={t('leftPanel.meters')}
           />
         </div>
         <div>
           <div className="label mb-1 flex items-center" title="Northing (Y) in meters">
-            [Y] Northing
+            {t('leftPanel.northing')}
             <InfoHint
               side="bottom"
               text={`Northing in meters from the southern map edge. Max ${worldSizeM} m on this map.`}
@@ -91,12 +93,12 @@ export default function CoordInput({
             title={`Northing in meters (0–${worldSizeM}).`}
             value={yValue}
             onChange={(e) => onChange({ x: xValue, y: e.target.value, z: zValue })}
-            placeholder="meters"
+            placeholder={t('leftPanel.meters')}
           />
         </div>
         <div>
           <div className="label mb-1 flex items-center" title="Altitude / elevation in meters above sea level">
-            [Z] Altitude
+            {t('leftPanel.altitude')}
             <InfoHint
               side="bottom"
               text={
@@ -119,7 +121,7 @@ export default function CoordInput({
       </div>
       <div>
         <div className="label mb-1 flex items-center">
-          [G] Grid String (e.g. 016073)
+          {t('leftPanel.gridString')}
           <InfoHint
             side="bottom"
             width={280}

@@ -36,6 +36,8 @@ export type MapDef = {
   worldSizeM: number;
   image: string;
   builtin: boolean;
+  heightmap?: string;
+  maxAltitude?: number;
   calibration?: {
     p1: { px: { x: number; y: number }; world: { x: number; y: number } };
     p2: { px: { x: number; y: number }; world: { x: number; y: number } };

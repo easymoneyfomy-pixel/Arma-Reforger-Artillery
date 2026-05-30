@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import weaponsData from "./data/weapons.json";
 import mapsData from "./data/maps";
 import type { MapDef, Mission, Vec3, Weapon } from "./types";
@@ -84,15 +85,40 @@ function playHudSound(type: "click" | "success" | "warning" | "beep", enabled: b
 }
 
 export default function App() {
+  const { t, i18n } = useTranslation();
   const [licenseKey, setLicenseKey] = useState(() => getSavedLicenseKey());
   const [isPremium, setIsPremium] = useState(false);
   const [licenseModalOpen, setLicenseModalOpen] = useState(false);
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const lic = params.get("lic");
+  const adminMode = params.get("admin") === "1";
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const lic = params.get("lic");
-    const adminMode = params.get("admin") === "1";
-    if (lic) {
+  // Handle mission sharing
+  const w = params.get("w");
+  const a = params.get("a");
+  const c = params.get("c");
+  const gx = params.get("gx");
+  const gy = params.get("gy");
+  const gz = params.get("gz");
+  const tx = params.get("tx");
+  const ty = params.get("ty");
+  const tz = params.get("tz");
+  const m = params.get("m");
+
+  if (w && WEAPONS.some(wpn => wpn.id === w)) setWeaponId(w);
+  if (a) setAmmoId(a);
+  if (c) {
+    setChargeId(c);
+    setAutoCharge(false);
+  }
+  if (gx && gy) setGun({ x: gx, y: gy, z: gz || "0" });
+  if (tx && ty) setTarget({ x: tx, y: ty, z: tz || "0" });
+  if (m && BUILTIN_MAPS.some(mp => mp.id === m)) setMapId(m);
+
+  if (lic) {
+// ...
+
       verifyLicenseKey(lic).then((ok) => {
         if (ok) {
           saveLicenseKey(lic);
@@ -396,13 +422,27 @@ function calibrate(cal: MapDef["calibration"]) {
             </div>
             <div className="flex flex-col">
               <span className="font-mono text-sm tracking-[0.18em] uppercase text-zinc-200" style={{ textShadow: '0 0 20px rgba(214, 255, 58, 0.15)' }}>
-                Arma Reforger · Artillery FDC
+                {t('header.title')}
               </span>
-              <span className="font-mono text-[9px] text-zinc-500 uppercase tracking-wider">TACTICAL TELEMETRY HUD</span>
+              <span className="font-mono text-[9px] text-zinc-500 uppercase tracking-wider">{t('header.subtitle')}</span>
             </div>
-            <span className="font-mono text-[10px] text-zinc-600 self-end mb-0.5">v1.0</span>
+            <span className="font-mono text-[10px] text-zinc-600 self-end mb-0.5">v1.1</span>
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center bg-black/40 border border-line/50 rounded-sm overflow-hidden p-0.5">
+              <button 
+                className={`px-1.5 py-0.5 text-[9px] font-mono transition-colors ${i18n.language === 'en' ? 'bg-accent text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
+                onClick={() => i18n.changeLanguage('en')}
+              >
+                EN
+              </button>
+              <button 
+                className={`px-1.5 py-0.5 text-[9px] font-mono transition-colors ${i18n.language === 'ru' ? 'bg-accent text-black' : 'text-zinc-500 hover:text-zinc-300'}`}
+                onClick={() => i18n.changeLanguage('ru')}
+              >
+                RU
+              </button>
+            </div>
             <div className="font-mono text-[10px] text-zinc-500 hidden md:block">
               {weapon.name} · {ammo.name} · <span className="text-accent">{solution?.chargeLabel ?? "—"}</span>
             </div>
@@ -416,7 +456,7 @@ function calibrate(cal: MapDef["calibration"]) {
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                   </svg>
-                  <span>SOUND [ON]</span>
+                  <span>{t('header.soundOn')}</span>
                 </>
               ) : (
                 <>
@@ -424,7 +464,7 @@ function calibrate(cal: MapDef["calibration"]) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
                   </svg>
-                  <span>SOUND [OFF]</span>
+                  <span>{t('header.soundOff')}</span>
                 </>
               )}
             </button>
@@ -447,7 +487,7 @@ function calibrate(cal: MapDef["calibration"]) {
                 onClick={() => setLicenseModalOpen(true)}
                 title="Premium Access Active"
               >
-                <span>👑 PREMIUM</span>
+                <span>👑 {t('header.premium')}</span>
               </button>
             ) : (
               <button
@@ -455,14 +495,14 @@ function calibrate(cal: MapDef["calibration"]) {
                 onClick={() => setLicenseModalOpen(true)}
                 title="Activate Premium Features"
               >
-                <span>🔓 FREE VERSION</span>
+                <span>🔓 {t('header.freeVersion')}</span>
               </button>
             )}
             <button className="btn !py-1 !px-2 !text-[10px]" onClick={resetPositions} title="Clear gun, target and impact positions. (R)">
-              Reset
+              {t('header.reset')}
             </button>
             <button className="btn !py-1 !px-2 !text-[10px]" onClick={openHelp} title="Show quick-start help (? key)">
-              Help
+              {t('header.help')}
             </button>
           </div>
         </div>
@@ -527,6 +567,9 @@ function calibrate(cal: MapDef["calibration"]) {
             soundEnabled={soundEnabled}
             isPremium={isPremium}
             onOpenLicense={() => setLicenseModalOpen(true)}
+            gun={gunV}
+            target={targetV}
+            mapId={mapId}
           />
           <CorrectionPanel
             gun={gunV}
@@ -539,10 +582,18 @@ function calibrate(cal: MapDef["calibration"]) {
           />
           <HistoryPanel
             missions={missions}
-            onLoad={loadMission}
+            onSelect={loadMission}
             onDelete={deleteMission}
             onClear={clearMissions}
-            onImport={importMissions}
+            onImport={() => {
+              const data = prompt("Paste mission JSON data here:");
+              if (data) {
+                try {
+                  const parsed = JSON.parse(data);
+                  if (Array.isArray(parsed)) importMissions(parsed);
+                } catch { alert("Invalid JSON"); }
+              }
+            }}
           />
           {isPremium && showAdmin && (
             <div className="panel p-3 space-y-2 border-amber-400/30">
@@ -559,15 +610,15 @@ function calibrate(cal: MapDef["calibration"]) {
       </main>
 
       <footer className="border-t border-line py-3 text-center font-mono text-[10px] text-zinc-600 space-y-1">
-<div>
-           FDC Artillery Calculator v1.0 · Tables: M252 81mm · 2B14 Podnos 82mm · M120 120mm · M119A2 105mm · D-30 122mm · M777 155mm · M109A6 Paladin
+        <div>
+           FDC Artillery Calculator v1.1 · Tables: M252 81mm · 2B14 Podnos 82mm · M120 120mm · M119A2 105mm · D-30 122mm · M777 155mm · M109A6 Paladin
          </div>
         <div className="text-zinc-700">
           Mils NATO (6400/circle) · All computations are 100% client-side · Zero server calls · © {new Date().getFullYear()} FDC Systems
         </div>
       </footer>
 
-      <HelpModal open={helpOpen} onClose={closeHelp} />
+      <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
       <LicenseModal
         open={licenseModalOpen}
         onClose={() => setLicenseModalOpen(false)}
