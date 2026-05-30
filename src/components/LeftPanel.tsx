@@ -104,16 +104,14 @@ export default function LeftPanel(p: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <div className="label flex items-center">
-                {t('leftPanel.ammo')}
-                <InfoHint
-                  text="Projectile/fuze combination. Pick the one loaded on the gun."
-                />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5 flex flex-col">
+              <div className="flex items-center min-h-[14px]">
+                <span className="label leading-none">{t('leftPanel.ammo')}</span>
+                <InfoHint text="Projectile/fuze combination." />
               </div>
               <select
-                className="field !py-2"
+                className="field !py-2 mt-auto"
                 value={p.ammoId}
                 onChange={(e) => {
                   p.setAmmoId(e.target.value);
@@ -128,18 +126,12 @@ export default function LeftPanel(p: Props) {
                 ))}
               </select>
             </div>
-            <div className="space-y-1.5">
-              <div className="label flex items-center justify-between">
+
+            <div className="space-y-1.5 flex flex-col">
+              <div className="flex items-center justify-between min-h-[14px]">
                 <div className="flex items-center">
-                  {t('leftPanel.charge')}
-                  <InfoHint
-                    text={
-                      <>
-                        Powder increments. <b>Lower</b> = steeper arc.
-                        <b> Higher</b> = flatter arc.
-                      </>
-                    }
-                  />
+                  <span className="label leading-none">{t('leftPanel.charge')}</span>
+                  <InfoHint text="Powder increments." />
                 </div>
                 <label className="flex items-center gap-1.5 cursor-pointer group">
                   <div 
@@ -148,13 +140,13 @@ export default function LeftPanel(p: Props) {
                   >
                     {p.autoCharge && <div className="w-1.5 h-1.5 bg-black rounded-full"></div>}
                   </div>
-                  <span className={`text-[9px] font-mono uppercase tracking-widest ${p.autoCharge ? "text-accent" : "text-zinc-500"}`}>
+                  <span className={`text-[9px] font-mono uppercase tracking-widest leading-none ${p.autoCharge ? "text-accent" : "text-zinc-500"}`}>
                     {t('leftPanel.autoCharge')}
                   </span>
                 </label>
               </div>
               <select
-                className="field !py-2"
+                className="field !py-2 mt-auto"
                 value={p.chargeId}
                 disabled={p.autoCharge}
                 onChange={(e) => p.setChargeId(e.target.value)}

@@ -45,19 +45,19 @@ body::before {
 }
 
 .panel {
-  @apply bg-panel/75 backdrop-blur-md border border-line rounded-[2px] relative overflow-hidden;
+  @apply bg-panel/75 backdrop-blur-md border border-line rounded-[2px] relative;
 }
 .panel::before {
   content: '';
-  @apply absolute top-0 left-0 w-2 h-2 border-t border-l border-accentDim/30 pointer-events-none;
+  @apply absolute top-0 left-0 w-2 h-2 border-t border-l border-accentDim/30 pointer-events-none z-10;
 }
 .panel::after {
   content: '';
-  @apply absolute bottom-0 right-0 w-2 h-2 border-b border-r border-accentDim/30 pointer-events-none;
+  @apply absolute bottom-0 right-0 w-2 h-2 border-b border-r border-accentDim/30 pointer-events-none z-10;
 }
 
 .panel-alt {
-  @apply bg-panelAlt/80 backdrop-blur-md border border-line rounded-[2px] relative overflow-hidden;
+  @apply bg-panelAlt/80 backdrop-blur-md border border-line rounded-[2px] relative;
 }
 .panel-alt::before {
   content: '';
