@@ -41,7 +41,7 @@ export default function CoordInput({
   const isTarget = accent === "target";
 
   return (
-    <div className={`panel p-3 space-y-3 relative overflow-hidden border-l-2 ${isGun ? "border-l-emerald-500/40" : isTarget ? "border-l-red-500/40" : "border-l-amber-500/40"}`}>
+    <div className={`panel p-3 space-y-3 relative border-l-2 ${isGun ? "border-l-emerald-500/40" : isTarget ? "border-l-red-500/40" : "border-l-amber-500/40"}`}>
       <div className="flex items-center justify-between border-b border-line/40 pb-1.5">
         <span className="section-title flex items-center gap-1.5">
           <span className="text-zinc-600">POS:</span>
