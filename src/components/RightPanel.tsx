@@ -142,55 +142,53 @@ export default function RightPanel({
         </div>
 
         {!solution ? (
-          <div className="font-mono text-xs text-zinc-500 py-6 text-center border border-dashed border-line/30 rounded-sm">
-            Enter coordinates to compute solution.
+          <div className="font-mono text-[10px] text-zinc-600 py-8 text-center border border-dashed border-white/5 bg-white/2 rounded-none uppercase tracking-widest">
+            {t('rightPanel.standby')}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2">
-            <Stat
-              label={t('rightPanel.range')}
-              value={solution.rangeM.toFixed(0)}
-              unit="m"
-            />
-            <Stat
-              label={t('rightPanel.tof')}
-              value={solution.tofSec.toFixed(1)}
-              unit="s"
-            />
-            <Stat
-              label={t('rightPanel.azimuth')}
-              value={solution.bearingMil.toFixed(0)}
-              unit="mil"
-            />
-            <Stat
-              label={t('rightPanel.azimuth')}
-              value={solution.bearingDeg.toFixed(1)}
-              unit="°"
-            />
-            <Stat
-              label={t('rightPanel.elevation')}
-              value={solution.elevationMil.toFixed(0)}
-              unit="mil"
-            />
-            <Stat
-              label={t('rightPanel.charge')}
-              value={solution.chargeLabel.replace("Charge ", "C")}
-            />
-          </div>
-        )}
-        {solution && (
-          <div className="mt-3 grid grid-cols-2 gap-2 font-mono text-[10px] text-zinc-400">
-            <div className="border border-line bg-black/30 px-2 py-1 flex items-center justify-between">
-              <span className="label !text-[9px]">{t('rightPanel.arc')}</span>
-              <span className={solution.arc === "high" ? "text-accent" : "text-amber-400"}>
-                {solution.arc.toUpperCase()}
-              </span>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2">
+              <Stat
+                label={t('rightPanel.azimuth')}
+                value={solution.bearingMil.toFixed(0)}
+                unit="mil"
+                secondary={`${solution.bearingDeg.toFixed(1)}°`}
+              />
+              <Stat
+                label={t('rightPanel.elevation')}
+                value={solution.elevationMil.toFixed(0)}
+                unit="mil"
+              />
             </div>
-            <div className="border border-line bg-black/30 px-2 py-1 flex items-center justify-between">
-              <span className="label !text-[9px]">{t('rightPanel.altDelta')}</span>
-              <span className={Math.abs(solution.altDeltaM) >= 25 ? "text-danger" : "text-zinc-300"}>
-                {solution.altDeltaM >= 0 ? "+" : "−"}{Math.abs(solution.altDeltaM).toFixed(0)} m
-              </span>
+
+            <div className="space-y-3 pt-2">
+              <VisualBar 
+                label={t('rightPanel.range')} 
+                value={solution.rangeM} 
+                unit="m" 
+                max={15000} // Example max, could be dynamic
+                color="#d6ff3a"
+              />
+              <VisualBar 
+                label={t('rightPanel.tof')} 
+                value={solution.tofSec} 
+                unit="s" 
+                max={60} 
+                color="#60a5fa"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="panel-alt p-2 flex items-center justify-between">
+                <span className="label !text-[8px]">{t('rightPanel.charge')}</span>
+                <span className="value text-accent font-bold">{solution.chargeLabel.replace("Charge ", "C")}</span>
+              </div>
+              <div className="panel-alt p-2 flex items-center justify-between">
+                <span className="label !text-[8px]">{t('rightPanel.arc')}</span>
+                <span className={`value font-bold ${solution.arc === "high" ? "text-accent" : "text-amber-400"}`}>
+                  {solution.arc.toUpperCase()}
+                </span>
+              </div>
             </div>
           </div>
         )}
@@ -324,13 +322,38 @@ export default function RightPanel({
   );
 }
 
-function Stat({ label, value, unit, hint }: { label: string; value: string; unit?: string; hint?: string }) {
+function Stat({ label, value, unit, secondary, hint }: { label: string; value: string; unit?: string; secondary?: string, hint?: string }) {
   return (
-    <div className="panel-alt p-2 relative group" title={hint}>
-      <div className="label mb-0.5">{label}</div>
+    <div className="panel-alt p-2.5 relative group border-white/5" title={hint}>
+      <div className="label mb-1 opacity-70">{label}</div>
       <div className="flex items-baseline gap-1">
-        <span className="font-mono text-xl text-accent font-bold tracking-tight">{value}</span>
-        {unit && <span className="text-[10px] text-zinc-500 font-mono">{unit}</span>}
+        <span className="font-mono text-2xl text-accent font-bold tracking-tighter drop-shadow-[0_0_8px_rgba(214,255,58,0.3)]">{value}</span>
+        {unit && <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-tighter">{unit}</span>}
+      </div>
+      {secondary && (
+        <div className="absolute top-2 right-2 font-mono text-[9px] text-zinc-500 font-bold">
+          {secondary}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function VisualBar({ label, value, unit, max, color }: { label: string, value: number, unit: string, max: number, color: string }) {
+  const percent = Math.min(100, (value / max) * 100);
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between items-end">
+        <span className="label !text-[8px] opacity-60">{label}</span>
+        <div className="font-mono text-[11px] font-bold text-zinc-300">
+          {value.toFixed(0)}<span className="text-[8px] text-zinc-500 ml-0.5">{unit}</span>
+        </div>
+      </div>
+      <div className="h-1.5 w-full bg-white/5 overflow-hidden border border-white/5">
+        <div 
+          className="h-full transition-all duration-500 ease-out shadow-[0_0_10px_currentColor]"
+          style={{ width: `${percent}%`, backgroundColor: color, color: color }}
+        />
       </div>
     </div>
   );

@@ -572,8 +572,9 @@ function calibrate(cal: MapDef["calibration"]) {
         </div>
       </header>
 
-      <main className="flex-1 max-w-[1700px] w-full mx-auto p-3 grid grid-cols-12 gap-3">
-        <section className="col-span-12 lg:col-span-3 space-y-3">
+      <main className="flex-1 max-w-[1800px] w-full mx-auto p-2 sm:p-4 grid grid-cols-12 gap-2 sm:gap-4 overflow-x-hidden overflow-y-auto lg:overflow-hidden">
+        {/* Left Side: Controls */}
+        <section className="panel-left col-span-12 lg:col-span-3 space-y-2 sm:space-y-4 overflow-y-auto lg:overflow-y-visible">
           <LeftPanel
             weapons={WEAPONS}
             weaponId={weaponId}
@@ -598,10 +599,24 @@ function calibrate(cal: MapDef["calibration"]) {
             isPremium={isPremium}
             onOpenLicense={() => setLicenseModalOpen(true)}
           />
+          <SyncPanel
+            batteryId={batteryId}
+            onJoin={setBatteryId}
+            onLeave={() => setBatteryId("")}
+            isConnected={isSynced}
+            serverUrl={syncServerUrl}
+            onUrlChange={(url) => {
+              setSyncServerUrl(url);
+              saveJSON("ar_fdc_sync_url", url);
+            }}
+            isPremium={isPremium}
+            onOpenLicense={() => setLicenseModalOpen(true)}
+          />
         </section>
 
-        <section className="col-span-12 lg:col-span-6 flex flex-col gap-3 min-h-[500px]">
-<MapView
+        {/* Center: Map */}
+        <section className="col-span-12 lg:col-span-6 flex flex-col gap-2 sm:gap-4 min-h-[450px] lg:min-h-0">
+          <MapView
              map={map}
              maps={maps}
              setMapId={setMapId}
@@ -624,7 +639,8 @@ function calibrate(cal: MapDef["calibration"]) {
           />
         </section>
 
-        <section className="col-span-12 lg:col-span-3 space-y-3">
+        {/* Right Side: Results & Tools */}
+        <section className="panel-right col-span-12 lg:col-span-3 space-y-2 sm:space-y-4 overflow-y-auto lg:overflow-y-visible">
           <RightPanel
             solution={mergedSolution}
             onSave={saveMission}
@@ -646,19 +662,6 @@ function calibrate(cal: MapDef["calibration"]) {
             isPremium={isPremium}
             onOpenLicense={() => setLicenseModalOpen(true)}
           />
-          <SyncPanel
-            batteryId={batteryId}
-            onJoin={setBatteryId}
-            onLeave={() => setBatteryId("")}
-            isConnected={isSynced}
-            serverUrl={syncServerUrl}
-            onUrlChange={(url) => {
-              setSyncServerUrl(url);
-              saveJSON("ar_fdc_sync_url", url);
-            }}
-            isPremium={isPremium}
-            onOpenLicense={() => setLicenseModalOpen(true)}
-          />
           <HistoryPanel
             missions={missions}
             onSelect={loadMission}
@@ -674,17 +677,6 @@ function calibrate(cal: MapDef["calibration"]) {
               }
             }}
           />
-          {isPremium && showAdmin && (
-            <div className="panel p-3 space-y-2 border-amber-400/30">
-              <div className="flex items-center justify-between">
-                <span className="section-title">ADMIN: License Generator</span>
-              </div>
-              <div className="font-mono text-xs text-zinc-400 leading-relaxed">
-                Admin utilities hidden by design.<br />
-                Licenses managed via Telegram Bot: <a href="https://t.me/Arma_Artillery_Bot" className="text-accent">@Arma_Artillery_Bot</a>
-              </div>
-            </div>
-          )}
         </section>
       </main>
 

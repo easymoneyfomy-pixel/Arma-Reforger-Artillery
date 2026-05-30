@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -10,166 +12,123 @@ body,
 
 body {
   background:
-    radial-gradient(1200px 600px at 20% -10%, rgba(214, 255, 58, 0.04), transparent 60%),
-    radial-gradient(900px 500px at 110% 110%, rgba(214, 255, 58, 0.03), transparent 60%),
-    #06070a;
+    radial-gradient(1400px 700px at 20% -10%, rgba(214, 255, 58, 0.05), transparent 60%),
+    radial-gradient(1000px 600px at 110% 110%, rgba(214, 255, 58, 0.04), transparent 60%),
+    #050608;
   -webkit-font-smoothing: antialiased;
   position: relative;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
 }
 
+/* CRT / HUD Effects Overlay */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   pointer-events: none;
-  opacity: 0.02;
+  opacity: 0.15;
   z-index: 100;
-  background-image: radial-gradient(#d6ff3a 1px, transparent 0);
-  background-size: 16px 16px;
+  background-image: radial-gradient(rgba(214, 255, 58, 0.1) 0.5px, transparent 0);
+  background-size: 24px 24px;
 }
 
-/* Custom telemetry scrollbars */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-::-webkit-scrollbar-track {
-  background: rgba(11, 12, 13, 0.5);
-}
-::-webkit-scrollbar-thumb {
-  background: #1f2226;
-  border-radius: 1px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #7a9610;
-}
-
-.panel {
-  @apply bg-panel/75 backdrop-blur-md border border-line rounded-[2px] relative;
-}
-.panel::before {
-  content: '';
-  @apply absolute top-0 left-0 w-2 h-2 border-t border-l border-accentDim/30 pointer-events-none z-10;
-}
-.panel::after {
-  content: '';
-  @apply absolute bottom-0 right-0 w-2 h-2 border-b border-r border-accentDim/30 pointer-events-none z-10;
-}
-
-.panel-alt {
-  @apply bg-panelAlt/80 backdrop-blur-md border border-line rounded-[2px] relative;
-}
-.panel-alt::before {
-  content: '';
-  @apply absolute top-0 left-0 w-1.5 h-1.5 border-t border-l border-accentDim/20 pointer-events-none;
-}
-.panel-alt::after {
-  content: '';
-  @apply absolute bottom-0 right-0 w-1.5 h-1.5 border-b border-r border-accentDim/20 pointer-events-none;
-}
-
-.label {
-  @apply text-[10px] uppercase tracking-[0.18em] text-zinc-500 font-mono;
-}
-.value {
-  @apply font-mono text-zinc-100;
-}
-.field {
-  @apply w-full bg-black/50 border border-line px-2.5 py-1.5 font-mono text-sm text-zinc-100 rounded-sm
-    transition-all duration-200 outline-none
-    focus:border-accent focus:shadow-[0_0_10px_rgba(214,255,58,0.12)] focus:ring-0;
-}
-
-/* Custom Select styling to ensure arrows and text are aligned */
-select.field {
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23d6ff3a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.5rem center;
-  background-size: 1rem;
-  padding-right: 2rem;
-  line-height: 1.2;
-}
-
-select.field:disabled {
-  @apply opacity-50 cursor-not-allowed grayscale;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2352525b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-}
-.btn {
-  @apply font-mono text-xs uppercase tracking-wider px-3 py-1.5 border border-line bg-panelAlt/80 backdrop-blur-sm
-    text-zinc-300 hover:border-accent hover:text-accent hover:shadow-[0_0_8px_rgba(214,255,58,0.08)]
-    transition-all duration-200 cursor-pointer rounded-sm select-none;
-}
-.btn-primary {
-  @apply font-mono text-xs uppercase tracking-wider px-3 py-1.5 border border-accentDim bg-accentDim/10
-    text-accent hover:bg-accentDim/20 hover:border-accent hover:shadow-[0_0_12px_rgba(214,255,58,0.15)]
-    transition-all duration-200 cursor-pointer rounded-sm select-none;
-}
-.section-title {
-  @apply text-[11px] uppercase tracking-[0.2em] text-accent/80 font-mono;
-}
-.hairline {
-  @apply border-t border-line;
-}
-
-/* Scanline CRT overlay — extremely subtle, adds telemetry immersion */
 body::after {
   content: '';
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 99;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0, 0, 0, 0.03) 2px,
-    rgba(0, 0, 0, 0.03) 4px
-  );
+  z-index: 101;
+  background: 
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 1px,
+      rgba(0, 0, 0, 0.1) 1px,
+      rgba(0, 0, 0, 0.1) 2px
+    ),
+    radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.4) 100%);
 }
 
-/* Text selection styling */
-::selection {
-  background: rgba(214, 255, 58, 0.25);
-  color: #fff;
+/* Custom telemetry scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.3);
+}
+::-webkit-scrollbar-thumb {
+  background: #1a1c1e;
+  border-radius: 0px;
+  border: 1px solid rgba(214, 255, 58, 0.1);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(214, 255, 58, 0.4);
 }
 
-/* Glow pulse animation for active elements */
-@keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 4px rgba(214, 255, 58, 0.05); }
-  50% { box-shadow: 0 0 12px rgba(214, 255, 58, 0.12); }
-}
-.glow-active {
-  animation: glowPulse 3s ease-in-out infinite;
-}
-
-/* Smooth fade-in for panels on page load */
-@keyframes fadeSlideUp {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
 .panel {
-  animation: fadeSlideUp 0.4s ease-out;
+  @apply bg-[#0b0c0f]/85 backdrop-blur-xl border border-white/5 shadow-2xl relative overflow-hidden;
 }
 
-/* Radar sweep animation */
-@keyframes radar-sweep {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+/* Tactical Corner Accents */
+.panel::before {
+  content: '';
+  @apply absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-accentDim/50 pointer-events-none z-10;
 }
-.radar-sweep-line {
-  transform-origin: 50px 50px;
-  animation: radar-sweep 4s linear infinite;
+.panel::after {
+  content: '';
+  @apply absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-accentDim/50 pointer-events-none z-10;
 }
 
-/* Smooth fade-in for collapsible elements */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
+.label {
+  @apply text-[9px] uppercase tracking-[0.25em] text-zinc-500 font-bold;
 }
-.animate-fadeIn {
-  animation: fadeIn 0.25s ease-out;
+.value {
+  font-family: 'JetBrains Mono', monospace;
+  @apply text-zinc-100;
 }
+.field {
+  font-family: 'JetBrains Mono', monospace;
+  @apply w-full bg-black/60 border border-white/10 px-3 py-2 text-sm text-zinc-100 rounded-none
+    transition-all duration-300 outline-none
+    focus:border-accent/60 focus:bg-accent/5 focus:shadow-[0_0_15px_rgba(214,255,58,0.08)];
+}
+
+.btn {
+  font-family: 'JetBrains Mono', monospace;
+  @apply text-[10px] uppercase tracking-widest px-4 py-2 border border-white/10 bg-white/5
+    text-zinc-400 hover:border-accent/60 hover:text-accent hover:bg-accent/5
+    transition-all duration-300 cursor-pointer rounded-none select-none;
+}
+.btn-primary {
+  font-family: 'JetBrains Mono', monospace;
+  @apply text-[10px] uppercase tracking-widest px-4 py-2 border border-accent/40 bg-accent/10
+    text-accent hover:bg-accent/20 hover:border-accent hover:shadow-[0_0_20px_rgba(214,255,58,0.2)]
+    transition-all duration-300 cursor-pointer rounded-none select-none;
+}
+
+.section-title {
+  @apply text-[10px] uppercase tracking-[0.3em] text-accent/90 font-bold flex items-center gap-2;
+}
+
+/* Animations */
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.panel-left {
+  animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+.panel-right {
+  animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 
 
 
