@@ -68,7 +68,7 @@ type Props = {
   const calibYRef = useRef<HTMLInputElement>(null);
 
   const magnifierPos = useMemo(() => {
-    if (calibStep >= 1 || (dragging && dragging.startsWith("p"))) return cursor;
+    if (calibStep >= 1 || dragging) return cursor;
     return null;
   }, [calibStep, dragging, cursor]);
 
@@ -804,7 +804,7 @@ type Props = {
             <img
               src={map.image}
               alt={map.name}
-              className="block w-full h-full object-cover opacity-90"
+              className="block w-full h-full object-fill opacity-90"
               draggable={false}
             />
           ) : (
@@ -1050,22 +1050,26 @@ type Props = {
           const scx = cp.x * scale + pan.x;
           const scy = cp.y * scale + pan.y;
           
-          const magSize = 160;
-          const zoom = 4;
+          const magSize = 180;
+          const zoom = 8; // Higher zoom for precision
           
-          // Use pixel-based background position for absolute precision
+          // Pixel-based background position for absolute precision
           const bgX = -cp.x * zoom + magSize / 2;
           const bgY = -cp.y * zoom + magSize / 2;
 
+          // Stable quadrant-based positioning to avoid jitter
+          const isLeft = scx > size.w / 2;
+          const isTop = scy > size.h / 2;
+          
           return (
             <div
-              className="absolute pointer-events-none border-2 border-accent/80 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-full overflow-hidden z-50 bg-black animate-in zoom-in duration-150"
+              className="absolute pointer-events-none border-2 border-accent/90 shadow-[0_30px_60px_rgba(0,0,0,0.6)] rounded-full overflow-hidden z-50 bg-black animate-in zoom-in duration-200"
               style={{
                 width: magSize,
                 height: magSize,
-                // Offset the magnifier so it doesn't block the cursor
-                left: scx + magSize / 2 + 20 > size.w ? scx - magSize * 1.5 - 20 : scx + magSize / 2 + 20,
-                top: Math.max(10, Math.min(size.h - magSize - 10, scy - magSize / 2)),
+                // Position in the quadrant furthest from the cursor
+                left: isLeft ? 20 : size.w - magSize - 20,
+                top: isTop ? 80 : size.h - magSize - 40,
               }}
             >
               <div
@@ -1077,18 +1081,35 @@ type Props = {
                   imageRendering: "pixelated",
                 }}
               />
-              {/* Center Crosshair for the magnifier */}
+              {/* Scope-style scanlines */}
+              <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.02),rgba(0,255,0,0.01),rgba(0,0,255,0.02))] bg-[length:100%_2px,3px_100%]" />
+              
+              {/* Precision Crosshair */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-full h-[1px] bg-accent/30" />
-                <div className="absolute w-[1px] h-full bg-accent/30" />
-                <div className="w-4 h-4 border border-accent/60 rounded-full" />
-                <div className="w-1 h-1 bg-accent rounded-full shadow-[0_0_8px_rgba(214,255,58,1)]" />
+                {/* Long axis lines */}
+                <div className="w-full h-[0.5px] bg-accent/40" />
+                <div className="absolute w-[0.5px] h-full bg-accent/40" />
+                
+                {/* Sub-pixel markers */}
+                <div className="absolute w-10 h-10 border border-accent/20 rounded-full" />
+                <div className="absolute w-20 h-20 border border-accent/10 rounded-full" />
+                
+                {/* Center dot */}
+                <div className="w-1.5 h-1.5 bg-accent rounded-full shadow-[0_0_12px_rgba(214,255,58,1)] z-10" />
               </div>
-              <div className="absolute bottom-3 left-0 right-0 text-center">
-                <span className="bg-black/60 px-2 py-0.5 rounded text-[9px] font-bold font-mono text-accent border border-accent/20">
-                  {zoom}X LENS
+
+              {/* Readouts */}
+              <div className="absolute top-3 left-0 right-0 text-center flex flex-col items-center gap-0.5">
+                <span className="bg-black/80 px-2 py-0.5 rounded text-[8px] font-bold font-mono text-accent border border-accent/30 tracking-widest uppercase">
+                  {zoom}X Zoom
+                </span>
+                <span className="bg-black/60 px-1.5 py-0.5 rounded text-[7px] font-mono text-zinc-400">
+                  X:{magnifierPos.x.toFixed(0)} Y:{magnifierPos.y.toFixed(0)}
                 </span>
               </div>
+              
+              {/* Lens glare effect */}
+              <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
             </div>
           );
         })()}
