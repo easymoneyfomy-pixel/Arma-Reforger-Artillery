@@ -7,45 +7,60 @@
 export function parseAxis(input: string, worldSizeM = 12800): number | null {
   const s = input.trim();
   if (!s) return null;
-  // If decimal or > 4 digits assume meters.
-  if (/[.,]/.test(s) || s.length > 4) {
+
+  // If it's a raw meter coordinate (length > 4 or has decimal)
+  if (/[.,]/.test(s) || s.length > 5) {
     const n = Number(s.replace(",", "."));
     return Number.isFinite(n) ? clamp(n, 0, worldSizeM) : null;
   }
-  if (!/^\d+$/.test(s)) {
-    const n = Number(s);
-    return Number.isFinite(n) ? clamp(n, 0, worldSizeM) : null;
+
+  // Arma Grid Logic:
+  // 2 digits: "04" -> 4000m
+  // 3 digits: "045" -> 4500m
+  // 4 digits: "0452" -> 4520m
+  // 5 digits: "04523" -> 4523m
+  
+  let val: number;
+  if (s.length <= 5) {
+    const padded = s.padEnd(5, "0");
+    val = Number(padded);
+  } else {
+    val = Number(s);
   }
-  // 1-4 digit grid: pad to 5 (each km is 1 leading digit, meters within km come from remaining digits).
-  // We interpret the leading digit(s) as kilometers, then remaining as a fraction of km.
-  // "04" -> 4 km. "045" -> 4.5 km. "0452" -> 4.52 km.
-  let km: number;
-  if (s.length === 1) km = Number(s);
-  else if (s.length === 2) km = Number(s);
-  else km = Number(s.slice(0, 2)) + Number(s.slice(2)) / Math.pow(10, s.length - 2);
-  return clamp(km * 1000, 0, worldSizeM);
+
+  return Number.isFinite(val) ? clamp(val, 0, worldSizeM) : null;
 }
 
 // Parse a single grid pair like "016073" -> { x: 1600, y: 7300 } (3+3 digits).
-// Also accepts space/comma separated "016 073" or "x=016 y=073".
+// Supports 4, 6, 8, 10 digit concatenated grids.
 export function parseGridPair(input: string, worldSizeM = 12800): { x: number; y: number } | null {
-  const cleaned = input.replace(/[^0-9 ,;\-/]/g, "").trim();
+  const cleaned = input.replace(/[^0-9 ]/g, "").trim();
   if (!cleaned) return null;
-  const parts = cleaned.split(/[\s,;/\-]+/).filter(Boolean);
+
+  const parts = cleaned.split(/\s+/).filter(Boolean);
+
+  // Space separated: "016 073"
   if (parts.length === 2) {
     const x = parseAxis(parts[0], worldSizeM);
     const y = parseAxis(parts[1], worldSizeM);
-    if (x == null || y == null) return null;
+    if (x === null || y === null) return null;
     return { x, y };
   }
-  // Single concatenated string: must be even length 2..10
-  if (parts.length === 1 && parts[0].length >= 2 && parts[0].length % 2 === 0) {
-    const half = parts[0].length / 2;
-    const x = parseAxis(parts[0].slice(0, half), worldSizeM);
-    const y = parseAxis(parts[0].slice(half), worldSizeM);
-    if (x == null || y == null) return null;
-    return { x, y };
+
+  // Concatenated: "016073"
+  if (parts.length === 1) {
+    const s = parts[0];
+    if (s.length >= 4 && s.length % 2 === 0) {
+      const half = s.length / 2;
+      const xStr = s.slice(0, half);
+      const yStr = s.slice(half);
+      const x = parseAxis(xStr, worldSizeM);
+      const y = parseAxis(yStr, worldSizeM);
+      if (x === null || y === null) return null;
+      return { x, y };
+    }
   }
+
   return null;
 }
 
