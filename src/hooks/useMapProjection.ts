@@ -5,13 +5,27 @@ export function useMapProjection(map: MapDef, size: { w: number; h: number }) {
   const worldToPx = useCallback((world: { x: number; y: number }) => {
     const cal = map.calibration;
     if (cal) {
-      const dx = cal.p2.world.x - cal.p1.world.x || 1;
-      const dy = cal.p2.world.y - cal.p1.world.y || 1;
-      const fx = (world.x - cal.p1.world.x) / dx;
-      const fy = (world.y - cal.p1.world.y) / dy;
-      const px = cal.p1.px.x + fx * (cal.p2.px.x - cal.p1.px.x);
-      const py = cal.p1.px.y + fy * (cal.p2.px.y - cal.p1.px.y);
-      return { x: (px / 1000) * size.w, y: (py / 1000) * size.h };
+      const dwx = cal.p2.world.x - cal.p1.world.x;
+      const dwy = cal.p2.world.y - cal.p1.world.y;
+      const dpx = cal.p2.px.x - cal.p1.px.x;
+      const dpy = cal.p2.px.y - cal.p1.px.y;
+      const det = dpx * dpx + dpy * dpy || 1;
+
+      // Similarity transform matrix M = [a -b; b a]
+      // deltaW = M * deltaP
+      const a = (dwx * dpx + dwy * dpy) / det;
+      const b = (dwy * dpx - dwx * dpy) / det;
+
+      // P = P1 + M^-1 * (W - W1)
+      // M^-1 = (1/det_M) * [a b; -b a], where det_M = a^2 + b^2
+      const detM = a * a + b * b || 1;
+      const dxw = world.x - cal.p1.world.x;
+      const dyw = world.y - cal.p1.world.y;
+      
+      const lpx = cal.p1.px.x + (a * dxw + b * dyw) / detM;
+      const lpy = cal.p1.px.y + (-b * dxw + a * dyw) / detM;
+
+      return { x: (lpx / 1000) * size.w, y: (lpy / 1000) * size.h };
     }
     const fx = world.x / map.worldSizeM;
     const fy = world.y / map.worldSizeM;
@@ -23,13 +37,22 @@ export function useMapProjection(map: MapDef, size: { w: number; h: number }) {
     if (cal) {
       const lpx = (px.x / size.w) * 1000;
       const lpy = (px.y / size.h) * 1000;
-      const dxp = cal.p2.px.x - cal.p1.px.x || 1;
-      const dyp = cal.p2.px.y - cal.p1.px.y || 1;
-      const fx = (lpx - cal.p1.px.x) / dxp;
-      const fy = (lpy - cal.p1.px.y) / dyp;
+      
+      const dpx = cal.p2.px.x - cal.p1.px.x;
+      const dpy = cal.p2.px.y - cal.p1.px.y;
+      const dwx = cal.p2.world.x - cal.p1.world.x;
+      const dwy = cal.p2.world.y - cal.p1.world.y;
+      const det = dpx * dpx + dpy * dpy || 1;
+
+      const a = (dwx * dpx + dwy * dpy) / det;
+      const b = (dwy * dpx - dwx * dpy) / det;
+
+      const dxp = lpx - cal.p1.px.x;
+      const dyp = lpy - cal.p1.px.y;
+
       return {
-        x: cal.p1.world.x + fx * (cal.p2.world.x - cal.p1.world.x),
-        y: cal.p1.world.y + fy * (cal.p2.world.y - cal.p1.world.y),
+        x: cal.p1.world.x + a * dxp - b * dyp,
+        y: cal.p1.world.y + b * dxp + a * dyp,
       };
     }
     const fx = px.x / size.w;

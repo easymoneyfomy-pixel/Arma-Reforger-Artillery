@@ -115,6 +115,11 @@ export default function MapView({
     return () => obs.disconnect();
   }, []);
 
+  useEffect(() => {
+    setCalibDraft(null);
+    setCalibMode(null);
+  }, [map.id]);
+
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {
     if (dragging || panDrag) return;
     const lp = eventLocalPx(e);
@@ -123,7 +128,7 @@ export default function MapView({
       const wx = Number(calibWorldInput.x) || 0;
       const wy = Number(calibWorldInput.y) || 0;
       const lpx = { x: (lp.x / size.w) * 1000, y: (lp.y / size.h) * 1000 };
-      const cur = calibDraft ?? {
+      const cur = calibDraft ?? map.calibration ?? {
         p1: { px: { x: 0, y: 1000 }, world: { x: 0, y: 0 } },
         p2: { px: { x: 1000, y: 0 }, world: { x: map.worldSizeM, y: map.worldSizeM } },
       };
@@ -242,6 +247,20 @@ export default function MapView({
   if (gun) markers.push({ pos: worldToPx(gun), color: "#34d399", label: "G", which: "gun" });
   if (target) markers.push({ pos: worldToPx(target), color: "#f87171", label: "T", which: "target" });
   if (impact) markers.push({ pos: worldToPx(impact), color: "#fbbf24", label: "I" });
+
+  // Add calibration markers if drafting
+  if (calibDraft) {
+    markers.push({
+      pos: { x: (calibDraft.p1.px.x / 1000) * size.w, y: (calibDraft.p1.px.y / 1000) * size.h },
+      color: "#60a5fa",
+      label: "P1",
+    });
+    markers.push({
+      pos: { x: (calibDraft.p2.px.x / 1000) * size.w, y: (calibDraft.p2.px.y / 1000) * size.h },
+      color: "#60a5fa",
+      label: "P2",
+    });
+  }
 
   const showLine = gun && target;
   const rangeM = gun && target ? Math.hypot(target.x - gun.x, target.y - gun.y) : null;
@@ -558,21 +577,41 @@ export default function MapView({
                 3) Repeat for a second, distant point as <b>P2</b>.<br />
                 4) Press <b>Save Calibration</b>.
               </div>
-              <div className="grid grid-cols-2 gap-1">
-                <input
-                  className="field"
-                  placeholder="world X (m)"
-                  title="Known world X coordinate, in meters."
-                  value={calibWorldInput.x}
-                  onChange={(e) => setCalibWorldInput({ ...calibWorldInput, x: e.target.value })}
-                />
-                <input
-                  className="field"
-                  placeholder="world Y (m)"
-                  title="Known world Y coordinate, in meters."
-                  value={calibWorldInput.y}
-                  onChange={(e) => setCalibWorldInput({ ...calibWorldInput, y: e.target.value })}
-                />
+              <div className="flex flex-col gap-1">
+                <div className="grid grid-cols-2 gap-1">
+                  <input
+                    className="field"
+                    placeholder="world X (m)"
+                    title="Known world X coordinate, in meters."
+                    value={calibWorldInput.x}
+                    onChange={(e) => setCalibWorldInput({ ...calibWorldInput, x: e.target.value })}
+                  />
+                  <input
+                    className="field"
+                    placeholder="world Y (m)"
+                    title="Known world Y coordinate, in meters."
+                    value={calibWorldInput.y}
+                    onChange={(e) => setCalibWorldInput({ ...calibWorldInput, y: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-1">
+                  <button
+                    className="btn !py-1 !text-[9px]"
+                    onClick={() => gun && setCalibWorldInput({ x: gun.x.toFixed(0), y: gun.y.toFixed(0) })}
+                    disabled={!gun}
+                    title="Copy current Gun world coordinates to inputs."
+                  >
+                    Use Gun Pos
+                  </button>
+                  <button
+                    className="btn !py-1 !text-[9px]"
+                    onClick={() => target && setCalibWorldInput({ x: target.x.toFixed(0), y: target.y.toFixed(0) })}
+                    disabled={!target}
+                    title="Copy current Target world coordinates to inputs."
+                  >
+                    Use Target Pos
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <button
@@ -603,7 +642,10 @@ export default function MapView({
                 className="btn-primary w-full"
                 disabled={!calibDraft}
                 onClick={() => {
-                  if (calibDraft) onCalibrate(calibDraft);
+                  if (calibDraft) {
+                    onCalibrate(calibDraft);
+                    setCalibDraft(null);
+                  }
                 }}
                 title="Save calibration. Saved into local storage with the map."
               >
