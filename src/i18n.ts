@@ -95,6 +95,17 @@ i18n
             import: "Import",
             empty: "No saved missions."
           },
+          sync: {
+            title: "Battery Sync",
+            label: "Battery ID",
+            join: "Join",
+            leave: "Leave",
+            connected: "CONNECTED",
+            disconnected: "DISCONNECTED",
+            status: "Status",
+            idPlaceholder: "ROOM ID",
+            help: "Sync markers with your battery in real-time."
+          },
           correction: {
             title: "Impact Correction",
             clear: "Clear",
@@ -189,6 +200,17 @@ i18n
             clear: "Очистить",
             import: "Импорт",
             empty: "Нет сохраненных миссий."
+          },
+          sync: {
+            title: "Синхронизация",
+            label: "ID Батареи",
+            join: "Войти",
+            leave: "Выйти",
+            connected: "ПОДКЛЮЧЕНО",
+            disconnected: "ОТКЛЮЧЕНО",
+            status: "Статус",
+            idPlaceholder: "ID КОМНАТЫ",
+            help: "Синхронизация меток с вашей батареей в реальном времени."
           },
           correction: {
             title: "Корректировка удара",

@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { io, Socket } from "socket.io-client";
 import weaponsData from "./data/weapons.json";
 import mapsData from "./data/maps";
 import type { MapDef, Mission, Vec3, Weapon } from "./types";
@@ -9,6 +10,7 @@ import LeftPanel from "./components/LeftPanel";
 import RightPanel from "./components/RightPanel";
 import MapView from "./components/MapView";
 import HistoryPanel from "./components/HistoryPanel";
+import SyncPanel from "./components/SyncPanel";
 import CorrectionPanel from "./components/CorrectionPanel";
 import HelpModal from "./components/HelpModal";
 import LicenseModal from "./components/LicenseModal";
@@ -89,8 +91,16 @@ export default function App() {
   const [licenseKey, setLicenseKey] = useState(() => getSavedLicenseKey());
   const [isPremium, setIsPremium] = useState(false);
   const [licenseModalOpen, setLicenseModalOpen] = useState(false);
-useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
+
+  // --- Sync States ---
+  const [batteryId, setBatteryId] = useState("");
+  const [isSynced, setIsSynced] = useState(false);
+  const [syncServerUrl, setSyncServerUrl] = useState(() => loadJSON<string>("ar_fdc_sync_url", "http://localhost:3000"));
+  const socketRef = useRef<Socket | null>(null);
+  const syncIgnoreRef = useRef(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
   const lic = params.get("lic");
   const adminMode = params.get("admin") === "1";
 
@@ -247,6 +257,60 @@ useEffect(() => {
 
   const gunV = toVec(gun);
   const targetV = toVec(target);
+
+  useEffect(() => {
+    if (!batteryId) {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        setIsSynced(false);
+      }
+      return;
+    }
+
+    const socket = io(syncServerUrl);
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      setIsSynced(true);
+      socket.emit("join_battery", { roomId: batteryId, userLabel: "Operator" });
+    });
+
+    socket.on("disconnect", () => setIsSynced(false));
+
+    socket.on("battery_state", (state) => {
+      syncIgnoreRef.current = true;
+      if (state.gun) setGun(vecToStr(state.gun));
+      if (state.target) setTarget(vecToStr(state.target));
+      if (state.weaponId) setWeaponId(state.weaponId);
+      if (state.ammoId) setAmmoId(state.ammoId);
+      setTimeout(() => (syncIgnoreRef.current = false), 50);
+    });
+
+    socket.on("marker_updated", (data) => {
+      syncIgnoreRef.current = true;
+      if (data.type === "gun") setGun(vecToStr(data.pos));
+      if (data.type === "target") setTarget(vecToStr(data.pos));
+      if (data.weaponId) setWeaponId(data.weaponId);
+      if (data.ammoId) setAmmoId(data.ammoId);
+      setTimeout(() => (syncIgnoreRef.current = false), 50);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [batteryId, syncServerUrl]);
+
+  // Sync Outgoing Changes
+  useEffect(() => {
+    if (!isSynced || !socketRef.current || syncIgnoreRef.current) return;
+    socketRef.current.emit("update_marker", { type: "gun", pos: gunV, weaponId, ammoId });
+  }, [gunV?.x, gunV?.y, gunV?.z, weaponId, ammoId]);
+
+  useEffect(() => {
+    if (!isSynced || !socketRef.current || syncIgnoreRef.current) return;
+    socketRef.current.emit("update_marker", { type: "target", pos: targetV });
+  }, [targetV?.x, targetV?.y, targetV?.z]);
 
   useEffect(() => {
     if (!autoCharge || !gunV || !targetV) return;
@@ -578,6 +642,17 @@ function calibrate(cal: MapDef["calibration"]) {
             onApplyCorrection={(corr) => {
               setTarget(vecToStr(corr));
               setImpactPoint(null);
+            }}
+          />
+          <SyncPanel
+            batteryId={batteryId}
+            onJoin={setBatteryId}
+            onLeave={() => setBatteryId("")}
+            isConnected={isSynced}
+            serverUrl={syncServerUrl}
+            onUrlChange={(url) => {
+              setSyncServerUrl(url);
+              saveJSON("ar_fdc_sync_url", url);
             }}
           />
           <HistoryPanel
