@@ -1050,37 +1050,44 @@ type Props = {
           const scx = cp.x * scale + pan.x;
           const scy = cp.y * scale + pan.y;
           
-          const magSize = 140;
+          const magSize = 160;
           const zoom = 4;
-          const sourceX = (cp.x / size.w) * 100;
-          const sourceY = (cp.y / size.h) * 100;
+          
+          // Use pixel-based background position for absolute precision
+          const bgX = -cp.x * zoom + magSize / 2;
+          const bgY = -cp.y * zoom + magSize / 2;
 
           return (
             <div
-              className="absolute pointer-events-none border-2 border-accent shadow-2xl rounded-sm overflow-hidden z-50 bg-black"
+              className="absolute pointer-events-none border-2 border-accent/80 shadow-[0_20px_50px_rgba(0,0,0,0.5)] rounded-full overflow-hidden z-50 bg-black animate-in zoom-in duration-150"
               style={{
                 width: magSize,
                 height: magSize,
-                left: Math.min(size.w - magSize - 10, Math.max(10, scx - magSize / 2)),
-                top: scy - magSize - 20 < 10 ? scy + 20 : scy - magSize - 20,
+                // Offset the magnifier so it doesn't block the cursor
+                left: scx + magSize / 2 + 20 > size.w ? scx - magSize * 1.5 - 20 : scx + magSize / 2 + 20,
+                top: Math.max(10, Math.min(size.h - magSize - 10, scy - magSize / 2)),
               }}
             >
               <div
                 className="w-full h-full"
                 style={{
                   backgroundImage: `url(${map.image})`,
-                  backgroundPosition: `${sourceX}% ${sourceY}%`,
-                  backgroundSize: `${100 * zoom}%`,
+                  backgroundPosition: `${bgX}px ${bgY}px`,
+                  backgroundSize: `${size.w * zoom}px ${size.h * zoom}px`,
                   imageRendering: "pixelated",
                 }}
               />
+              {/* Center Crosshair for the magnifier */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-full h-[1px] bg-accent/40" />
-                <div className="absolute w-[1px] h-full bg-accent/40" />
-                <div className="w-2 h-2 border border-accent rounded-full shadow-[0_0_8px_rgba(214,255,58,0.8)]" />
+                <div className="w-full h-[1px] bg-accent/30" />
+                <div className="absolute w-[1px] h-full bg-accent/30" />
+                <div className="w-4 h-4 border border-accent/60 rounded-full" />
+                <div className="w-1 h-1 bg-accent rounded-full shadow-[0_0_8px_rgba(214,255,58,1)]" />
               </div>
-              <div className="absolute bottom-1 right-1 bg-black/80 px-1 py-0.5 text-[8px] font-mono text-accent">
-                MAG {zoom}x
+              <div className="absolute bottom-3 left-0 right-0 text-center">
+                <span className="bg-black/60 px-2 py-0.5 rounded text-[9px] font-bold font-mono text-accent border border-accent/20">
+                  {zoom}X LENS
+                </span>
               </div>
             </div>
           );
