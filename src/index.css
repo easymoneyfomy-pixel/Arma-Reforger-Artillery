@@ -95,9 +95,22 @@ body::after {
     focus:border-accent/60 focus:bg-accent/10 focus:shadow-[0_0_20px_rgba(214,255,58,0.12)];
 }
 
-/* Ensure select dropdown options are readable */
+/* Robust Select Styling for all OS */
+select.field {
+  background-color: rgba(0, 0, 0, 0.85) !important;
+  color: #f4f4f5 !important; /* zinc-100 */
+}
+
 select.field option {
-  @apply bg-[#0b0c0f] text-zinc-100;
+  background-color: #0b0c0f !important;
+  color: #f4f4f5 !important;
+  padding: 8px;
+}
+
+/* Specific fix for Windows/Chrome unstyled select options */
+select.field:focus option {
+  background-color: #0b0c0f;
+  color: #f4f4f5;
 }
 
 .btn {
