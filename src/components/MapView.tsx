@@ -616,7 +616,7 @@ export default function MapView({
 
       <div
         ref={containerRef}
-        className="relative flex-1 min-h-[300px] border border-line bg-black/60 select-none"
+        className="relative flex-1 min-h-[300px] border border-line bg-black/60 select-none overflow-hidden"
         onClick={handleClick}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMove}
