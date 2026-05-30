@@ -134,11 +134,20 @@ type Props = {
 
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {
     if (dragging || panDrag) return;
+    
+    // Prevent map clicks if we clicked on the coordinate popup or other UI
+    if ((e.target as HTMLElement).closest('.pointer-events-auto')) return;
+
     const lp = eventLocalPx(e);
     const world = pxToWorld({ x: lp.x, y: lp.y });
     
     if (calibStep >= 1 && calibStep <= 3) {
       const pointId = `p${calibStep}` as "p1" | "p2" | "p3";
+      
+      // LOGIC IMPROVEMENT: If the point is already placed in this step, 
+      // clicking the map shouldn't jump it. User should drag to refine.
+      if (calibDraft?.[pointId]) return;
+
       const lpx = { x: (lp.x / size.w) * 1000, y: (lp.y / size.h) * 1000 };
       const point = { ...(calibDraft![pointId] || { world: { x: 0, y: 0 } }), px: lpx };
       const next = {
