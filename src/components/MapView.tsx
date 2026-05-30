@@ -64,6 +64,8 @@ type Props = {
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [panDrag, setPanDrag] = useState<null | { ox: number; oy: number; sx: number; sy: number }>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const calibXRef = useRef<HTMLInputElement>(null);
+  const calibYRef = useRef<HTMLInputElement>(null);
 
   const magnifierPos = useMemo(() => {
     if (calibStep >= 1 || (dragging && dragging.startsWith("p"))) return cursor;
@@ -138,12 +140,18 @@ type Props = {
     if (calibStep >= 1 && calibStep <= 3) {
       const pointId = `p${calibStep}` as "p1" | "p2" | "p3";
       const lpx = { x: (lp.x / size.w) * 1000, y: (lp.y / size.h) * 1000 };
+      const point = { ...(calibDraft![pointId] || { world: { x: 0, y: 0 } }), px: lpx };
       const next = {
         ...calibDraft!,
-        [pointId]: { ...(calibDraft![pointId] || { world: { x: 0, y: 0 } }), px: lpx }
+        [pointId]: point
       };
       setCalibDraft(next);
-      // Stay on the same step but now they can edit the world coordinates in the overlay
+      setCalibWorldInput({ 
+        x: point.world.x.toString(), 
+        y: point.world.y.toString() 
+      });
+      // Auto-focus the X coordinate field
+      setTimeout(() => calibXRef.current?.focus(), 10);
       return;
     }
     
@@ -592,11 +600,11 @@ type Props = {
          )}
          {isPremium && !map.builtin && (
            <button
-             className={calibStep > 0 ? "btn-primary" : "btn"}
+             className={calibStep > 0 ? "btn-primary animate-pulse" : "btn"}
              onClick={startCalibration}
              title="Calibrate a custom map by clicking three known points."
            >
-             {t('map.calibrate')}
+             {calibStep > 0 && calibStep <= 3 ? t('map.calibrating', { step: calibStep }) : t('map.calibrate')}
            </button>
          )}
       </div>
@@ -624,17 +632,17 @@ type Props = {
         {calibStep > 0 && (
           <div className="absolute inset-0 z-40 flex flex-col pointer-events-none">
             {/* Top Instruction Bar */}
-            <div className="bg-black/80 backdrop-blur-md border-b border-accent/40 p-4 pointer-events-auto flex items-center justify-between shadow-xl">
+            <div className="bg-black/90 backdrop-blur-md border-b border-accent/40 p-4 pointer-events-auto flex items-center justify-between shadow-xl">
               <div className="flex flex-col gap-1">
                 <div className="text-accent font-bold tracking-widest text-xs uppercase flex items-center gap-2">
-                  <span className="bg-accent text-black px-1.5 py-0.5 rounded-sm">Wizard</span>
-                  Step {calibStep} of 3
+                  <span className="bg-accent text-black px-1.5 py-0.5 rounded-sm">{t('map.calibWizard')}</span>
+                  {calibStep < 4 ? t('map.calibrating', { step: calibStep }) : t('map.calibReview')}
                 </div>
                 <div className="text-zinc-200 text-sm font-medium">
-                  {calibStep === 1 && "Click the first known point on the map (P1)"}
-                  {calibStep === 2 && "Click the second known point on the map (P2)"}
-                  {calibStep === 3 && "Click the third known point on the map (P3)"}
-                  {calibStep === 4 && "Review calibration. Drag P1, P2, P3 to fine-tune pixels if needed."}
+                  {calibStep === 1 && t('map.calibStep1')}
+                  {calibStep === 2 && t('map.calibStep2')}
+                  {calibStep === 3 && t('map.calibStep3')}
+                  {calibStep === 4 && t('map.calibReview')}
                 </div>
               </div>
               <div className="flex gap-2">
@@ -642,15 +650,23 @@ type Props = {
                   className="btn border-zinc-700 hover:bg-zinc-800 text-zinc-400"
                   onClick={() => setCalibStep(0)}
                 >
-                  Cancel
+                  {t('map.calibCancel')}
                 </button>
+                {calibStep > 1 && (
+                  <button
+                    className="btn border-zinc-700 hover:bg-zinc-800 text-zinc-400"
+                    onClick={() => setCalibStep(calibStep - 1)}
+                  >
+                    {t('map.calibBack')}
+                  </button>
+                )}
                 {calibStep < 4 ? (
                   <button
                     className="btn-primary"
                     disabled={!calibDraft || !calibDraft[`p${calibStep}` as keyof typeof calibDraft]}
                     onClick={() => setCalibStep(calibStep + 1)}
                   >
-                    Next Step
+                    {t('map.calibNext')}
                   </button>
                 ) : (
                   <button
@@ -660,7 +676,7 @@ type Props = {
                       setCalibStep(0);
                     }}
                   >
-                    Finish & Save
+                    {t('map.calibFinish')}
                   </button>
                 )}
               </div>
@@ -672,15 +688,16 @@ type Props = {
               const px = worldToPx(pxToWorld({ x: (p.px.x / 1000) * size.w, y: (p.px.y / 1000) * size.h }));
               return (
                 <div 
-                  className="absolute pointer-events-auto bg-black/90 border border-accent/60 p-3 rounded shadow-2xl w-56 flex flex-col gap-2 z-50"
+                  className="absolute pointer-events-auto bg-black/95 border border-accent/60 p-3 rounded shadow-2xl w-60 flex flex-col gap-2 z-50 animate-in fade-in zoom-in duration-200"
                   style={{ 
-                    left: Math.min(size.w - 230, Math.max(10, px.x + 20)), 
-                    top: Math.min(size.h - 150, Math.max(80, px.y - 60)) 
+                    left: Math.min(size.w - 250, Math.max(10, px.x + 20)), 
+                    top: Math.min(size.h - 160, Math.max(80, px.y - 60)) 
                   }}
                 >
-                  <div className="text-[10px] text-zinc-500 font-mono uppercase tracking-tighter">Enter World Coordinates (m)</div>
+                  <div className="text-[10px] text-zinc-500 font-mono uppercase tracking-tighter">{t('map.calibWorldPos')}</div>
                   <div className="grid grid-cols-2 gap-1">
                     <input
+                      ref={calibXRef}
                       className="field !py-1 !px-2 !text-xs"
                       placeholder="World X"
                       value={calibWorldInput.x}
@@ -692,6 +709,7 @@ type Props = {
                       }}
                     />
                     <input
+                      ref={calibYRef}
                       className="field !py-1 !px-2 !text-xs"
                       placeholder="World Y"
                       value={calibWorldInput.y}
@@ -705,7 +723,7 @@ type Props = {
                   </div>
                   <div className="flex gap-1">
                     <button 
-                      className="btn !py-0.5 !text-[9px] flex-1"
+                      className="btn !py-1 !text-[9px] flex-1"
                       onClick={() => {
                         if (gun) {
                           setCalibWorldInput({ x: gun.x.toFixed(0), y: gun.y.toFixed(0) });
@@ -718,7 +736,7 @@ type Props = {
                       Use Gun
                     </button>
                     <button 
-                      className="btn !py-0.5 !text-[9px] flex-1"
+                      className="btn !py-1 !text-[9px] flex-1"
                       onClick={() => {
                         if (target) {
                           setCalibWorldInput({ x: target.x.toFixed(0), y: target.y.toFixed(0) });
@@ -919,39 +937,54 @@ type Props = {
                 </g>
               );
             })()}
-            {markers.map((m, i) => (
-              <g
-                key={i}
-                transform={`translate(${m.pos.x},${m.pos.y})`}
-                style={{ cursor: m.which ? "grab" : "default" }}
-                onMouseDown={(e) => m.which && startDrag(e, m.which)}
-              >
-                {/* Outer radar pulse ring */}
-                {m.which && (
-                  <circle r={18} fill="none" stroke={m.color} strokeOpacity={0.12} strokeWidth={0.5}>
-                    <animate attributeName="r" values="12;22" dur="2s" repeatCount="indefinite" />
-                    <animate attributeName="stroke-opacity" values="0.2;0" dur="2s" repeatCount="indefinite" />
-                  </circle>
-                )}
-                {/* Inner glow ring */}
-                {m.which && (
-                  <circle r={11} fill="none" stroke={m.color} strokeOpacity={0.35} strokeWidth={1} />
-                )}
-                {/* Core marker dot */}
-                <circle r={7} fill={m.color} stroke="#000" strokeWidth={1} />
-                {/* Marker label */}
-                <text
-                  x={12}
-                  y={4}
-                  fontSize={11}
-                  fontFamily="ui-monospace, monospace"
-                  fill={m.color}
-                  style={{ textShadow: `0 0 6px ${m.color}` }}
+            {markers.map((m, i) => {
+              const isCalib = m.which && m.which.startsWith("p");
+              return (
+                <g
+                  key={i}
+                  transform={`translate(${m.pos.x},${m.pos.y})`}
+                  style={{ cursor: m.which ? "grab" : "default" }}
+                  onMouseDown={(e) => m.which && startDrag(e, m.which)}
                 >
-                  {m.label}
-                </text>
-              </g>
-            ))}
+                  {isCalib ? (
+                    <g className="animate-in fade-in duration-500">
+                      {/* Crosshair lines */}
+                      <line x1={-12} y1={0} x2={12} y2={0} stroke={m.color} strokeWidth={1} />
+                      <line x1={0} y1={-12} x2={0} y2={12} stroke={m.color} strokeWidth={1} />
+                      <circle r={6} fill="none" stroke={m.color} strokeWidth={1} />
+                      <circle r={1.5} fill={m.color} />
+                    </g>
+                  ) : (
+                    <>
+                      {/* Outer radar pulse ring */}
+                      {m.which && (
+                        <circle r={18} fill="none" stroke={m.color} strokeOpacity={0.12} strokeWidth={0.5}>
+                          <animate attributeName="r" values="12;22" dur="2s" repeatCount="indefinite" />
+                          <animate attributeName="stroke-opacity" values="0.2;0" dur="2s" repeatCount="indefinite" />
+                        </circle>
+                      )}
+                      {/* Inner glow ring */}
+                      {m.which && (
+                        <circle r={11} fill="none" stroke={m.color} strokeOpacity={0.35} strokeWidth={1} />
+                      )}
+                      {/* Core marker dot */}
+                      <circle r={7} fill={m.color} stroke="#000" strokeWidth={1} />
+                    </>
+                  )}
+                  {/* Marker label */}
+                  <text
+                    x={isCalib ? 8 : 12}
+                    y={isCalib ? -8 : 4}
+                    fontSize={isCalib ? 10 : 11}
+                    fontFamily="ui-monospace, monospace"
+                    fill={m.color}
+                    style={{ textShadow: `0 0 6px ${m.color}`, fontWeight: isCalib ? "bold" : "normal" }}
+                  >
+                    {m.label}
+                  </text>
+                </g>
+              );
+            })}
           </svg>
         </div>
         <div className="absolute top-2 right-2 pointer-events-none" title="North">
