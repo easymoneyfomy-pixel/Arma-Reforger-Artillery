@@ -189,7 +189,7 @@ type Props = {
     setPanDrag(null);
   }
 
-  function startDrag(e: React.MouseEvent, which: "gun" | "target") {
+  function startDrag(e: React.MouseEvent, which: "gun" | "target" | "p1" | "p2" | "p3") {
     e.stopPropagation();
     e.preventDefault();
     setDragging(which);
