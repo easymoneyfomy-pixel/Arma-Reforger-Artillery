@@ -289,12 +289,12 @@ export default function MapView({
       if (x > worldSize) continue;
       const pStart = worldToPx({ x, y: 0 });
       const pEnd = worldToPx({ x, y: worldSize });
-      lines.push(<line key={`major-x-${i}`} x1={pStart.x} y1={pStart.y} x2={pEnd.x} y2={pEnd.y} stroke="rgba(214,255,58,0.3)" strokeWidth={1} />);
+      lines.push(<line key={`major-x-${i}`} x1={pStart.x} y1={pStart.y} x2={pEnd.x} y2={pEnd.y} stroke="rgba(214,255,58,0.3)" strokeWidth={1.5} />);
       
-      // Labels for X (Easting)
-      const labelStr = Math.floor(x / 10).toString().padStart(3, "0");
+      // Labels for X (Easting) - Kilometer index (e.g. 01, 02)
+      const labelStr = Math.floor(x / 1000).toString().padStart(2, "0");
       labels.push(
-        <text key={`label-x-${i}`} x={pStart.x + 2} y={size.h - 5} fontSize={10} fill="rgba(214,255,58,0.6)" fontFamily="ui-monospace, monospace">
+        <text key={`label-x-${i}`} x={pStart.x + 4} y={size.h - 8} fontSize={11} fontWeight="bold" fill="rgba(214,255,58,0.7)" fontFamily="ui-monospace, monospace">
           {labelStr}
         </text>
       );
@@ -305,12 +305,12 @@ export default function MapView({
       if (y > worldSize) continue;
       const pStart = worldToPx({ x: 0, y });
       const pEnd = worldToPx({ x: worldSize, y });
-      lines.push(<line key={`major-y-${j}`} x1={pStart.x} y1={pStart.y} x2={pEnd.x} y2={pEnd.y} stroke="rgba(214,255,58,0.3)" strokeWidth={1} />);
+      lines.push(<line key={`major-y-${j}`} x1={pStart.x} y1={pStart.y} x2={pEnd.x} y2={pEnd.y} stroke="rgba(214,255,58,0.3)" strokeWidth={1.5} />);
       
-      // Labels for Y (Northing)
-      const labelStr = Math.floor(y / 10).toString().padStart(3, "0");
+      // Labels for Y (Northing) - Kilometer index
+      const labelStr = Math.floor(y / 1000).toString().padStart(2, "0");
       labels.push(
-        <text key={`label-y-${j}`} x={5} y={pStart.y - 2} fontSize={10} fill="rgba(214,255,58,0.6)" fontFamily="ui-monospace, monospace">
+        <text key={`label-y-${j}`} x={8} y={pStart.y - 4} fontSize={11} fontWeight="bold" fill="rgba(214,255,58,0.7)" fontFamily="ui-monospace, monospace">
           {labelStr}
         </text>
       );
@@ -326,15 +326,34 @@ export default function MapView({
         if (x > worldSize) continue;
         const pStart = worldToPx({ x, y: 0 });
         const pEnd = worldToPx({ x, y: worldSize });
-        lines.push(<line key={`minor-x-${i}`} x1={pStart.x} y1={pStart.y} x2={pEnd.x} y2={pEnd.y} stroke="rgba(214,255,58,0.1)" strokeWidth={0.5} />);
+        lines.push(<line key={`minor-x-${i}`} x1={pStart.x} y1={pStart.y} x2={pEnd.x} y2={pEnd.y} stroke="rgba(214,255,58,0.15)" strokeWidth={0.5} />);
+        
+        // Hectometer labels (e.g. 015) when zoomed in deep
+        if (scale > 6) {
+          const subLabel = Math.floor(x / 100).toString().padStart(3, "0");
+          labels.push(
+            <text key={`sub-label-x-${i}`} x={pStart.x + 2} y={size.h - 6} fontSize={8} fill="rgba(214,255,58,0.3)" fontFamily="ui-monospace, monospace">
+              {subLabel}
+            </text>
+          );
+        }
       }
       for (let j = 0; j <= minorStepsY; j++) {
         if (j % 10 === 0) continue; // Skip major lines
         const y = j * minorStep;
         if (y > worldSize) continue;
         const pStart = worldToPx({ x: 0, y });
-        const pEnd = worldToPx({ x: worldSize, y });
-        lines.push(<line key={`minor-y-${j}`} x1={pStart.x} y1={pStart.y} x2={pEnd.x} y2={pEnd.y} stroke="rgba(214,255,58,0.1)" strokeWidth={0.5} />);
+        const pEnd = worldToPx({ x, y: worldSize });
+        lines.push(<line key={`minor-y-${j}`} x1={pStart.x} y1={pStart.y} x2={pEnd.x} y2={pEnd.y} stroke="rgba(214,255,58,0.15)" strokeWidth={0.5} />);
+
+        if (scale > 6) {
+          const subLabel = Math.floor(y / 100).toString().padStart(3, "0");
+          labels.push(
+            <text key={`sub-label-y-${j}`} x={4} y={pStart.y - 2} fontSize={8} fill="rgba(214,255,58,0.3)" fontFamily="ui-monospace, monospace">
+              {subLabel}
+            </text>
+          );
+        }
       }
     }
 
