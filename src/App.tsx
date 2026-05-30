@@ -467,8 +467,8 @@ function calibrate(cal: MapDef["calibration"]) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-line bg-panel/60 backdrop-blur">
-        <div className="max-w-[1700px] mx-auto px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap">
+      <header className="border-b border-line bg-panel/60 backdrop-blur sticky top-0 z-50">
+        <div className="max-w-[1800px] mx-auto px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <div className="relative w-8 h-8 flex items-center justify-center bg-black/40 border border-line/50 rounded-sm overflow-hidden hidden sm:flex">
               <svg className="w-7 h-7 text-accent" viewBox="0 0 100 100">
@@ -572,9 +572,9 @@ function calibrate(cal: MapDef["calibration"]) {
         </div>
       </header>
 
-      <main className="flex-1 max-w-[1800px] w-full mx-auto p-2 sm:p-4 grid grid-cols-12 gap-2 sm:gap-4 overflow-x-hidden overflow-y-auto lg:overflow-hidden">
+      <main className="flex-1 max-w-[1800px] w-full mx-auto p-2 sm:p-4 grid grid-cols-12 gap-2 sm:gap-4 h-full">
         {/* Left Side: Controls */}
-        <section className="panel-left col-span-12 lg:col-span-3 space-y-2 sm:space-y-4 overflow-y-auto lg:overflow-y-visible">
+        <section className="panel-left col-span-12 lg:col-span-3 space-y-2 sm:space-y-4">
           <LeftPanel
             weapons={WEAPONS}
             weaponId={weaponId}
@@ -640,7 +640,7 @@ function calibrate(cal: MapDef["calibration"]) {
         </section>
 
         {/* Right Side: Results & Tools */}
-        <section className="panel-right col-span-12 lg:col-span-3 space-y-2 sm:space-y-4 overflow-y-auto lg:overflow-y-visible">
+        <section className="panel-right col-span-12 lg:col-span-3 space-y-2 sm:space-y-4">
           <RightPanel
             solution={mergedSolution}
             onSave={saveMission}

@@ -168,8 +168,9 @@ type Props = {
   function handleClick(e: React.MouseEvent<HTMLDivElement>) {
     if (dragging || panDrag) return;
     
-    // Prevent map clicks if we clicked on the coordinate popup or other UI
-    if ((e.target as HTMLElement).closest('.pointer-events-auto')) return;
+    // Prevent map clicks if we clicked on the coordinate popup or the top wizard bar
+    const target = e.target as HTMLElement;
+    if (target.closest('.calib-popup') || target.closest('.calib-bar')) return;
 
     const lp = eventLocalPx(e);
     const world = pxToWorld({ x: lp.x, y: lp.y });
@@ -674,7 +675,7 @@ type Props = {
         {calibStep > 0 && (
           <div className="absolute inset-0 z-40 flex flex-col pointer-events-none">
             {/* Top Instruction Bar */}
-            <div className="bg-black/90 backdrop-blur-md border-b border-accent/40 p-4 pointer-events-auto flex items-center justify-between shadow-xl">
+            <div className="calib-bar bg-black/90 backdrop-blur-md border-b border-accent/40 p-4 pointer-events-auto flex items-center justify-between shadow-xl">
               <div className="flex flex-col gap-1">
                 <div className="text-accent font-bold tracking-widest text-xs uppercase flex items-center gap-2">
                   <span className="bg-accent text-black px-1.5 py-0.5 rounded-sm">{t('map.calibWizard')}</span>
@@ -730,7 +731,7 @@ type Props = {
               const px = worldToPx(pxToWorld({ x: (p.px.x / 1000) * size.w, y: (p.px.y / 1000) * size.h }));
               return (
                 <div 
-                  className="absolute pointer-events-auto bg-black/95 border border-accent/60 p-3 rounded shadow-2xl w-64 flex flex-col gap-3 z-50 animate-in fade-in zoom-in duration-200"
+                  className="calib-popup absolute pointer-events-auto bg-black/95 border border-accent/60 p-3 rounded shadow-2xl w-64 flex flex-col gap-3 z-50 animate-in fade-in zoom-in duration-200"
                   style={{ 
                     left: Math.min(size.w - 270, Math.max(10, px.x + 20)), 
                     top: Math.min(size.h - 220, Math.max(80, px.y - 60)) 
