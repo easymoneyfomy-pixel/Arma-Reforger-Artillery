@@ -197,37 +197,42 @@ export default function RightPanel({
       </div>
 
       {solution && (
-        <div className="panel p-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="section-title"><span className="text-zinc-600 mr-1">TMR:</span>{t('rightPanel.timer')}</span>
-            <span className="text-[10px] font-mono text-accent">TOF {solution.tofSec.toFixed(1)}s</span>
+        <div className="panel p-3 space-y-3">
+          <div className="flex items-center justify-between border-b border-line/40 pb-1.5">
+            <span className="section-title flex items-center gap-1.5">
+              <span className="text-zinc-600">TMR:</span>
+              {t('rightPanel.timer').toUpperCase()}
+            </span>
+            <span className="text-[10px] font-mono text-accent bg-accent/10 px-1.5 rounded-sm border border-accent/20 animate-pulse">
+              TOF {solution.tofSec.toFixed(1)}s
+            </span>
           </div>
 
-          <div className="panel-alt p-3 flex flex-col items-center justify-center space-y-2 relative overflow-hidden">
-            <div className="font-mono text-3xl font-bold tracking-widest text-accent tabular-nums flex items-baseline gap-1">
+          <div className="panel-alt p-4 flex flex-col items-center justify-center space-y-3 relative overflow-hidden bg-black/40">
+            <div className="font-mono text-4xl font-bold tracking-[0.2em] text-accent tabular-nums flex items-baseline gap-1 drop-shadow-[0_0_10px_rgba(214,255,58,0.2)]">
               {timeLeft > 0 ? (
                 <>
-                  <span className="text-red-400 animate-pulse mr-1">{t('rightPanel.tMinus')}</span>
+                  <span className="text-red-500/80 animate-pulse text-sm mr-1 tracking-normal">{t('rightPanel.tMinus')}</span>
                   <span>{timeLeft.toFixed(1)}</span>
-                  <span className="text-xs text-zinc-500">s</span>
+                  <span className="text-xs text-zinc-600 ml-1">SEC</span>
                 </>
               ) : timeLeft === 0 && timerTotal > 0 ? (
-                <span className="text-emerald-400 font-bold tracking-wide animate-ping">{t('rightPanel.impact')}</span>
+                <span className="text-emerald-400 font-bold tracking-[0.25em] animate-ping drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]">{t('rightPanel.impact')}</span>
               ) : (
-                <span className="text-zinc-500">{t('rightPanel.standby')}</span>
+                <span className="text-zinc-700 tracking-[0.1em] text-2xl uppercase">System Ready</span>
               )}
             </div>
 
-            <div className="w-full bg-black/40 h-1.5 rounded-full overflow-hidden border border-line/30">
+            <div className="w-full bg-black/60 h-2 rounded-full overflow-hidden border border-line/40 shadow-inner">
               <div
-                className={`h-full transition-all duration-75 ${timeLeft <= 3 ? "bg-red-400 animate-pulse" : "bg-accent"}`}
+                className={`h-full transition-all duration-75 shadow-[0_0_10px_rgba(214,255,58,0.3)] ${timeLeft <= 3 ? "bg-red-500 animate-pulse" : "bg-accent"}`}
                 style={{ width: `${timerTotal > 0 ? (timeLeft / timerTotal) * 100 : 0}%` }}
               />
             </div>
 
             <div className="flex gap-2 w-full pt-1">
               <button
-                className={`flex-1 btn font-mono !py-1 text-[10px] ${timerActive ? "border-amber-500/40 text-amber-400" : "btn-primary"}`}
+                className={`flex-1 btn font-mono !py-2 text-[10px] flex items-center justify-center gap-2 ${timerActive ? "border-amber-500/60 text-amber-400 bg-amber-500/10" : "btn-primary"}`}
                 onClick={() => {
                   if (timerActive) setTimerActive(false);
                   else {
@@ -236,10 +241,16 @@ export default function RightPanel({
                   }
                 }}
               >
-                {timerActive ? `⏸️ ${t('rightPanel.pause')}` : timeLeft > 0 ? `▶️ ${t('rightPanel.resume')}` : `⏱️ ${t('rightPanel.startTimer')}`}
+                {timerActive ? (
+                  <><span>⏸</span> {t('rightPanel.pause')}</>
+                ) : timeLeft > 0 ? (
+                  <><span>▶</span> {t('rightPanel.resume')}</>
+                ) : (
+                  <><span>⏱</span> {t('rightPanel.startTimer')}</>
+                )}
               </button>
               <button
-                className="btn font-mono !py-1 !px-3 text-[10px]"
+                className="btn font-mono !py-2 !px-4 text-[10px]"
                 disabled={timeLeft <= 0 && !timerActive}
                 onClick={() => { setTimerActive(false); setTimeLeft(0); setTimerTotal(0); }}
               >
@@ -251,19 +262,24 @@ export default function RightPanel({
       )}
 
       {solution && (
-        <div className="panel p-3 space-y-2 relative overflow-hidden">
-          <div className="flex items-center justify-between border-b border-line/45 pb-1">
-            <span className="section-title">
-              <span className="text-zinc-600 mr-1">MET:</span>{t('rightPanel.wind')}
+        <div className="panel p-3 space-y-3 relative overflow-hidden">
+          <div className="flex items-center justify-between border-b border-line/45 pb-1.5">
+            <span className="section-title flex items-center gap-1.5">
+              <span className="text-zinc-600">MET:</span>
+              {t('rightPanel.wind').toUpperCase()}
             </span>
-            <span className="text-[10px] text-zinc-500">PREMIUM</span>
+            {isPremium ? (
+              <span className="text-[9px] font-mono text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded-sm border border-amber-400/20">👑 ACTIVE</span>
+            ) : (
+              <span className="text-[9px] font-mono text-zinc-500 bg-black/40 px-1.5 py-0.5 rounded-sm border border-line/40">🔒 LOCKED</span>
+            )}
           </div>
 
           {!isPremium ? (
-            <div className="bg-black/30 border border-line/20 p-3.5 rounded-sm text-center font-mono text-[9px] text-zinc-500 space-y-2 relative z-10 py-5">
-              <div className="text-amber-400 font-semibold uppercase tracking-wider">🔒 {t('rightPanel.windLocked')}</div>
-              <p className="text-[8px] text-zinc-400 leading-relaxed px-1">{t('rightPanel.windLockedDesc')}</p>
-              <button type="button" className="btn border-accentDim/40 hover:bg-accentDim/10 text-accent text-[9px] px-3 py-1 uppercase tracking-wider" onClick={onOpenLicense}>
+            <div className="bg-black/30 border border-line/20 p-4 rounded-sm text-center font-mono text-[9px] text-zinc-500 space-y-3 relative z-10 py-6">
+              <div className="text-amber-400 font-semibold uppercase tracking-widest text-[10px]">⚠️ MET STATION OFFLINE</div>
+              <p className="text-[8px] text-zinc-400 leading-relaxed px-2">{t('rightPanel.windLockedDesc')}</p>
+              <button type="button" className="btn-primary !py-1.5 !px-4 !text-[9px] uppercase tracking-wider" onClick={onOpenLicense}>
                 {t('rightPanel.unlockPremium')}
               </button>
             </div>

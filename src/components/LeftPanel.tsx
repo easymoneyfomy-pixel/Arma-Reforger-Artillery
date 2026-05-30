@@ -96,9 +96,9 @@ export default function LeftPanel(p: Props) {
             {weapon.isMod ? " · MOD" : " · VANILLA"}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <div className="label mb-1 flex items-center">
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="space-y-1">
+            <div className="label flex items-center">
               {t('leftPanel.ammo')}
               <InfoHint
                 text={
@@ -110,7 +110,7 @@ export default function LeftPanel(p: Props) {
               />
             </div>
             <select
-              className="field"
+              className="field !py-2"
               title="Projectile/fuze loaded on the gun."
               value={p.ammoId}
               onChange={(e) => {
@@ -126,8 +126,8 @@ export default function LeftPanel(p: Props) {
               ))}
             </select>
           </div>
-          <div>
-            <div className="label mb-1 flex items-center justify-between">
+          <div className="space-y-1">
+            <div className="label flex items-center justify-between">
               <div className="flex items-center">
                 {t('leftPanel.charge')}
                 <InfoHint
@@ -141,26 +141,25 @@ export default function LeftPanel(p: Props) {
                   }
                 />
               </div>
-              <label className="normal-case tracking-normal text-[9px] text-zinc-500 flex items-center gap-1 cursor-pointer hover:text-zinc-300 transition-colors">
+              <label className="normal-case tracking-normal text-[9px] text-zinc-500 flex items-center gap-1.5 cursor-pointer hover:text-zinc-300 transition-colors">
                 <input
                   type="checkbox"
-                  className="w-3 h-3 rounded-sm bg-black border-line checked:bg-accent focus:ring-0"
+                  className="w-3.5 h-3.5 rounded-sm bg-black border-line checked:bg-accent focus:ring-0"
                   checked={p.autoCharge}
                   onChange={(e) => p.setAutoCharge(e.target.checked)}
-                  title="When on, the optimal charge is auto-selected for the current target range."
                 />
-                {t('leftPanel.autoCharge').toUpperCase()}
+                <span className="font-mono uppercase">{t('leftPanel.autoCharge')}</span>
               </label>
             </div>
             <select
-              className="field !py-1"
+              className="field !py-2"
               title="Powder charge. Lower = steeper arc, shorter range. Higher = flatter, longer range."
               value={p.chargeId}
               disabled={p.autoCharge}
               onChange={(e) => p.setChargeId(e.target.value)}
             >
               {ammo?.charges.map((c) => (
-                <option key={c.id} value={c.id} className="bg-zinc-900 text-zinc-100">
+                <option key={c.id} value={c.id}>
                   C{c.id} · {c.rows[0].range_m}-{c.rows[c.rows.length - 1].range_m}m
                 </option>
               ))}
@@ -203,23 +202,31 @@ export default function LeftPanel(p: Props) {
 
       {/* Saved Landmarks Panel */}
       <div className="panel p-3 space-y-3 relative overflow-hidden">
-        <div className="flex items-center justify-between">
-          <span className="section-title"><span className="text-zinc-600 mr-1">MEM:</span>Tactical Landmarks</span>
-          <span className="text-[10px] font-mono text-zinc-600">{t('leftPanel.presets')}</span>
+        <div className="flex items-center justify-between border-b border-line/40 pb-1.5">
+          <span className="section-title flex items-center gap-1.5">
+            <span className="text-zinc-600">MEM:</span>
+            TACTICAL LANDMARKS
+          </span>
+          {p.isPremium ? (
+             <span className="text-[9px] font-mono text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded-sm border border-amber-400/20">👑 PREMIUM</span>
+          ) : (
+             <span className="text-[9px] font-mono text-zinc-500 bg-black/40 px-1.5 py-0.5 rounded-sm border border-line/40">🔒 LOCKED</span>
+          )}
         </div>
 
         {!p.isPremium ? (
-          <div className="bg-black/40 border border-line/30 p-4 rounded-sm text-center font-mono text-[10px] text-zinc-500 space-y-3 py-6 relative z-10">
-            <div className="text-amber-400 font-semibold tracking-wider">🔒 PRESETS MEMORY LOCKED</div>
-            <p className="text-[9px] text-zinc-400 leading-relaxed px-2">
-              Unlock tactical landmarks and preset templates by activating your Premium FDC license.
+          <div className="bg-black/40 border border-line/30 p-4 rounded-sm text-center font-mono text-[10px] text-zinc-500 space-y-3 py-8 relative z-10 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-amber-500/5 pointer-events-none"></div>
+            <div className="text-amber-400 font-semibold tracking-wider relative z-20">TACTICAL MEMORY OFFLINE</div>
+            <p className="text-[9px] text-zinc-400 leading-relaxed px-2 relative z-20">
+              Unlock the ability to save, export and sync tactical landmarks across sessions.
             </p>
             <button
               type="button"
-              className="btn border-accentDim/40 hover:bg-accentDim/10 text-accent text-[9px] px-4 py-1.5 uppercase tracking-wider"
+              className="btn-primary !py-2 !px-4 !text-[10px] relative z-20"
               onClick={p.onOpenLicense}
             >
-              {t('rightPanel.unlockPremium')}
+              ACTIVATE FDC LICENSE
             </button>
           </div>
         ) : (
